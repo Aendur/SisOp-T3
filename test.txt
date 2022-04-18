@@ -1,0 +1,7 @@
+File name:             test.txt
+Head size:                  172
+Tail size:                   12
+File size:                   -1
+Timestamp: 12022-03-18T19:03:14
+-- START --hi!
+--- END ---
