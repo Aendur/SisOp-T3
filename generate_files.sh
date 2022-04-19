@@ -15,30 +15,52 @@
 # 		./a.out $fname 1000
 # 		mv $fname /mnt/g/SD${i}/$fname 2>/dev/null
 # 		echo $fname
+#	 	sleep 0.05
 # 	done
 # done
 
-# Criar no subdiretório SD1, mais 3 subdiretórios: SD1.0, SD1.1 e SD1.2
-for i in 0 1 2
-do
-	mkdir -vp /mnt/g/SD1/SD1.${i}
-done
-
-# Copiar no diretório raiz o máximo de arquivos possíveis, cada um com aproximadamente 512 Bytes.
-for i in {13100..33000}
-do
-	fname=$(printf "ROOT-FILE%05d.dat" $i)
-	./a.out $fname 500
-	mv $fname /mnt/g/$fname 2>/dev/null
-	echo $fname
-	sleep 0.1
-done
-
-# # Copiar no subdiretório de SD1.0 o dobro do número de arquivos existentes no diretório raiz, cada arquivo com aproximadamente 4 KB.
-# for i in {1..132000} do
-# 	./a.out /mnt/g/SD1/SD1.0${i}.txt 4000
-# 	echo SD1.0/$i
+# # Criar no subdiretório SD1, mais 3 subdiretórios: SD1.0, SD1.1 e SD1.2
+# for i in 0 1 2
+# do
+# 	mkdir -vp /mnt/g/SD1/SD1.${i}
 # done
-# Copiar no subdiretório de SD1.1 o triplo do número de arquivos existentes no diretório raiz, cada arquivo com aproximadamente 8 KB.
+
+# # Copiar no diretório raiz o máximo de arquivos possíveis, cada um com aproximadamente 512 Bytes.
+# for i in {21840..21850}
+# do
+# 	fname=$(printf "ROOT-FILE%05d.dat" $i)
+# 	./a.out $fname 500
+# 	mv -v $fname /mnt/g/$fname 2>/dev/null
+# 	#echo $fname
+# 	sleep 0.05
+# done
+
+# Copiar no subdiretório de SD1.0 o dobro do número de arquivos existentes no diretório raiz, cada arquivo com aproximadamente 4 KB.
+# cd /mnt/g/SD1/SD1.0
+# #for i in {1..43686}
+# for i in {21801..22200}
+# do
+# 	fname=$(printf "SD1.0-FILE%05d.dat" $i)
+# 	~/SisOp-T3/a.out $fname 4000
+# 	echo $fname
+# done
+
+# # Copiar no subdiretório de SD1.1 o triplo do número de arquivos existentes no diretório raiz, cada arquivo com aproximadamente 8 KB.
+cd /mnt/g/SD1/SD1.1
+for i in {1..65529}
+	fname=$(printf "SD1.1-FILE%05d.dat" $i)
+	~/SisOp-T3/a.out $fname 8000
+	echo $fname
+do
+done
+
+
 # Copiar em SD1.2 arquivos de vídeo, de forma a encher o pen-drive.
+
+
+## TOTAL FILES IN ROOT: 21843 + 5 DIRS
+## TOTAL FILES IN SD1.0: 21844 (43686)
+## TOTAL FILES IN SD1.1: 65529 (?)
+## TOTAL FILES IN SD1.2: ----- (?)
+
 

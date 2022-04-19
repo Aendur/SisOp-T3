@@ -3,25 +3,22 @@
 #include <stdexcept>
 #include <iostream>
 
-//int main (int argc, char ** argv) {
 int main (int argc, char ** argv) {
-	if (argc > 2) {
-		RandomFile rf(argv[1], std::stoull(argv[2]));
-		rf.write();
+	if (argc < 3) {
+		std::cout << "a.out file_name file_size\n\n";
+		std::cout << "      file_name max 25 characters\n";
+		std::cout << "      file_size in bytes\n";
+		return 0;
 	}
-	/*RandomFile rfs[] = {
-		RandomFile("test001.txt", 600),
-		//RandomFile("test257.txt", 257),
-		//RandomFile("test257.txt", 258),
-		//RandomFile("test512.txt", 512),
-		//RandomFile("test01K.txt", 1024),
-		//RandomFile("test02K.txt", 2048),
-		//RandomFile("test04K.txt", 4096),
-	};
+	try {
+		size_t fsize = std::stoull(argv[2]);
+		std::cout << "Creating file: " << argv[1] << " (" << fsize << ") bytes\n";
+		RandomFile rf(argv[1], fsize);
+		rf.write();
+	} catch (std::exception & e) {
+		std::cout << "Error: " << e.what() << std::endl;
+	}
 
-	const int siz = 7;
-	for(int i = 0; i < siz; ++i) {
-		rfs[i].write();
-	}*/
+	return 0;
 }
 
