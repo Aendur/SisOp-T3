@@ -25,12 +25,13 @@ do
 done
 
 # Copiar no diretório raiz o máximo de arquivos possíveis, cada um com aproximadamente 512 Bytes.
-for i in {1..66000}
+for i in {13100..33000}
 do
 	fname=$(printf "ROOT-FILE%05d.dat" $i)
 	./a.out $fname 500
 	mv $fname /mnt/g/$fname 2>/dev/null
 	echo $fname
+	sleep 0.1
 done
 
 # # Copiar no subdiretório de SD1.0 o dobro do número de arquivos existentes no diretório raiz, cada arquivo com aproximadamente 4 KB.
