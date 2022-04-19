@@ -11,92 +11,130 @@
 using std::string;
 using std::vector;
 
-static const vector<const char*> head_template = {
-	"File name: %*s\n", // 12 + N
-	"File size: %*d\n", // 12 + N
-	"Head size: %*d\n", // 12 + N
-	"Body size: %*d\n", // 12 + N
-	"Tail size: %*d\n", // 12 + N
-	"Timestamp: %*s\n", // 12 + N
-	"-- START --\n"     // 12
-};
+static const char head_template[] =
+	"File name: %*s\n"
+	"File size: %*lu\n"
+	"Head size: %*d\n"
+	"Body size: %*lu\n"
+	"Tail size: %*d\n"
+	"Timestamp: %*s\n"
+	"------------ START ------------\n"
+;
+
+static const char tail_template[] =
+	"------------- END -------------\n"
+;
 
 #define LOG_FILE stderr
 
 RandomFile::RandomFile(const char * name, size_t size) : file_size(size) {
-	this->file_name = new char[FILD_SIZE + 1];
-	snprintf(this->file_name,  FILD_SIZE + 1, name);
-
-	this->tail_size = this->DESC_SIZE;
-	this->head_size = this->DESC_SIZE + (this->DESC_SIZE + this->FILD_SIZE) * (head_template.size() - 1);
-	this->body_size = this->file_size -  this->tail_size - this->head_size;
-
-	if (this->file_size < this->head_size + this->tail_size) {
-		throw std::runtime_error("file_size must be greater than " + std::to_string(this->head_size + this->tail_size));
+	if (strlen(name) > RF_FILD_SIZE) {
+		throw std::runtime_error("file_name too long");
 	}
+	snprintf(this->file_name,  RF_FILD_SIZE + 1, name);
 
-	fprintf(LOG_FILE, "this->file_name %s\n" , this->file_name);
-	fprintf(LOG_FILE, "this->file_size %lu\n", this->file_size);
-	fprintf(LOG_FILE, "this->head_size %lu\n", this->head_size);
-	fprintf(LOG_FILE, "this->body_size %lu\n", this->body_size);
-	fprintf(LOG_FILE, "this->tail_size %lu\n", this->tail_size);
+	if (this->file_size < RF_HEAD_SIZE + RF_TAIL_SIZE) {
+		throw std::runtime_error("file_size must be greater than " + std::to_string(RF_HEAD_SIZE + RF_TAIL_SIZE));
+	}
 	
-	this->head = new char[head_size + 1];
+	this->body_size = this->file_size - RF_HEAD_SIZE - RF_TAIL_SIZE;
 	this->body = new char[body_size + 1];
-	this->tail = new char[tail_size + 1];
-
 	this->init_head();
 	this->init_body();
 	this->init_tail();
-
-	fprintf(LOG_FILE, "this->head:\n%s\n", this->head);
-	fprintf(LOG_FILE, "this->body:\n%s\n", this->body);
-	fprintf(LOG_FILE, "this->tail:\n%s\n", this->tail);
 }
 
 RandomFile::~RandomFile(void) {
-	delete[] this->file_name;
-	delete[] this->head;
 	delete[] this->body;
-	delete[] this->tail;
 }
 
 void RandomFile::init_head(void) {
-	size_t N = DESC_SIZE + FILD_SIZE;
-	
 	time_t now = time(NULL);
 	struct tm * utc = gmtime(&now);
-	char * time_buffer = new char[FILD_SIZE + 1];
-	snprintf(time_buffer, FILD_SIZE + 1, "%d-%02d-%02dT%02d:%02d:%02d",
-		utc->tm_year + 11900, utc->tm_mon, utc->tm_mday,
-		utc->tm_hour        , utc->tm_min, utc->tm_sec
+	char * time_buffer = new char[RF_FILD_SIZE + 1];
+	snprintf(
+		time_buffer         , RF_FILD_SIZE + 1, "%d-%02d-%02dT%02d:%02d:%02d",
+		utc->tm_year + 11900, utc->tm_mon     , utc->tm_mday,
+		utc->tm_hour        , utc->tm_min     , utc->tm_sec
 	);
-	printf("%d %d\n", N, FILD_SIZE);
 
-	snprintf(this->head + 0 * N,         N, head_template[0], FILD_SIZE, this->file_name);
-	snprintf(this->head + 1 * N,         N, head_template[1], FILD_SIZE, this->file_size);
-	snprintf(this->head + 2 * N,         N, head_template[2], FILD_SIZE, this->head_size);
-	snprintf(this->head + 3 * N,         N, head_template[3], FILD_SIZE, this->body_size);
-	snprintf(this->head + 4 * N,         N, head_template[4], FILD_SIZE, this->tail_size);
-	snprintf(this->head + 5 * N,         N, head_template[5], FILD_SIZE, time_buffer);
-	snprintf(this->head + 6 * N, DESC_SIZE, head_template[6]);
+	snprintf(this->head, RF_HEAD_SIZE + 1, head_template,
+		RF_FILD_SIZE, this->file_name,
+		RF_FILD_SIZE, this->file_size,
+		RF_FILD_SIZE, RF_HEAD_SIZE,
+		RF_FILD_SIZE, this->body_size,
+		RF_FILD_SIZE, RF_TAIL_SIZE,
+		RF_FILD_SIZE, time_buffer
+	);
 
 	delete[] time_buffer;
-	fprintf(LOG_FILE, "this->head:\n%s\n", this->head);
 }
+#define HYAKU_SIZE 100
+#define IROHA_SIZE 400
+char hyakusen[] =
+	    "%-9lu ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:----\n";
+char iroha[] =
+	"                                ※・・【　いろはにほへと ちりぬるを　】・・※\n"
+	"                                ※・・【　わかよたれそつ 　ねならむ　】・・※\n"
+	"                                ※・・【　うゐのおくやま けふこえて　】・・※\n"
+	"                                ※・・【　あさきゆめみし ゑひもせす　】・・※\n"
+;
+char torinaku[] =
+	"                                ※・・【　とりなくこゑす ゆめさませ　】・・※\n"
+	"                                ※・・【　みよあけわたる ひんかしを　】・・※\n"
+	"                                ※・・【　そらいろはえて おきつへに　】・・※\n"
+	"                                ※・・【　ほふねむれゐぬ もやのうち　】・・※\n"
+;
 
 void RandomFile::init_body(void) {
-	memset(this->body, '.', this->body_size);
-	for (int i = 20; i < this->body_size; i += 21) { this->body[i] = '\n'; }
-	this->body[this->body_size - 1] = 0;
-	this->body[this->body_size - 2] = '\n';
+	if (this->body_size == 0) {
+		this->body[0] = 0;
+		return;
+	} else if (this->body_size == 1) {
+		this->body[this->body_size - 1] = '\n';
+		this->body[this->body_size] = 0;
+	}
+
+	char * pos = this->body;
+	char * end = this->body + this->body_size;
+	while (pos < end) {
+		snprintf(pos, end - pos, hyakusen, 1 + RF_HEAD_SIZE + pos - this->body);
+		pos += HYAKU_SIZE;
+	}
+
+	int offset;
+	if (2*IROHA_SIZE <= this->body_size && this->body_size < 3*IROHA_SIZE) {
+		offset = (this->body_size - IROHA_SIZE) / 2;
+		offset -= offset % HYAKU_SIZE;
+		memcpy(this->body + offset, iroha, IROHA_SIZE);
+	} else if (this->body_size >= 3*IROHA_SIZE) {
+		offset = (this->body_size - IROHA_SIZE * 2) / 3;
+		offset -= offset % HYAKU_SIZE;
+		memcpy(this->body + offset, iroha, IROHA_SIZE);
+		offset += offset + IROHA_SIZE + HYAKU_SIZE;
+		memcpy(this->body + offset, torinaku, IROHA_SIZE);
+	}
+
+	/*if (POEM_SIZE + 2*GOJU_SIZE <= this->body_size && this->body_size < 2*POEM_SIZE + 3*GOJU_SIZE) {
+		int offset = (this->body_size - POEM_SIZE) / 2;
+		offset -= offset % GOJU_SIZE;
+		memcpy(this->body + offset, iroha, POEM_SIZE);
+	} else if (this->body_size >= 2*POEM_SIZE + 3*GOJU_SIZE) {
+		int offset = (this->body_size - POEM_SIZE * 2) / 3;
+		offset -= offset % GOJU_SIZE;
+		memcpy(this->body + offset, iroha, POEM_SIZE);
+		memcpy(this->body + offset*2 + POEM_SIZE, torinaku, POEM_SIZE);
+	}*/
+
+	this->body[this->body_size - 1] = '\n';
+	this->body[this->body_size] = 0;
 }
 
 void RandomFile::init_tail(void) {
-	snprintf(this->tail, DESC_SIZE, "--- END ---");
+	snprintf(this->tail, RF_TAIL_SIZE + 1, tail_template);
 }
 
-void RandomFile::Write(void) const {
+void RandomFile::write(void) const {
 	std::ofstream stream(this->file_name);
 	if (stream.good()) {
 		stream << this->head;

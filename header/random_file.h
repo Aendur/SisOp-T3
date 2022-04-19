@@ -3,19 +3,20 @@
 
 #include <string>
 
+#define RF_HEAD_SIZE 224
+#define RF_TAIL_SIZE 32
+#define RF_LINE_SIZE 32
+#define RF_FILD_SIZE 20
+
 class RandomFile {
 private:
-	const size_t DESC_SIZE = 12;
-	const size_t FILD_SIZE = 20;
-	size_t head_size;
-	size_t body_size;
-	size_t tail_size;
-	size_t file_size;
-	char * file_name = nullptr;
 
-	char * head = nullptr;
+	char   file_name[RF_FILD_SIZE + 1];
+	size_t file_size;
+	size_t body_size;
+	char   head[RF_HEAD_SIZE + 1];
+	char   tail[RF_TAIL_SIZE + 1];
 	char * body = nullptr;
-	char * tail = nullptr;
 
 	void init_head(void);
 	void init_body(void);
@@ -25,7 +26,7 @@ private:
 public:
 	RandomFile(const char * name, size_t size);
 	~RandomFile(void);
-	void Write(void) const;
+	void write(void) const;
 };
 
 #endif
