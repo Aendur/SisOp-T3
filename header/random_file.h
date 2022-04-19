@@ -6,7 +6,7 @@
 #define RF_HEAD_SIZE 224
 #define RF_TAIL_SIZE 32
 #define RF_LINE_SIZE 32
-#define RF_FILD_SIZE 20
+#define RF_FILD_SIZE 25
 
 class RandomFile {
 private:
@@ -21,8 +21,6 @@ private:
 	void init_head(void);
 	void init_body(void);
 	void init_tail(void);
-
-	//inline size_t get_file_size(void) const { return head_}
 public:
 	RandomFile(const char * name, size_t size);
 	~RandomFile(void);

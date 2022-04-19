@@ -12,12 +12,12 @@ using std::string;
 using std::vector;
 
 static const char head_template[] =
-	"File name: %*s\n"
-	"File size: %*lu\n"
-	"Head size: %*d\n"
-	"Body size: %*lu\n"
-	"Tail size: %*d\n"
-	"Timestamp: %*s\n"
+	"Name: %*s\n"
+	"Size: %*lu\n"
+	"Head: %*d\n"
+	"Body: %*lu\n"
+	"Tail: %*d\n"
+	"Time: %*s\n"
 	"------------ START ------------\n"
 ;
 
