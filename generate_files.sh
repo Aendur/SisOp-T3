@@ -54,24 +54,23 @@
 
 
 # Copiar em SD1.2 arquivos de vídeo, de forma a encher o pen-drive.
-cd /mnt/g/SD1/SD1.2
-for i in {1..6}
-do
-	fname=$(printf "SD1.2-FILE%d_100MB.dat" $i)
-	~/SisOp-T3/a.out $fname 100000000
-done
+# cd /mnt/g/SD1/SD1.2
+# for i in {1..6}
+# do
+# 	fname=$(printf "SD1.2-FILE%d_100MB.dat" $i)
+# 	~/SisOp-T3/a.out $fname 100000000
+# done
 
 # cd /mnt/g/SD1/SD1.2
 # fname=$(printf "SD1.2-FILE_30MB.dat" $i)
-# ~/SisOp-T3/a.out $fname 30341632
-
+# ~/SisOp-T3/a.out $fname 30318000
 
 
 ## TOTAL FILES IN ROOT: 21843 + 5 DIRS
 ## TOTAL FILES IN SD1.0: 21844 (43686)
 ## TOTAL FILES IN SD1.1: 21844 (65529)
 ## 630 341 632 free bytes before SD1.2
-## TOTAL FILES IN SD1.2: ----- (?)
+## TOTAL FILES IN SD1.2: 7
 
 
 
