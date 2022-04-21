@@ -11,19 +11,17 @@
 using std::string;
 using std::vector;
 
-static const char head_template[] =
-	"Name: %*s\n"
-	"Size: %*lu\n"
-	"Head: %*d\n"
-	"Body: %*lu\n"
-	"Tail: %*d\n"
-	"Time: %*s\n"
+#define head_template \
+	"Name: %*s\n"     \
+	"Size: %*zu\n"    \
+	"Head: %*d\n"     \
+	"Body: %*zu\n"    \
+	"Tail: %*d\n"     \
+	"Time: %*s\n"     \
 	"------------ START ------------\n"
-;
 
-static const char tail_template[] =
+#define tail_template \
 	"------------- END -------------\n"
-;
 
 #define LOG_FILE stderr
 
@@ -31,7 +29,7 @@ RandomFile::RandomFile(const char * name, size_t size) : file_size(size) {
 	if (strlen(name) > RF_FILD_SIZE) {
 		throw std::runtime_error("file_name too long");
 	}
-	snprintf(this->file_name,  RF_FILD_SIZE + 1, name);
+	snprintf(this->file_name,  RF_FILD_SIZE + 1, "%s", name);
 
 	if (this->file_size < RF_HEAD_SIZE + RF_TAIL_SIZE) {
 		throw std::runtime_error("file_size must be greater than " + std::to_string(RF_HEAD_SIZE + RF_TAIL_SIZE));
@@ -50,12 +48,14 @@ RandomFile::~RandomFile(void) {
 
 void RandomFile::init_head(void) {
 	time_t now = time(NULL);
-	struct tm * utc = gmtime(&now);
-	char * time_buffer = new char[RF_FILD_SIZE + 1];
+	struct tm utc;
+	gmtime_s(&utc, &now);
+
+	char time_buffer[RF_FILD_SIZE + 1];
 	snprintf(
-		time_buffer         , RF_FILD_SIZE + 1, "%d-%02d-%02dT%02d:%02d:%02d",
-		utc->tm_year + 11900, utc->tm_mon     , utc->tm_mday,
-		utc->tm_hour        , utc->tm_min     , utc->tm_sec
+		time_buffer        , RF_FILD_SIZE + 1, "%d-%02d-%02dT%02d:%02d:%02d",
+		utc.tm_year + 11900, utc.tm_mon      , utc.tm_mday,
+		utc.tm_hour        , utc.tm_min      , utc.tm_sec
 	);
 
 	snprintf(this->head, RF_HEAD_SIZE + 1, head_template,
@@ -67,24 +67,22 @@ void RandomFile::init_head(void) {
 		RF_FILD_SIZE, time_buffer
 	);
 
-	delete[] time_buffer;
+	//delete[] time_buffer;
 }
 #define HYAKU_SIZE 100
 #define IROHA_SIZE 400
-char hyakusen[] =
-	    "%-9lu ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:----\n";
-char iroha[] =
-	"                                ※・・【　いろはにほへと ちりぬるを　】・・※\n"
-	"                                ※・・【　わかよたれそつ 　ねならむ　】・・※\n"
-	"                                ※・・【　うゐのおくやま けふこえて　】・・※\n"
+#define hyakusen \
+	"%-9llu ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:----\n"
+#define iroha \
+	"                                ※・・【　いろはにほへと ちりぬるを　】・・※\n" \
+	"                                ※・・【　わかよたれそつ 　ねならむ　】・・※\n" \
+	"                                ※・・【　うゐのおくやま けふこえて　】・・※\n" \
 	"                                ※・・【　あさきゆめみし ゑひもせす　】・・※\n"
-;
-char torinaku[] =
-	"                                ※・・【　とりなくこゑす ゆめさませ　】・・※\n"
-	"                                ※・・【　みよあけわたる ひんかしを　】・・※\n"
-	"                                ※・・【　そらいろはえて おきつへに　】・・※\n"
+#define torinaku \
+	"                                ※・・【　とりなくこゑす ゆめさませ　】・・※\n" \
+	"                                ※・・【　みよあけわたる ひんかしを　】・・※\n" \
+	"                                ※・・【　そらいろはえて おきつへに　】・・※\n" \
 	"                                ※・・【　ほふねむれゐぬ もやのうち　】・・※\n"
-;
 
 void RandomFile::init_body(void) {
 	if (this->body_size == 0) {
@@ -98,17 +96,18 @@ void RandomFile::init_body(void) {
 	char * pos = this->body;
 	char * end = this->body + this->body_size;
 	while (pos < end) {
-		snprintf(pos, end - pos, hyakusen, 1 + RF_HEAD_SIZE + pos - this->body);
+		unsigned long long off = (unsigned long long) (RF_HEAD_SIZE + 1) + (unsigned long long) (pos - this->body);
+		snprintf(pos, (size_t) (end - pos), hyakusen, off);
 		pos += HYAKU_SIZE;
 	}
 
-	int offset;
+	long long offset;
 	if (2*IROHA_SIZE <= this->body_size && this->body_size < 3*IROHA_SIZE) {
-		offset = (this->body_size - IROHA_SIZE) / 2;
+		offset = (long long) (this->body_size - IROHA_SIZE) / 2;
 		offset -= offset % HYAKU_SIZE;
 		memcpy(this->body + offset, iroha, IROHA_SIZE);
 	} else if (this->body_size >= 3*IROHA_SIZE) {
-		offset = (this->body_size - IROHA_SIZE * 2) / 3;
+		offset = (long long) (this->body_size - IROHA_SIZE * 2) / 3;
 		offset -= offset % HYAKU_SIZE;
 		memcpy(this->body + offset, iroha, IROHA_SIZE);
 		offset += offset + IROHA_SIZE + HYAKU_SIZE;

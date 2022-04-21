@@ -1,29 +1,20 @@
-#####
-CFLAGS = -std=c++17 -m64 -Wall -Wextra -Wpedantic
-LIBS = $(patsubst source/%.cpp,obj/%.o,$(filter-out source/main.cpp,$(wildcard source/*.cpp source/*/*.cpp)))
+CFLAGS=/Wall /W4 /EHsc /std:c++17 /Ih /utf-8 /wd5045 /nologo
+LIBN=random_file utility
+LIBS=$(patsubst %,obj\\%.obj,$(LIBN))
 
-main: source/main.cpp dirs $(LIBS)
-	g++ $(CFLAGS) -Iheader -oa.out $< $(LIBS) $(LINKS)
+all: filegen
 
-tests/%: cpp/tests/%.cpp $(LIBS)
-	g++ $(CFLAGS) -DUNIT_TEST -Iheader -obin/test $<  $(LIBS)
+filegen: src\main.cpp $(LIBS)
+	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:filegen.exe $?
 
-obj/%.o: source/%.cpp header/%.h
-	g++ $(CFLAGS) -Iheader -c -o$@ $<
+diskexp: src\main.cpp $(LIBS)
+	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:diskexp.exe $?
 
-dirs: bin obj
+{src}.cpp{obj}.obj::
+	cl $(CFLAGS) /c /Fo:obj\ $<
 
-bin:
-	mkdir -p bin
-
-obj:
-	mkdir -p obj
-
-# CUIDADO AO UTILIZAR AS RECEITAS ABAIXO POIS ELAS PODEM REMOVER OU SUBSTITUIR ARQUIVOS IMPORTANTES
-.PHONY: clean cleanse
+.PHONY: clean
 clean:
-	rm -vfr obj
+	del "obj\*.obj" /q
 
-cleanse: clean
-	rm -vfr $(DIRS)
 

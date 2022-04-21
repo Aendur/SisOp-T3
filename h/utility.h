@@ -1,0 +1,9 @@
+#ifndef UTILITY_H
+#define UTILITY_H
+
+#define STS_MAX_FORMAT_SIZE 32
+
+// Converts a size value to human-readable string
+const char* size_to_string(char * output, size_t size, bool append_unit);
+
+#endif
