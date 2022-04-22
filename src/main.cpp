@@ -31,6 +31,8 @@ int main (int argc, char ** argv) {
 #include "disk_explorer.h"
 
 int main(int, char **) {
+	DiskExplorer de;
+	de.run();
 	return 0;
 }
 

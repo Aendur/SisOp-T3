@@ -1,25 +1,27 @@
 #ifndef DISK_EXPLORER_H
 #define DISK_EXPLORER_H
 
+#include "term_ui.h"
+#include "clw/widget.h"
+#include <Windows.h>
+#include <stack>
 
-#include <handleapi.h>
-#include <vector>
-
+class Device;
 class DiskExplorer {
 private:
-	FILE * _out = stdout;
-	FILE * _log = stderr;
-	HANDLE _device = INVALID_HANDLE_VALUE;
-	DISK_GEOMETRY _geometry;
-	DWORD _geom_nbytes;
-public:
-	static std::vector<char> get_drives(void);
-	void open_device(char drive);
-	void close_device(void);
+	TermUI _ui;
+	std::stack<Widget> _widgets;
 
-	void get_geometry(void);
-	void print_geometry(void) const;
-	void read_fat32(void);
+	unsigned long long _offset_start = 0;
+	unsigned long long _offset_current = 0;
+	unsigned long long _buffer_length = 0;
+	BYTE * _buffer = nullptr;
+	Device * _device = nullptr;
+public:
+	DiskExplorer(void);
+	//~DiskExplorer(void);
+
+	void run(void);
 };
 
 #endif
