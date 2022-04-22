@@ -34,5 +34,15 @@ int main(int, char **) {
 	return 0;
 }
 
+#elif defined(TERMUI_TEST)
+
+#include "term_ui.h"
+
+int main(int, char **) {
+	TermUI termui;
+	termui.init();
+	termui.read();
+}
+
 #endif
 
