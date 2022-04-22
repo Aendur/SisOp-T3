@@ -1,10 +1,10 @@
-#include "disk_explorer.h"
+#include "device.h"
 
 #include <Windows.h>
 
 using std::vector;
 
-vector<char> DiskExplorer::get_drives(void) {
+vector<char> Device::get_drives(void) {
 	DWORD drives = GetLogicalDrives();
 	
 	vector<char> result;
@@ -20,7 +20,7 @@ vector<char> DiskExplorer::get_drives(void) {
 	return result;
 }
 
-void DiskExplorer::print_geometry(void) const {
+void Device::print_geometry(void) const {
 	unsigned long long capacity =
 		_geometry.Cylinders.LowPart *
 		_geometry.TracksPerCylinder *
@@ -38,7 +38,7 @@ void DiskExplorer::print_geometry(void) const {
 	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
-void DiskExplorer::open_device(char drive) {
+void Device::open_device(char drive) {
 	if (this->_device != INVALID_HANDLE_VALUE) {
 		fprintf(_log, "device already open\n");
 	} else {
@@ -56,7 +56,7 @@ void DiskExplorer::open_device(char drive) {
 
 }
 
-void DiskExplorer::close_device(void) {
+void Device::close_device(void) {
 	if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
 	else {
 		CloseHandle(this->_device);
@@ -64,7 +64,7 @@ void DiskExplorer::close_device(void) {
 	}
 }
 
-void DiskExplorer::get_geometry(void) {
+void Device::get_geometry(void) {
 	if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
 	else {
 		BOOL status = DeviceIoControl(
