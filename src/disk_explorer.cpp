@@ -8,7 +8,7 @@ DiskExplorer::DiskExplorer(void) {
 
 
 void DiskExplorer::run(void) {
-
+	_device.print_geometry();
 }
 
 
