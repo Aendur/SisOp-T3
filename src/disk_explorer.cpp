@@ -20,118 +20,67 @@ vector<char> DiskExplorer::get_drives(void) {
 	return result;
 }
 
-//////////////////////////////
-#include <cstdio>
-#include <Windows.h>
-#include "fat32.h"
-#include "entry.h"
-
-
-void print_geometry(const DISK_GEOMETRY * geom, DWORD nbytes) {
+void DiskExplorer::print_geometry(void) const {
 	unsigned long long capacity =
-		geom->Cylinders.LowPart *
-		geom->TracksPerCylinder *
-		geom->SectorsPerTrack *
-		geom->BytesPerSector;
+		_geometry.Cylinders.LowPart *
+		_geometry.TracksPerCylinder *
+		_geometry.SectorsPerTrack *
+		_geometry.BytesPerSector;
 
-	wprintf(L"MediaType         %d\n", /*MEDIA_TYPE*/ geom->MediaType);
-	wprintf(L"Cylinders (Quad)  %lld\n", /*LARGE_INTEGER*/ geom->Cylinders.QuadPart);
-	wprintf(L"Cylinders (High)  %d\n", /*LARGE_INTEGER*/ geom->Cylinders.HighPart);
-	wprintf(L"Cylinders (Low)   %d\n", /*LARGE_INTEGER*/ geom->Cylinders.LowPart);
-	wprintf(L"TracksPerCylinder %d\n", /*DWORD*/ geom->TracksPerCylinder);
-	wprintf(L"SectorsPerTrack   %d\n", /*DWORD*/ geom->SectorsPerTrack);
-	wprintf(L"BytesPerSector    %d\n", /*DWORD*/ geom->BytesPerSector);
-	wprintf(L"Capacity          %llu\n", capacity);
-	wprintf(L"NBytes            %d\n", nbytes);
+	fwprintf(_out, L"MediaType         %d\n", /*MEDIA_TYPE*/ _geometry.MediaType);
+	fwprintf(_out, L"Cylinders (Quad)  %lld\n", /*LARGE_INTEGER*/ _geometry.Cylinders.QuadPart);
+	fwprintf(_out, L"Cylinders (High)  %d\n", /*LARGE_INTEGER*/ _geometry.Cylinders.HighPart);
+	fwprintf(_out, L"Cylinders (Low)   %d\n", /*LARGE_INTEGER*/ _geometry.Cylinders.LowPart);
+	fwprintf(_out, L"TracksPerCylinder %d\n", /*DWORD*/ _geometry.TracksPerCylinder);
+	fwprintf(_out, L"SectorsPerTrack   %d\n", /*DWORD*/ _geometry.SectorsPerTrack);
+	fwprintf(_out, L"BytesPerSector    %d\n", /*DWORD*/ _geometry.BytesPerSector);
+	fwprintf(_out, L"Capacity          %llu\n", capacity);
+	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
-void print_hdr(void) {
-	printf("\033[2m");
-	printf("-----------|-------------------------------------------------------------------------------------------------------|----------------------------------\n");
-	printf("  Address  |  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F  |                Text\n");
-	printf("-----------|-------------------------------------------------------------------------------------------------------|----------------------------------\n");
+void DiskExplorer::open_device(char drive) {
+	if (this->_device != INVALID_HANDLE_VALUE) {
+		fprintf(_log, "device already open\n");
+	} else {
+		this->_device = CreateFileW(
+			L"\\\\.\\g:",
+			GENERIC_READ, // | GENERIC_WRITE,
+			FILE_SHARE_READ | FILE_SHARE_WRITE,
+			NULL,
+			OPEN_EXISTING,
+			0, //FILE_ATTRIBUTE_NORMAL,
+			NULL
+		);
+		if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
+	}
+
 }
 
-void print_adr(long long offset) {
-	printf("\033[2m  %07llx  |  \033[0m", offset);
+void DiskExplorer::close_device(void) {
+	if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
+	else {
+		CloseHandle(this->_device);
+		this->_device = INVALID_HANDLE_VALUE;
+	}
 }
 
-void print_hex(PBYTE line, int len) {
-	static const int q1 = 0x08;
-	static const int q2 = 0x10;
-	static const int q3 = 0x18;
-	for (int i =  0; i < q1; ++i) { printf("%02x ", line[i]); }
-	for (int i = q1; i < q2; ++i) { printf(" %02x", line[i]); }
-	printf("   ");
-	for (int i = q2; i < q3; ++i)  { printf("%02x ", line[i]); }
-	for (int i = q3; i < len; ++i) { printf(" %02x", line[i]); }
-	printf("\033[2m  |  \033[0m");
-}
-
-void print_str(PBYTE line, int len) {
-	for (int i = 0x00; i < len; ++i) {
-		char c = line[i];
-		if (0x20 <= c && c <= 0x7E) {
-			printf("%c", c);
-		} else if (c == 0) {
-			printf("\033[31;2m.\033[0m");
-		} else {
-			printf("\033[31;1m.\033[0m");
+void DiskExplorer::get_geometry(void) {
+	if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
+	else {
+		BOOL status = DeviceIoControl(
+			_device, IOCTL_DISK_GET_DRIVE_GEOMETRY,
+			NULL, 0,
+			&_geometry, sizeof(_geometry),
+			&_geom_nbytes, (LPOVERLAPPED) NULL
+		);
+		if (!status) {
+			fprintf(_log, "device io ctl geometry error\n");
 		}
 	}
-	printf("\n");
 }
 
-#define LINE_WIDTH 0x20
-void print_buffer(PBYTE buffer, DWORD len, DWORD nbytes) {
-	PBYTE end = buffer + len;
-	PBYTE pos = buffer;
-	printf("buffer length: %d\n", len);
-	printf("read bytes: %d\n", nbytes);
-	
-	print_hdr();
-	while(pos < end) {
-		print_adr(pos - buffer);
-		print_hex(pos, LINE_WIDTH);
-		print_str(pos, LINE_WIDTH);
-		pos += LINE_WIDTH;
-	}
-}
-
+/*
 int main() {
-	
-	HANDLE device = CreateFileW(
-		L"\\\\.\\g:",
-		GENERIC_READ, // | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		0, //FILE_ATTRIBUTE_NORMAL,
-		NULL
-	);
-
-	if (device == INVALID_HANDLE_VALUE) {
-		fprintf(stderr, "device open error\n");
-		return 0;
-	}
-
-	DISK_GEOMETRY geom;
-	DWORD nbytes;
-	BOOL status;
-	status = DeviceIoControl(
-		device, IOCTL_DISK_GET_DRIVE_GEOMETRY,
-		NULL, 0,
-		&geom, sizeof(geom),
-		&nbytes, (LPOVERLAPPED) NULL
-	);
-	if (status) {
-		print_geometry(&geom, nbytes);
-	} else {
-		CloseHandle(device);
-		fprintf(stderr, "device io ctl error\n");
-		return 0;
-	}
-
 	fat32 sector0;
 	status = ReadFile(device, &sector0, sizeof(sector0), &nbytes, NULL);
 	print_buffer((PBYTE) &sector0, sizeof(sector0), nbytes);
