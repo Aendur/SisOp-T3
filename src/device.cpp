@@ -4,11 +4,11 @@
 
 using std::vector;
 
-vector<char> Device::get_drives(void) {
+vector<wchar_t> Device::get_drives(void) {
 	DWORD drives = GetLogicalDrives();
 	
-	vector<char> result;
-	char letter = 'A';
+	vector<wchar_t> result;
+	wchar_t letter = L'A';
 	for (int i = 0; i < sizeof(DWORD) * 2; ++i) {
 		if (drives & 0x01) { result.push_back(letter); } ++letter;
 		if (drives & 0x02) { result.push_back(letter); } ++letter;
@@ -38,12 +38,18 @@ void Device::print_geometry(void) const {
 	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
-void Device::open_device(char drive) {
+void Device::open_drive(wchar_t drive) {
 	if (this->_device != INVALID_HANDLE_VALUE) {
 		fprintf(_log, "device already open\n");
 	} else {
+		WCHAR drive_path[] = L"\\\\.\\X:";
+		drive_path[4] = drive;
+		/*for(int i = 0; i < 7; ++i) {
+			fwprintf(_log, L"%c\n", drive_path[i]);
+		}*/
+
 		this->_device = CreateFileW(
-			L"\\\\.\\g:",
+			drive_path,
 			GENERIC_READ, // | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
 			NULL,
@@ -51,14 +57,19 @@ void Device::open_device(char drive) {
 			0, //FILE_ATTRIBUTE_NORMAL,
 			NULL
 		);
-		if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
+		if (this->_device == INVALID_HANDLE_VALUE) {
+			fprintf(_log, "device open error\n");
+		} else {
+			get_geometry();
+		}
 	}
-
 }
 
-void Device::close_device(void) {
-	if (this->_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device open error\n"); }
-	else {
+void Device::close_drive(void) {
+	if (this->_device == INVALID_HANDLE_VALUE) {
+		fprintf(_log, "device not open\n");
+	} else {
+		delete[] _buffer;
 		CloseHandle(this->_device);
 		this->_device = INVALID_HANDLE_VALUE;
 	}
@@ -75,20 +86,33 @@ void Device::get_geometry(void) {
 		);
 		if (!status) {
 			fprintf(_log, "device io ctl geometry error\n");
+			close_drive();
+		} else {
+			_buffer = new BYTE[_geometry.BytesPerSector];
 		}
+	}
+}
+
+void Device::read(void) {
+	//BOOL status = ReadFile(_device, &sector0, sizeof(sector0), &nbytes, NULL);
+	BOOL status = ReadFile(_device, _buffer, _geometry.BytesPerSector, &_read_nbytes, NULL);
+	if (!status) fprintf(stderr, "device read error\n");
+}
+
+void Device::seek(LONG offset_lo) {
+	//DWORD sfp = SetFilePointer(_device, offset_lo, NULL, FILE_BEGIN);
+	DWORD sfp = SetFilePointer(_device, offset_lo, NULL, FILE_CURRENT);
+	if (sfp == INVALID_SET_FILE_POINTER) {
+		fprintf(stderr, "device seek error\n");
+	} else {
+		_offset += offset_lo;
 	}
 }
 
 /*
 int main() {
 	fat32 sector0;
-	status = ReadFile(device, &sector0, sizeof(sector0), &nbytes, NULL);
-	print_buffer((PBYTE) &sector0, sizeof(sector0), nbytes);
-	char str[10];
-	snprintf(str, 9, (const char*) sector0.BS_FilSysType());
-	printf("'%s'\n", str);
-	printf("0x%02X  ", sector0.SigByte1());
-	printf("0x%02X\n", sector0.SigByte2());
+
 	unsigned long cluster_size = sector0.BPB_BytsPerSec() * sector0.BPB_SecPerClus();
 	
 	printf("BPB_FATSz16:     %u\n", sector0.BPB_FATSz16());
@@ -98,7 +122,6 @@ int main() {
 	printf("Bytes/sector:    %u\n", sector0.BPB_BytsPerSec());
 	printf("Sectors/cluster: %u\n", sector0.BPB_SecPerClus());
 	printf("Cluster size   : %u\n", cluster_size);
-
 	size_t FirstDataSector = sector0.BPB_RsvdSecCnt() + sector0.BPB_FATSz32() * sector0.BPB_NumFATs();
 	size_t FDS_offset = FirstDataSector * sector0.BPB_BytsPerSec();
 	printf("FirstDataSector: %llu\n", FirstDataSector);
@@ -106,27 +129,9 @@ int main() {
 
 	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
 	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
+	// SEEK
+	//FDS_offset
 
-
-
-	// check INVALID_SET_FILE_POINTER
-	DWORD sfp = SetFilePointer(device, FDS_offset - 512, NULL, FILE_BEGIN);
-	if (sfp == INVALID_SET_FILE_POINTER) {
-		if (!status) fprintf(stderr, "device seek error\n");
-	}
-
-	int npages = 2;
-	PBYTE buffer = new BYTE[geom.BytesPerSector];
-	while (status && npages-- > 0) {
-		status = ReadFile(device, buffer, geom.BytesPerSector, &nbytes, NULL);
-		if (!status) fprintf(stderr, "device read error\n");
-		else         print_buffer(buffer, geom.BytesPerSector, nbytes);
-	}
-	delete[] buffer;
-
-	CloseHandle(device);
-
-	printf("entry size: %llu\n", sizeof(entry));
 	return 0;
 }
 */

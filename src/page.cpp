@@ -1,5 +1,6 @@
 #include "page.h"
 #include <cstdio>
+#include <cstring>
 
 #define PAGE_HDR \
 	"\033[2m" \
@@ -42,15 +43,15 @@ void Page::print_str(PBYTE line, int len) const {
 }
 
 #define LINE_WIDTH 0x20
-void Page::print_buf(PBYTE buffer, DWORD len, DWORD nbytes) const {
-	PBYTE end = buffer + len;
-	PBYTE pos = buffer;
-	printf("buffer length: %d\n", len);
-	printf("read bytes: %d\n", nbytes);
+void Page::print(void) const {
+	PBYTE end = _buffer + _length;
+	PBYTE pos = _buffer;
+	// printf("buffer length: %d\n", len);
+	// printf("read bytes: %d\n", nbytes);
 	
 	print_hdr();
 	while(pos < end) {
-		print_adr(pos - buffer);
+		print_adr(_offset - _buffer);
 		print_hex(pos, LINE_WIDTH);
 		print_str(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;
