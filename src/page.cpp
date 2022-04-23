@@ -6,15 +6,15 @@
 
 #define PAGE_BAR \
 	"\033[2m" \
-	"+------------+-------------------------------------------------------------------------------------------------------+------------------------------------+\n"\
+	"+------------+-------------------------------------------------------------------------------------------------------+------------------------------------+"\
 	"\033[0m"
 #define PAGE_HDR \
 	"\033[2m" \
-	"|  Address   |  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F  |                Text                |\n" \
+	"|  Address   |  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F  |                Text                |" \
 	"\033[0m"
 #define PAGE_FTR \
 	"\033[2m" \
-	"|  Byte offset: %-50s Sector: %-77lld  |\n" \
+	"|  %-10llu B %-50s Sector: %-77lld  |" \
 	"\033[0m"
 #define PAGE_ADR \
 	"\033[2m|  %08llX  |  \033[0m"
@@ -25,27 +25,36 @@
 #define PAGE_SEP2 \
 	"\033[2m  |  \033[0m"
 
-#define PAGE_RMARGIN \
-	"  \033[2m|\033[0m\n"
+#define PAGE_LMARGIN \
+	"  \033[40G"
 
-#define PAGE_SAVE L"\033[12;1H"
-#define PAGE_LOAD L"\033[12;1H"
+#define PAGE_RMARGIN \
+	"  \033[2m|\033[0m"
+
+#define PAGE_LE \
+	"\033[1B"
+
+
+#define PAGE_SAVE L"\033[1;1H"
+#define PAGE_LOAD L"\033[1;1H"
 
 void Page::print_hdr(void) const {
-	printf(PAGE_BAR);
-	printf(PAGE_HDR);
-	printf(PAGE_BAR);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
+	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
 }
 
 void Page::print_ftr(void) const {
 	char buf[STS_MAX_FORMAT_SIZE];
-	printf(PAGE_BAR);
-	printf(PAGE_FTR, size_to_string(buf, _offset, true), _offset / _length);
-	printf(PAGE_BAR);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
+	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _offset, size_to_string(buf, _offset, true), _offset / _length);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
+	printf("\n\n");
 }
 
+//// Data line BEGIN
 void Page::print_adr(ULONGLONG offset) const {
-	printf(PAGE_ADR, offset);
+	printf(PAGE_LMARGIN PAGE_ADR, offset);
 }
 
 void Page::print_hex(PBYTE line, int len) const {
@@ -71,8 +80,10 @@ void Page::print_str(PBYTE line, int len) const {
 			printf("\033[31;1m.\033[0m");
 		}
 	}
-	printf(PAGE_RMARGIN);
+	printf(PAGE_RMARGIN PAGE_LE);
 }
+//// Data line END
+
 
 #define LINE_WIDTH 0x20
 void Page::print(bool reset) const {

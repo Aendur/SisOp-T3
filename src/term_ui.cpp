@@ -156,6 +156,10 @@ KeyCode TermUI::handle_input(void) {
 	case L'7': return TERMUI_KEY_7;
 	case L'8': return TERMUI_KEY_8;
 	case L'9': return TERMUI_KEY_9;
+	case L'd':
+	case L'D': return TERMUI_KEY_D;
+	case L'f':
+	case L'F': return TERMUI_KEY_F;
 	case L'q':
 	case L'Q': return TERMUI_KEY_Q;
 	default:

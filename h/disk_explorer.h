@@ -18,12 +18,13 @@ private:
 	Device _device;
 	Page _page;
 
-	fat32 sector0;
+	fat32 _sector0;
 
 	void set_print(void);
 	void read_set_print(void);
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
+	void proc_fat32_info(void);
 
 public:
 	DiskExplorer(void);

@@ -1,5 +1,7 @@
 #include "disk_explorer.h"
 #include <stdexcept>
+#include <vector>
+#include <string>
 
 DiskExplorer::DiskExplorer(void) {
 	_ui.init();
@@ -11,22 +13,41 @@ DiskExplorer::DiskExplorer(void) {
 	}
 }
 
+static const std::vector<std::pair<std::string, std::string>> commands = {
+	{"0:"        , "show sector 0"      },
+	{"UP:"       , "last sector"        },
+	{"DOWN:"     , "next sector"        },
+	{"RIGHT:"    , "rew 100 sectors"    },
+	{"LEFT:"     , "fwd 100 sectors"    },
+	{"PGUP:"     , "rew 10000 sectors"  },
+	{"PGDOWN:"   , "fwd 10000 sectors"  },
+	{"S_PGUP:"   , "rew 1000000 sectors"},
+	{"S_PGDOWN:" , "fwd 1000000 sectors"},
+	{"HOME:"     , "goto first sector"  },
+	{"END:"      , "goto last sector"   },
+	{"-----"     , "-----"              },
+	{"D:"        , "show drive info"    },
+	{"F:"        , "show fat32 info"    },
+	{"Q:"        , "quit"               },
+};
+
+
 void print_commands(void) {
 	printf("\n");
-	printf("Q:    quit                  UP:     last sector         PGUP:     rew 10000 sectors\n");
-	printf("0:    show sector 0         DOWN:   next sector         PGDOWN:   fwd 10000 sectors\n");
-	printf("HOME: goto first sector     LEFT:   fwd 100 sectors     S+PGUP:   rew 1000000 sectors\n");
-	printf("END:  goto last sector      RIGHT:  rew 100 sectors     S+PGDOWN: fwd 1000000 sectors\n");
+	for (const auto & i : commands) {
+		printf("%-10s %-22s\n", i.first.c_str(), i.second.c_str());
+	}
 }
 
 void DiskExplorer::run(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
 	_ui.clear_screen();
-	_device.print_geometry();
+	print_commands();
 
-	// save fat32 sector0 data
+
+	// save fat32 _sector0 data
 	_device.read();
-	memcpy(&sector0, _device.buffer(), _device.geometry().BytesPerSector);
+	memcpy(&_sector0, _device.buffer(), _device.geometry().BytesPerSector);
 	set_print();
 
 	
@@ -34,9 +55,11 @@ void DiskExplorer::run(void) {
 	while ((key = _ui.read()) != TERMUI_KEY_Q) {
 		switch(key) {
 		case TERMUI_KEY_0:
-			_page.set((PBYTE)(&sector0), LEN, 0);
+			_page.set((PBYTE)(&_sector0), LEN, 0);
 			_page.print(true);
 			break;
+		case TERMUI_KEY_D: printf("\033[0J"); _device.print_geometry(); _page.print(true); break;
+		case TERMUI_KEY_F: proc_fat32_info(); _page.print(true); break;
 		case TERMUI_KEY_ARROW_UP: advance_sectors(-2 * (long) LEN); read_set_print(); break;
 		case TERMUI_KEY_ARROW_DOWN: read_set_print(); break;
 		case TERMUI_KEY_ARROW_LEFT: advance_sectors(99 * (long) LEN); read_set_print(); break;
@@ -58,10 +81,8 @@ void DiskExplorer::run(void) {
 
 void DiskExplorer::set_print(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
-	
 	_page.set(_device.buffer(), LEN, _device.offset() - LEN);
 	_page.print(true);
-	print_commands();
 }
 
 void DiskExplorer::read_set_print(void) {
@@ -99,36 +120,29 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 	} else {
 		offset -= offset % LEN;
 	}
-
-	//printf("ALIGN %lld\n", (_device.capacity() + offset) % 512);
-
 	_device.seek(offset, false);
 }
 
-
-/*
-int main() {
-	fat32 sector0;
-
-	unsigned long cluster_size = sector0.BPB_BytsPerSec() * sector0.BPB_SecPerClus();
+void DiskExplorer::proc_fat32_info(void) {
+	unsigned long cluster_size = _sector0.BPB_BytsPerSec() * _sector0.BPB_SecPerClus();
+	size_t FirstDataSector = _sector0.BPB_RsvdSecCnt() + _sector0.BPB_FATSz32() * _sector0.BPB_NumFATs();
+	size_t FDS_offset = FirstDataSector * _sector0.BPB_BytsPerSec();
 	
-	printf("BPB_FATSz16:     %u\n", sector0.BPB_FATSz16());
-	printf("BPB_FATSz32:     %u\n", sector0.BPB_FATSz32());
-	printf("BPB_NumFATs:     %u\n", sector0.BPB_NumFATs());
-	printf("BPB_RsvdSecCnt:  %u\n", sector0.BPB_RsvdSecCnt());
-	printf("Bytes/sector:    %u\n", sector0.BPB_BytsPerSec());
-	printf("Sectors/cluster: %u\n", sector0.BPB_SecPerClus());
+	printf("\033[0J");
+	printf("BPB_FATSz16:     %u\n", _sector0.BPB_FATSz16());
+	printf("BPB_FATSz32:     %u\n", _sector0.BPB_FATSz32());
+	printf("BPB_NumFATs:     %u\n", _sector0.BPB_NumFATs());
+	printf("BPB_RsvdSecCnt:  %u\n", _sector0.BPB_RsvdSecCnt());
+	printf("Bytes/sector:    %u\n", _sector0.BPB_BytsPerSec());
+	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
 	printf("Cluster size   : %u\n", cluster_size);
-	size_t FirstDataSector = sector0.BPB_RsvdSecCnt() + sector0.BPB_FATSz32() * sector0.BPB_NumFATs();
-	size_t FDS_offset = FirstDataSector * sector0.BPB_BytsPerSec();
+	printf("\n");
 	printf("FirstDataSector: %llu\n", FirstDataSector);
 	printf("FDS offset     : %llu\n", FDS_offset);
+	printf("BPB_RootClus   : %d\n"  , _sector0.BPB_RootClus());
 
-	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
-	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
+	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
+	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
 	// SEEK
 	//FDS_offset
-
-	return 0;
 }
-*/
