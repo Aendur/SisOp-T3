@@ -28,7 +28,7 @@ public:
 	void close_drive(void);
 	
 	const PBYTE read(void);
-	void seek(LONGLONG offset);
+	void seek(LONGLONG offset, bool relative);
 
 	void print_geometry(void) const;
 	

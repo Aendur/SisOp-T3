@@ -23,6 +23,7 @@ private:
 	void set_print(void);
 	void read_set_print(void);
 	void advance_sectors(LONGLONG offset);
+	void goto_sector(LONGLONG offset);
 
 public:
 	DiskExplorer(void);

@@ -41,8 +41,10 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_DOWN: read_set_print(); break;
 		case TERMUI_KEY_ARROW_LEFT: advance_sectors(99 * (long) LEN); read_set_print(); break;
 		case TERMUI_KEY_ARROW_RIGHT: advance_sectors(-101 * (long) LEN); read_set_print(); break;
-		case TERMUI_KEY_HOME: advance_sectors(-_device.offset()); read_set_print(); break;
-		case TERMUI_KEY_END: advance_sectors(_device.capacity()); read_set_print(); break;
+		// case TERMUI_KEY_HOME: advance_sectors(-_device.offset()); read_set_print(); break;
+		// case TERMUI_KEY_END: advance_sectors(_device.capacity()); read_set_print(); break;
+		case TERMUI_KEY_HOME: goto_sector(0); read_set_print(); break;
+		case TERMUI_KEY_END: goto_sector(-(long)LEN); read_set_print(); break;
 		case TERMUI_KEY_PGUP: advance_sectors(-10001 * (long) LEN); read_set_print(); break;
 		case TERMUI_KEY_PGDOWN: advance_sectors(9999 * (long) LEN); read_set_print(); break;
 		case TERMUI_KEY_SHIFT_PGUP: advance_sectors(-1000001 * (long) LEN); read_set_print(); break;
@@ -71,7 +73,6 @@ void DiskExplorer::advance_sectors(LONGLONG offset) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
 	LONGLONG mod = _device.capacity() % LEN;
 	LONGLONG max_off = _device.capacity() - mod - LEN;
-	wprintf(L"MOD %lld\b", mod);
 
 	if (_device.offset() + offset < 0) {
 		offset = -_device.offset();
@@ -81,6 +82,53 @@ void DiskExplorer::advance_sectors(LONGLONG offset) {
 		offset -= offset % LEN;
 		wprintf(L"must offset by sector size!!");
 	}
-	_device.seek(offset);
+	_device.seek(offset, true);
 }
 
+void DiskExplorer::goto_sector(LONGLONG offset) {
+	if (offset < 0) { offset = _device.capacity() + offset; }
+
+	static const DWORD LEN = _device.geometry().BytesPerSector;
+	LONGLONG mod = _device.capacity() % LEN;
+	LONGLONG max_off = _device.capacity() - LEN - mod;
+
+	if (offset < 0) {
+		offset = 0;
+	} else if (offset > max_off) {
+		offset = max_off;
+	} else {
+		offset -= offset % LEN;
+	}
+
+	//printf("ALIGN %lld\n", (_device.capacity() + offset) % 512);
+
+	_device.seek(offset, false);
+}
+
+
+/*
+int main() {
+	fat32 sector0;
+
+	unsigned long cluster_size = sector0.BPB_BytsPerSec() * sector0.BPB_SecPerClus();
+	
+	printf("BPB_FATSz16:     %u\n", sector0.BPB_FATSz16());
+	printf("BPB_FATSz32:     %u\n", sector0.BPB_FATSz32());
+	printf("BPB_NumFATs:     %u\n", sector0.BPB_NumFATs());
+	printf("BPB_RsvdSecCnt:  %u\n", sector0.BPB_RsvdSecCnt());
+	printf("Bytes/sector:    %u\n", sector0.BPB_BytsPerSec());
+	printf("Sectors/cluster: %u\n", sector0.BPB_SecPerClus());
+	printf("Cluster size   : %u\n", cluster_size);
+	size_t FirstDataSector = sector0.BPB_RsvdSecCnt() + sector0.BPB_FATSz32() * sector0.BPB_NumFATs();
+	size_t FDS_offset = FirstDataSector * sector0.BPB_BytsPerSec();
+	printf("FirstDataSector: %llu\n", FirstDataSector);
+	printf("FDS offset     : %llu\n", FDS_offset);
+
+	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
+	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
+	// SEEK
+	//FDS_offset
+
+	return 0;
+}
+*/

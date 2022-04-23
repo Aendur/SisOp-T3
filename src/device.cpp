@@ -5,6 +5,8 @@
 
 using std::vector;
 
+void print_error(const wchar_t *, DWORD);
+
 vector<wchar_t> Device::get_drives(void) {
 	DWORD drives = GetLogicalDrives();
 	
@@ -100,7 +102,6 @@ void Device::get_geometry(void) {
 }
 
 const PBYTE Device::read(void) {
-	//BOOL status = ReadFile(_device, &sector0, sizeof(sector0), &nbytes, NULL);
 	BOOL status = ReadFile(_device, _buffer, _geometry.BytesPerSector, &_read_nbytes, NULL);
 	if (!status) {
 		fprintf(stderr, "device read error\n");
@@ -110,41 +111,41 @@ const PBYTE Device::read(void) {
 		return _buffer;
 	}
 }
+//0x00000000FFFFFE00
+void Device::seek(LONGLONG offset, bool relative) {
+	LARGE_INTEGER lin;
+	lin.QuadPart = offset;
 
-void Device::seek(LONGLONG offset) {
-	LONG offset_lo = (LONG) (offset - offset % _geometry.BytesPerSector);
-	LONG offset_hi = (LONG) (offset >> 32);
-	DWORD status = SetFilePointer(_device, offset_lo, &offset_hi, FILE_CURRENT); //, FILE_BEGIN);
-	if (status == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
-		fprintf(stderr, "device seek error\n");
+	DWORD error = NO_ERROR;
+	DWORD status = relative
+		? SetFilePointer(_device, lin.LowPart, &lin.HighPart, FILE_CURRENT)
+		: SetFilePointer(_device, lin.LowPart, &lin.HighPart, FILE_BEGIN);
+
+	if (status == INVALID_SET_FILE_POINTER) { error = GetLastError(); }
+
+	if (error == NO_ERROR) {
+		_offset = relative
+			? _offset + offset
+			: offset;
 	} else {
-		_offset += offset;
+		print_error(L"device::seek", error);
 	}
 }
 
-/*
-int main() {
-	fat32 sector0;
+void print_error(const wchar_t * msg, DWORD error) {
+	LPVOID msg_buffer;
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER | 
+		FORMAT_MESSAGE_FROM_SYSTEM |
+		FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL,
+		error,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPTSTR) &msg_buffer,
+		0, NULL
+	);
 
-	unsigned long cluster_size = sector0.BPB_BytsPerSec() * sector0.BPB_SecPerClus();
-	
-	printf("BPB_FATSz16:     %u\n", sector0.BPB_FATSz16());
-	printf("BPB_FATSz32:     %u\n", sector0.BPB_FATSz32());
-	printf("BPB_NumFATs:     %u\n", sector0.BPB_NumFATs());
-	printf("BPB_RsvdSecCnt:  %u\n", sector0.BPB_RsvdSecCnt());
-	printf("Bytes/sector:    %u\n", sector0.BPB_BytsPerSec());
-	printf("Sectors/cluster: %u\n", sector0.BPB_SecPerClus());
-	printf("Cluster size   : %u\n", cluster_size);
-	size_t FirstDataSector = sector0.BPB_RsvdSecCnt() + sector0.BPB_FATSz32() * sector0.BPB_NumFATs();
-	size_t FDS_offset = FirstDataSector * sector0.BPB_BytsPerSec();
-	printf("FirstDataSector: %llu\n", FirstDataSector);
-	printf("FDS offset     : %llu\n", FDS_offset);
-
-	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
-	// size_t FirstSectorofCluster = ((N - 2) * sector0.BPB_SecPerClus()) + FirstDataSector
-	// SEEK
-	//FDS_offset
-
-	return 0;
+	wprintf(L"%s : %hs\n", msg, (LPTSTR) msg_buffer);
+	LocalFree(msg_buffer);
 }
-*/
+
