@@ -25,12 +25,6 @@ Device::~Device(void) {
 }
 
 void Device::print_geometry(void) const {
-	unsigned long long capacity =
-		_geometry.Cylinders.LowPart *
-		_geometry.TracksPerCylinder *
-		_geometry.SectorsPerTrack   *
-		_geometry.BytesPerSector    ;
-
 	fwprintf(_out, L"MediaType         %d\n", /*MEDIA_TYPE*/ _geometry.MediaType);
 	fwprintf(_out, L"Cylinders (Quad)  %lld\n", /*LARGE_INTEGER*/ _geometry.Cylinders.QuadPart);
 	fwprintf(_out, L"Cylinders (High)  %d\n", /*LARGE_INTEGER*/ _geometry.Cylinders.HighPart);
@@ -39,7 +33,7 @@ void Device::print_geometry(void) const {
 	fwprintf(_out, L"SectorsPerTrack   %d\n", /*DWORD*/ _geometry.SectorsPerTrack);
 	fwprintf(_out, L"BytesPerSector    %d\n", /*DWORD*/ _geometry.BytesPerSector);
 	wchar_t sts[STS_MAX_FORMAT_SIZE];
-	fwprintf(_out, L"Capacity          %llu B - %s\n", capacity, size_to_wstring(sts, capacity, true));
+	fwprintf(_out, L"Capacity          %lld B - %s\n", _capacity, size_to_wstring(sts, _capacity, true));
 	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
@@ -94,6 +88,13 @@ void Device::get_geometry(void) {
 			close_drive();
 		} else {
 			_buffer = new BYTE[_geometry.BytesPerSector];
+			_offset = 0;
+			_capacity = (LONGLONG) (
+				_geometry.Cylinders.LowPart *
+				_geometry.TracksPerCylinder *
+				_geometry.SectorsPerTrack   *
+				_geometry.BytesPerSector
+			);
 		}
 	}
 }
@@ -110,13 +111,14 @@ const PBYTE Device::read(void) {
 	}
 }
 
-void Device::seek(LONG offset_lo) {
-	//DWORD sfp = SetFilePointer(_device, offset_lo, NULL, FILE_BEGIN);
-	DWORD sfp = SetFilePointer(_device, offset_lo, NULL, FILE_CURRENT);
-	if (sfp == INVALID_SET_FILE_POINTER) {
+void Device::seek(LONGLONG offset) {
+	LONG offset_lo = (LONG) (offset - offset % _geometry.BytesPerSector);
+	LONG offset_hi = (LONG) (offset >> 32);
+	DWORD status = SetFilePointer(_device, offset_lo, &offset_hi, FILE_CURRENT); //, FILE_BEGIN);
+	if (status == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) {
 		fprintf(stderr, "device seek error\n");
 	} else {
-		_offset += offset_lo;
+		_offset += offset;
 	}
 }
 

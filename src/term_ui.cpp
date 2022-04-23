@@ -1,5 +1,6 @@
 #include "term_ui.h"
 
+#include <unordered_map>
 #include <stdexcept>
 
 TermUI::TermUI(void) {
@@ -95,7 +96,28 @@ KeyCode TermUI::read(void) {
 	}
 }
 
+
+
 KeyCode TermUI::handle_esc(void) {
+	static const std::unordered_map<std::wstring, KeyCode> patterns = {
+		{ L"\033\\[A", TERMUI_KEY_ARROW_UP },
+		{ L"\033\\[C", TERMUI_KEY_ARROW_RIGHT },
+		{ L"\033\\[B", TERMUI_KEY_ARROW_DOWN },
+		{ L"\033\\[D", TERMUI_KEY_ARROW_LEFT },
+		{ L"\033\\[H", TERMUI_KEY_HOME },
+		{ L"\033\\[F", TERMUI_KEY_END },
+		{ L"\033\\[5~", TERMUI_KEY_PGUP },
+		{ L"\033\\[6~", TERMUI_KEY_PGDOWN },
+		{ L"\033\\[5;2~", TERMUI_KEY_SHIFT_PGUP },
+		{ L"\033\\[6;2~", TERMUI_KEY_SHIFT_PGDOWN },
+	};
+
+	for(const auto & [pat,ret] : patterns) {
+		if (std::regex_match(_input_string, std::wregex(pat))) {
+			return ret;
+		}
+	}
+
 	PUSHORT val = (PUSHORT) _input_string;
 	USHORT bytes[] = {
 		(USHORT)(val[0] & 0x00FF),
@@ -108,15 +130,10 @@ KeyCode TermUI::handle_esc(void) {
 		(USHORT)(val[7] & 0x00FF),
 	};
 	
-	wprintf(L"\033[40;1HKey pressed: ESC %ls (", &_input_string[1]);
+	wprintf(L"\n\n\nNO MATCH!!!\n");
+	wprintf(L"Key pressed: ESC %ls (", &_input_string[1]);
 	for (int p = 0; p < 8; ++p) { wprintf(L" 0x%02X", bytes[p]); }
 	wprintf(L" )\033[0K\n");
-
-	std::wregex pat(L"\033\\[[0-9]+;[0-9]+R");
-	//if (std::regex_match(std::wstring(_input_string), pat)) {
-	if (std::regex_search(_input_string, pat)) {
-		wprintf(L"MATCH!!!\n");
-	}
 	return TERMUI_KEY_UNDEFINED;
 }
 KeyCode TermUI::handle_input(void) {
@@ -126,19 +143,25 @@ KeyCode TermUI::handle_input(void) {
 	_input_nreads = 0;
 
 	switch(_input_string[0]) {
-	case L'\033':
-		return handle_esc();
-	case L'\n':
-		return TERMUI_KEY_RETURN;
-	case L'\r':
-		return TERMUI_KEY_RETURN;
+	case L'\033': return handle_esc();
+	case L'\n': return TERMUI_KEY_RETURN;
+	case L'\r': return TERMUI_KEY_RETURN;
+	case L'0': return TERMUI_KEY_0;
+	case L'1': return TERMUI_KEY_1;
+	case L'2': return TERMUI_KEY_2;
+	case L'3': return TERMUI_KEY_3;
+	case L'4': return TERMUI_KEY_4;
+	case L'5': return TERMUI_KEY_5;
+	case L'6': return TERMUI_KEY_6;
+	case L'7': return TERMUI_KEY_7;
+	case L'8': return TERMUI_KEY_8;
+	case L'9': return TERMUI_KEY_9;
 	case L'q':
-	case L'Q':
-		return TERMUI_KEY_Q;
+	case L'Q': return TERMUI_KEY_Q;
 	default:
 		short v0 = ((PUSHORT) _input_string)[0];
 		short v1 = ((PUSHORT) _input_string)[1];
-		wprintf(L"\033[40;1HKey pressed: %ls (0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF);
+		wprintf(L"\n\n\nKey pressed: %ls (0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF);
 		return TERMUI_KEY_UNDEFINED;
 	}
 }

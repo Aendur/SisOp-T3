@@ -4,6 +4,7 @@
 #include "term_ui.h"
 #include "device.h"
 #include "page.h"
+#include "fat32.h"
 #include <Windows.h>
 
 class DiskExplorer {
@@ -16,6 +17,13 @@ private:
 	BYTE * _buffer = nullptr;
 	Device _device;
 	Page _page;
+
+	fat32 sector0;
+
+	void set_print(void);
+	void read_set_print(void);
+	void advance_sectors(LONGLONG offset);
+
 public:
 	DiskExplorer(void);
 	//~DiskExplorer(void);

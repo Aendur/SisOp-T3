@@ -15,7 +15,8 @@ private:
 	DWORD _geom_nbytes;
 	DWORD _read_nbytes;
 
-	ULONGLONG _offset = 0;
+	LONGLONG _offset = -1;
+	LONGLONG _capacity = -1;
 
 	void get_geometry(void);
 
@@ -27,13 +28,13 @@ public:
 	void close_drive(void);
 	
 	const PBYTE read(void);
-	void seek(LONG offset_lo);
+	void seek(LONGLONG offset);
 
 	void print_geometry(void) const;
-	void read_fat32(void);
 	
 	inline const DISK_GEOMETRY & geometry(void) const { return _geometry; }
-	inline ULONGLONG offset(void) const { return _offset; }
+	inline LONGLONG offset(void) const { return _offset; }
+	inline LONGLONG capacity(void) const { return _capacity; }
 	const PBYTE buffer(void) const { return _buffer; }
 };
 
