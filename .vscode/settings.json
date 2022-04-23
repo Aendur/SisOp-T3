@@ -67,6 +67,7 @@
 		"list": "cpp",
 		"queue": "cpp",
 		"xhash": "cpp",
-		"xutility": "cpp"
+		"xutility": "cpp",
+		"stack": "cpp"
 	}
 }

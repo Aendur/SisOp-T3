@@ -17,16 +17,19 @@ vector<wchar_t> Device::get_drives(void) {
 		if (drives & 0x08) { result.push_back(letter); } ++letter;
 		drives >>= 4;
 	}
-
 	return result;
+}
+
+Device::~Device(void) {
+	this->close_drive();
 }
 
 void Device::print_geometry(void) const {
 	unsigned long long capacity =
 		_geometry.Cylinders.LowPart *
 		_geometry.TracksPerCylinder *
-		_geometry.SectorsPerTrack *
-		_geometry.BytesPerSector;
+		_geometry.SectorsPerTrack   *
+		_geometry.BytesPerSector    ;
 
 	fwprintf(_out, L"MediaType         %d\n", /*MEDIA_TYPE*/ _geometry.MediaType);
 	fwprintf(_out, L"Cylinders (Quad)  %lld\n", /*LARGE_INTEGER*/ _geometry.Cylinders.QuadPart);
@@ -95,10 +98,16 @@ void Device::get_geometry(void) {
 	}
 }
 
-void Device::read(void) {
+const PBYTE Device::read(void) {
 	//BOOL status = ReadFile(_device, &sector0, sizeof(sector0), &nbytes, NULL);
 	BOOL status = ReadFile(_device, _buffer, _geometry.BytesPerSector, &_read_nbytes, NULL);
-	if (!status) fprintf(stderr, "device read error\n");
+	if (!status) {
+		fprintf(stderr, "device read error\n");
+		return NULL;
+	} else {
+		_offset += _geometry.BytesPerSector;
+		return _buffer;
+	}
 }
 
 void Device::seek(LONG offset_lo) {

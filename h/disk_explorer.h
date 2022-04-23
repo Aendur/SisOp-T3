@@ -3,9 +3,8 @@
 
 #include "term_ui.h"
 #include "device.h"
+#include "page.h"
 #include <Windows.h>
-#include <stack>
-
 
 class DiskExplorer {
 private:
@@ -16,6 +15,7 @@ private:
 	unsigned long long _buffer_length = 0;
 	BYTE * _buffer = nullptr;
 	Device _device;
+	Page _page;
 public:
 	DiskExplorer(void);
 	//~DiskExplorer(void);

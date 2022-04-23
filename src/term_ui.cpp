@@ -3,7 +3,6 @@
 #include <stdexcept>
 
 TermUI::TermUI(void) {
-	static const auto x = ~ENABLE_LINE_INPUT;
 	_mode1_in = ENABLE_VIRTUAL_TERMINAL_INPUT;
 	_mode1_out = ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_PROCESSED_OUTPUT;
 	_mode1_err = ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN | ENABLE_PROCESSED_OUTPUT;
@@ -31,12 +30,6 @@ TermUI::~TermUI(void) {
 void TermUI::init(void) {
 	init_in();
 	init_out();
-}
-
-const TCHAR * TermUI::read(void) {
-	BOOL status = ReadConsole(_handle_in, _input_string, BUFSIZE, &_input_nreads, NULL);
-	if (status) { handle_input(); }
-	return _input_string;
 }
 
 void TermUI::init_in(void) {
@@ -84,27 +77,81 @@ void TermUI::init_err(void) {
 	}
 }
 
-void TermUI::handle_input(void) {
+//[<r>;<c>R
+#include <regex>
+#include <string>
+
+void TermUI::write(const wchar_t * msg) { //, DWORD len) {
+	DWORD len = (DWORD) wcslen(msg);
+	WriteConsoleW(_handle_out, msg, len, NULL, NULL);
+}
+
+KeyCode TermUI::read(void) {
+	BOOL status = ReadConsoleW(_handle_in, _input_string, sizeof(_input_string), &_input_nreads, NULL);
+	if (status) {
+		return handle_input();
+	} else {
+		return TERMUI_KEY_UNDEFINED;
+	}
+}
+
+KeyCode TermUI::handle_esc(void) {
+	PUSHORT val = (PUSHORT) _input_string;
+	USHORT bytes[] = {
+		(USHORT)(val[0] & 0x00FF),
+		(USHORT)(val[1] & 0x00FF),
+		(USHORT)(val[2] & 0x00FF),
+		(USHORT)(val[3] & 0x00FF),
+		(USHORT)(val[4] & 0x00FF),
+		(USHORT)(val[5] & 0x00FF),
+		(USHORT)(val[6] & 0x00FF),
+		(USHORT)(val[7] & 0x00FF),
+	};
+	
+	wprintf(L"\033[40;1HKey pressed: ESC %ls (", &_input_string[1]);
+	for (int p = 0; p < 8; ++p) { wprintf(L" 0x%02X", bytes[p]); }
+	wprintf(L" )\033[0K\n");
+
+	std::wregex pat(L"\033\\[[0-9]+;[0-9]+R");
+	//if (std::regex_match(std::wstring(_input_string), pat)) {
+	if (std::regex_search(_input_string, pat)) {
+		wprintf(L"MATCH!!!\n");
+	}
+	return TERMUI_KEY_UNDEFINED;
+}
+KeyCode TermUI::handle_input(void) {
 	_input_string[_input_nreads] = 0;
 	
-	if (_input_nreads == 0) { return; }
+	if (_input_nreads == 0) { return TERMUI_KEY_UNDEFINED; }
+	_input_nreads = 0;
 
 	switch(_input_string[0]) {
-		case 033:
-			//WriteConsole(_handle_out, esc, 15 * sizeof(TCHAR), NULL, NULL);
-			//WriteConsole(_handle_out, &_input_string[1], size-1, NULL, NULL);
-			wprintf(L"\033[31;1mESC\033[0m%hs", &_input_string[1]);
-			break;
-		case '\n':
-			wprintf(L"[LF]");
-			break;
-		case '\r':
-			wprintf(L"[CR]");
-			break;
-		default:
-			wprintf(L"%hs", _input_string);
-			break;
+	case L'\033':
+		return handle_esc();
+	case L'\n':
+		return TERMUI_KEY_RETURN;
+	case L'\r':
+		return TERMUI_KEY_RETURN;
+	case L'q':
+	case L'Q':
+		return TERMUI_KEY_Q;
+	default:
+		short v0 = ((PUSHORT) _input_string)[0];
+		short v1 = ((PUSHORT) _input_string)[1];
+		wprintf(L"\033[40;1HKey pressed: %ls (0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF);
+		return TERMUI_KEY_UNDEFINED;
 	}
+}
 
-	_input_nreads = 0;
+void TermUI::save_position(void) {
+	// write(L"\033[6n");
+	// read();
+}
+
+void TermUI::load_position(void) {
+	//write(L"\033[6n");
+}
+
+void TermUI::clear_screen(void) {
+	write(L"\033[1;1H\033[J");
 }

@@ -2,6 +2,19 @@
 #define TERM_UI_H
 
 #include <Windows.h>
+#include <utility>
+
+enum KeyCode {
+	TERMUI_KEY_UNDEFINED,
+	TERMUI_KEY_RETURN,
+	TERMUI_KEY_ARROW_UP,
+	TERMUI_KEY_ARROW_RIGHT,
+	TERMUI_KEY_ARROW_DOWN,
+	TERMUI_KEY_ARROW_LEFT,
+	TERMUI_KEY_PAGE_UP,
+	TERMUI_KEY_PAGE_DOWN,
+	TERMUI_KEY_Q,
+};
 
 class TermUI {
 private:
@@ -20,17 +33,26 @@ private:
 	void init_in(void);
 	void init_out(void);
 	void init_err(void);
-	void handle_input(void);
+	KeyCode handle_input(void);
+	KeyCode handle_esc(void);
 
 	inline static const int BUFSIZE = 16;
-	TCHAR _input_string[BUFSIZE];
+	wchar_t _input_string[BUFSIZE];
 	DWORD _input_nreads;
+
+	std::pair<int,int> _position;
 public:
 	TermUI(void);
 	~TermUI(void);
 	void init(void);
-	const TCHAR * read(void);
-	const TCHAR * str(void) const { return _input_string; }
+	KeyCode read(void);
+	void write(const wchar_t * msg);
+
+	void save_position(void);
+	void load_position(void);
+	void clear_screen(void);
+
+	const wchar_t * str(void) const { return _input_string; }
 	size_t len(void) const { return _input_nreads; }
 };
 

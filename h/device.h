@@ -15,20 +15,26 @@ private:
 	DWORD _geom_nbytes;
 	DWORD _read_nbytes;
 
-	unsigned long long _offset = 0;
+	ULONGLONG _offset = 0;
 
 	void get_geometry(void);
 
 public:
+	~Device(void);
+
 	static std::vector<wchar_t> get_drives(void);
 	void open_drive(WCHAR drive);
 	void close_drive(void);
 	
-	void read(void);
+	const PBYTE read(void);
 	void seek(LONG offset_lo);
 
 	void print_geometry(void) const;
 	void read_fat32(void);
+	
+	inline const DISK_GEOMETRY & geometry(void) const { return _geometry; }
+	inline ULONGLONG offset(void) const { return _offset; }
+	const PBYTE buffer(void) const { return _buffer; }
 };
 
 #endif
