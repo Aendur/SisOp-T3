@@ -146,6 +146,7 @@ KeyCode TermUI::handle_input(void) {
 	case L'\033': return handle_esc();
 	case L'\n': return TERMUI_KEY_RETURN;
 	case L'\r': return TERMUI_KEY_RETURN;
+	case L'\t': return TERMUI_KEY_TAB;
 	case L'0': return TERMUI_KEY_0;
 	case L'1': return TERMUI_KEY_1;
 	case L'2': return TERMUI_KEY_2;

@@ -54,6 +54,7 @@ void DiskExplorer::run(void) {
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	while ((key = _ui.read()) != TERMUI_KEY_Q) {
 		switch(key) {
+		case TERMUI_KEY_TAB: _page.toggle_mode(); _page.print(true); break;
 		case TERMUI_KEY_0:
 			_page.set((PBYTE)(&_sector0), LEN, 0);
 			_page.print(true);
