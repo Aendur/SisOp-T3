@@ -35,8 +35,8 @@ void Device::print_geometry(void) const {
 	fwprintf(_out, L"TracksPerCylinder %d\n", /*DWORD*/ _geometry.TracksPerCylinder);
 	fwprintf(_out, L"SectorsPerTrack   %d\n", /*DWORD*/ _geometry.SectorsPerTrack);
 	fwprintf(_out, L"BytesPerSector    %d\n", /*DWORD*/ _geometry.BytesPerSector);
-	char sts[STS_MAX_FORMAT_SIZE];
-	fprintf (_out,  "Capacity          %llu B - %s\n", capacity, size_to_string(sts, capacity, true));
+	wchar_t sts[STS_MAX_FORMAT_SIZE];
+	fwprintf(_out, L"Capacity          %llu B - %s\n", capacity, size_to_wstring(sts, capacity, true));
 	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
