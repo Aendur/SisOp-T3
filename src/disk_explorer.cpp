@@ -7,6 +7,7 @@
 DiskExplorer::DiskExplorer(void) {
 	_ui.init();
 	_device.open_drive('G');
+	_input.init(&_ui);
 	
 	if (_device.geometry().BytesPerSector != 512) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
@@ -16,22 +17,24 @@ DiskExplorer::DiskExplorer(void) {
 void DiskExplorer::print_commands(void) {
 	printf("\033[1;1H\n\n");
 	printf("-- NAV --                 \n");
-	printf("SPACE  : show current sec \n");
-	printf("0      : show sector 0    \n");
-	printf("1      : goto FirstDataSec\n");
-	printf("UP     : rew %d sector%c  \n", _adv_N, _adv_N == 1 ? ' ' : 's');
-	printf("DOWN   : fwd %d sector%c  \n", _adv_N, _adv_N == 1 ? ' ' : 's');
-	printf("L/R    : set N=%-10d\n", _adv_N);
-	printf("PGUP   : goto last cluster\n");
-	printf("PGDOWN : goto next cluster\n");
-	printf("HOME   : goto first sector\n");
-	printf("END    : goto last sector \n");
+	printf("SPACE : show current sec  \n");
+	printf("0     : show sector 0     \n");
+	printf("1     : goto FirstDataSec \n");
+	printf("g     : goto sector %-7lld\n", _sector_bookmark);
+	printf("G     : goto sector (type)\n");
+	printf("U_ARR : rewind %d sector%c\n", _adv_N, _adv_N == 1 ? ' ' : 's');
+	printf("D_ARR : forwrd %d sector%c\n", _adv_N, _adv_N == 1 ? ' ' : 's');
+	printf("LR_ARR: set N=%-10d \n", _adv_N);
+	printf("PGUP  : goto prev cluster \n");
+	printf("PGDOWN: goto next cluster \n");
+	printf("HOME  : goto first sector \n");
+	printf("END   : goto last sector  \n");
 	printf("-- DISP --                \n");
-	printf("TAB : toggle display mode \n");
-	printf("D   : show drive info     \n");
-	printf("E   : show ext entry info \n");
-	printf("F   : show fat32 info     \n");
-	printf("Q   : quit                \n");
+	printf("TAB: toggle display mode  \n");
+	printf("d/D: show drive info      \n");
+	printf("e/E: show ext entry info  \n");
+	printf("f/F: show fat32 info      \n");
+	printf("q/Q: quit                 \n");
 }
 
 void DiskExplorer::run(void) {
@@ -47,7 +50,6 @@ void DiskExplorer::run(void) {
 	_page.print();
 	show_entry_info();
 
-	
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q) {
 		switch(key) {
@@ -60,6 +62,9 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_E          : _extended_entry_info = !_extended_entry_info    ;                 break;
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : show_fat32_info()                               ;                 break;
+		case TERMUI_KEY_g          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpage(); break;
+		case TERMUI_KEY_G          : input_and_go()                                  ;                 break;
+		//case TERMUI_KEY_G          : printf("\033[48;1HINPUT FIELD WIP");            ;                 break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+1) * (long) LEN)       ; read_setpage(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-1) * (long) LEN)       ; read_setpage(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                 break;
@@ -118,6 +123,13 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 		offset -= offset % LEN;
 	}
 	_device.seek(offset, false);
+}
+
+void DiskExplorer::input_and_go(void) {
+	if (_input.get(&_sector_bookmark)) {
+		goto_sector(_sector_bookmark * _device.geometry().BytesPerSector);
+		read_setpage();
+	}
 }
 
 void DiskExplorer::show_entry_info(void) {

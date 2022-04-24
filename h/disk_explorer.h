@@ -5,6 +5,7 @@
 #include "device.h"
 #include "page.h"
 #include "fat32.h"
+#include "input_field.h"
 #include <Windows.h>
 
 class DiskExplorer {
@@ -17,7 +18,10 @@ private:
 
 	Device _device;
 	Page _page;
+	InputField _input;
+
 	long _adv_N = 1;
+	LONGLONG _sector_bookmark = 0;
 	bool _extended_entry_info = false;
 
 	fat32 _sector0;
@@ -26,6 +30,7 @@ private:
 	void read_setpage(void);
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
+	void input_and_go(void);
 	void show_fat32_info(void);
 	void show_entry_info(void);
 	void print_commands(void);
