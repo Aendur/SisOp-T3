@@ -62,11 +62,19 @@ void Page::print_adr(ULONGLONG offset) const {
 }
 
 static char color_char_buffer[32];
-const char * colorize_char(char c, const char * ctl) {
-	const int width = (int) strlen(ctl);
+const char * colorize_char(char c, char ctl) {
+	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, 32, "%c", c); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, 32, "\033[31;2m%c\033[0m", ctl); }
+	else                             { snprintf(color_char_buffer, 32, "\033[31;1m%c\033[0m", ctl); }
+	return color_char_buffer;
+}
+const char * colorize_char(char c, const char * ctl, int width) {
 	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, 32, "%*c", width, c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, 32, "\033[31;2m%s\033[0m", ctl); }
-	else                             { snprintf(color_char_buffer, 32, "\033[31;1m%s\033[0m", ctl); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, 32, "\033[31;2m%*s\033[0m", width, ctl); }
+	else if (             c == '\t') { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m" , width, "\\t"); }
+	else if (             c == '\n') { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m" , width, "\\n"); }
+	else if (             c == '\r') { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m" , width, "\\r"); }
+	else                             { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m", width, ctl); }
 	return color_char_buffer;
 }
 const char * colorize_char(unsigned char c, int width) {
@@ -84,6 +92,9 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 		switch(_mode) {
 		case Mode::CHR:
 			printf("%s ", colorize_char(line[i], 2));
+			break;
+		case Mode::CHX:
+			printf("%s ", colorize_char(line[i], "..", 2));
 			break;
 		case Mode::HEX:
 		default:
@@ -105,7 +116,7 @@ void Page::print_hex(PBYTE line, int len) const {
 void Page::print_str(PBYTE line, int len) const {
 	for (int i = 0x00; i < len; ++i) {
 		char c = line[i];
-		printf("%s", colorize_char(c, "."));
+		printf("%s", colorize_char(c, '.'));
 	}
 	printf(PAGE_RMARGIN PAGE_LE);
 }

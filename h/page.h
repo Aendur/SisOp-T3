@@ -6,9 +6,11 @@
 class TermUI;
 class Page {
 private:
-	enum class Mode {
-		HEX = -1,
-		CHR =  1,
+	enum class Mode : int {
+		HEX,
+		CHR,
+		CHX,
+		MAX,
 	};
 
 	TermUI * _ui = nullptr;
@@ -28,7 +30,7 @@ public:
 	//Page(void);
 	inline void init(TermUI * t) { _ui = t; }
 	inline void set(PBYTE buffer, DWORD length, ULONGLONG offset) { _buffer = buffer; _length = length; _offset = offset; }
-	inline void toggle_mode(void) { _mode = (Mode)(-(int)_mode); }
+	inline void toggle_mode(void) { _mode = (Mode)(((int)_mode + 1) % (int)Mode::MAX); }
 	void print(bool reset) const;
 
 	//void await(void) const;
