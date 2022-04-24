@@ -22,7 +22,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 }
 
 void DiskExplorer::print_commands(void) const {
-	printf("\033[1;1H\n\n");
+	printf("\033[1;1H\n");
 	printf("-- NAV --                 \n");
 	printf("SPACE : show current sec  \n");
 	printf("0     : show sector 0     \n");
@@ -37,11 +37,21 @@ void DiskExplorer::print_commands(void) const {
 	printf("HOME  : goto first sector \n");
 	printf("END   : goto last sector  \n");
 	printf("-- DISP --                \n");
-	printf("TAB: toggle display mode  \n");
-	printf("d/D: show drive info      \n");
-	printf("e/E: show ext entry info  \n");
-	printf("f/F: show fat32 info      \n");
-	printf("q/Q: quit                 \n");
+	printf("TAB : toggle sector disp. \n");
+	printf("^TAB: toggle entry disp.  \n");
+	printf("d/D : show drive info     \n");
+	printf("q/Q : quit                \n");
+
+	if (_show_drive_info) {
+		printf("\n-- GEOMETRY --\n");
+		show_geom_info();
+		printf("\n-- FAT32 --\n");
+		show_fat32_info();
+	} else {
+		printf("\033[0J");
+	}
+
+
 }
 
 void DiskExplorer::run(void) {
@@ -55,14 +65,13 @@ void DiskExplorer::run(void) {
 	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q) {
 		switch(key) {
 		case TERMUI_KEY_TAB        : _page.toggle_mode()                             ;                 break;
+		case TERMUI_KEY_STAB       : _page.toggle_extended()                         ;                 break;
 		case TERMUI_KEY_0          : _page.set((PBYTE)(&_sector0), 0)                ;                 break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpage(); break;
 		case TERMUI_KEY_d          :
-		case TERMUI_KEY_D          : show_geom_info()                                ;                 break;
-		case TERMUI_KEY_e          :
-		case TERMUI_KEY_E          : _page.toggle_extended()                         ;                 break;
-		case TERMUI_KEY_f          :
-		case TERMUI_KEY_F          : show_fat32_info()                               ;                 break;
+		case TERMUI_KEY_D          : _show_drive_info = !_show_drive_info            ;                 break;
+		//case TERMUI_KEY_e          :
+		//case TERMUI_KEY_E          : _page.toggle_extended()                         ;                 break;
 		case TERMUI_KEY_g          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpage(); break;
 		case TERMUI_KEY_G          : input_and_go()                                  ;                 break;
 		//case TERMUI_KEY_G          : printf("\033[48;1HINPUT FIELD WIP");            ;                 break;
@@ -133,7 +142,6 @@ void DiskExplorer::input_and_go(void) {
 }
 
 void DiskExplorer::show_geom_info(void) const {
-	printf("\033[0J");
 	wprintf(L"MediaType         %d\n",   _device.geometry().MediaType);
 	wprintf(L"Cylinders (Quad)  %lld\n", _device.geometry().Cylinders.QuadPart);
 	wprintf(L"Cylinders (High)  %d\n",   _device.geometry().Cylinders.HighPart);
@@ -147,7 +155,6 @@ void DiskExplorer::show_geom_info(void) const {
 }
 
 void DiskExplorer::show_fat32_info(void) const {
-	printf("\033[0J");
 	printf("BPB_FATSz16    : %u\n", _sector0.BPB_FATSz16());
 	printf("BPB_FATSz32    : %u\n", _sector0.BPB_FATSz32());
 	printf("BPB_NumFATs    : %u\n", _sector0.BPB_NumFATs());

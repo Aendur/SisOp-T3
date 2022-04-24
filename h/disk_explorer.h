@@ -24,7 +24,7 @@ private:
 
 	long _adv_N = 1;
 	LONGLONG _sector_bookmark = 0;
-	bool _extended_entry_info = false;
+	bool _show_drive_info = true;
 
 	fat32 _sector0;
 

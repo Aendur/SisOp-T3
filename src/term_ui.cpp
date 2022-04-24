@@ -108,11 +108,14 @@ KeyCode TermUI::handle_esc(void) {
 		{ L"\033\\[3~", TERMUI_KEY_DELETE },
 		{ L"\033\\[H", TERMUI_KEY_HOME },
 		{ L"\033\\[F", TERMUI_KEY_END },
+		{ L"\033\\[Z", TERMUI_KEY_STAB },
 		{ L"\033\\[5~", TERMUI_KEY_PGUP },
 		{ L"\033\\[6~", TERMUI_KEY_PGDOWN },
+		{ L"\033" L"OP", TERMUI_KEY_F1 },
+		{ L"\033" L"OQ", TERMUI_KEY_F2 },
+		{ L"\033" L"OR", TERMUI_KEY_F3 },
+		{ L"\033" L"OS", TERMUI_KEY_F4 },
 		{ L"\033", TERMUI_KEY_ESC },
-		//{ L"\033\\[5;2~", TERMUI_KEY_SHIFT_PGUP },
-		//{ L"\033\\[6;2~", TERMUI_KEY_SHIFT_PGDOWN },
 	};
 
 	for(const auto & [pat,ret] : patterns) {
