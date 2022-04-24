@@ -84,6 +84,7 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 		}
 	}
 }
+
 void Page::print_hex(PBYTE line, int len) const {
 	static const int q1 = 0x08;
 	static const int q2 = 0x10;

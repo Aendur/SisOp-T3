@@ -49,13 +49,16 @@ void DiskExplorer::run(void) {
 
 	
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	while ((key = _ui.read()) != TERMUI_KEY_Q) {
+	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q) {
 		switch(key) {
 		case TERMUI_KEY_TAB        : _page.toggle_mode()                             ;                 break;
 		case TERMUI_KEY_0          : _page.set((PBYTE)(&_sector0), 0)                ;                 break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpage(); break;
+		case TERMUI_KEY_d          :
 		case TERMUI_KEY_D          : printf("\033[0J"); _device.print_geometry()     ;                 break;
+		case TERMUI_KEY_e          :
 		case TERMUI_KEY_E          : _extended_entry_info = !_extended_entry_info    ;                 break;
+		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : show_fat32_info()                               ;                 break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+1) * (long) LEN)       ; read_setpage(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-1) * (long) LEN)       ; read_setpage(); break;

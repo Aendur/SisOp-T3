@@ -104,16 +104,20 @@ KeyCode TermUI::handle_esc(void) {
 		{ L"\033\\[C", TERMUI_KEY_ARROW_RIGHT },
 		{ L"\033\\[B", TERMUI_KEY_ARROW_DOWN },
 		{ L"\033\\[D", TERMUI_KEY_ARROW_LEFT },
+		{ L"\033\\[2~", TERMUI_KEY_INSERT },
+		{ L"\033\\[3~", TERMUI_KEY_DELETE },
 		{ L"\033\\[H", TERMUI_KEY_HOME },
 		{ L"\033\\[F", TERMUI_KEY_END },
 		{ L"\033\\[5~", TERMUI_KEY_PGUP },
 		{ L"\033\\[6~", TERMUI_KEY_PGDOWN },
-		{ L"\033\\[5;2~", TERMUI_KEY_SHIFT_PGUP },
-		{ L"\033\\[6;2~", TERMUI_KEY_SHIFT_PGDOWN },
+		{ L"\033", TERMUI_KEY_ESC },
+		//{ L"\033\\[5;2~", TERMUI_KEY_SHIFT_PGUP },
+		//{ L"\033\\[6;2~", TERMUI_KEY_SHIFT_PGDOWN },
 	};
 
 	for(const auto & [pat,ret] : patterns) {
 		if (std::regex_match(_input_string, std::wregex(pat))) {
+			//wprintf(L"\033[48;1HMATCH - Key pressed: ESC %ls\033[0K\n", &_input_string[1]);
 			return ret;
 		}
 	}
@@ -130,7 +134,7 @@ KeyCode TermUI::handle_esc(void) {
 		(USHORT)(val[7] & 0x00FF),
 	};
 	
-	wprintf(L"\n\n\nNO MATCH!!!\n");
+	wprintf(L"\033[48;1HNO MATCH - ");
 	wprintf(L"Key pressed: ESC %ls (", &_input_string[1]);
 	for (int p = 0; p < 8; ++p) { wprintf(L" 0x%02X", bytes[p]); }
 	wprintf(L" )\033[0K\n");
@@ -143,33 +147,16 @@ KeyCode TermUI::handle_input(void) {
 	if (_input_nreads == 0) { return TERMUI_KEY_UNDEFINED; }
 	_input_nreads = 0;
 
+	if (' ' <= _input_string[0] && _input_string[0] <= '~') {
+		return (KeyCode) _input_string[0];
+	}
+
 	switch(_input_string[0]) {
 	case L'\033': return handle_esc();
 	case L'\n': return TERMUI_KEY_RETURN;
 	case L'\r': return TERMUI_KEY_RETURN;
 	case L'\t': return TERMUI_KEY_TAB;
-	case L'0': return TERMUI_KEY_0;
-	case L'1': return TERMUI_KEY_1;
-	case L'2': return TERMUI_KEY_2;
-	case L'3': return TERMUI_KEY_3;
-	case L'4': return TERMUI_KEY_4;
-	case L'5': return TERMUI_KEY_5;
-	case L'6': return TERMUI_KEY_6;
-	case L'7': return TERMUI_KEY_7;
-	case L'8': return TERMUI_KEY_8;
-	case L'9': return TERMUI_KEY_9;
-	case L'+':
-	case L'=': return TERMUI_KEY_PLUS;
-	case L'-': return TERMUI_KEY_MINUS;
-	case L' ': return TERMUI_KEY_SPACE;
-	case L'd':
-	case L'D': return TERMUI_KEY_D;
-	case L'e':
-	case L'E': return TERMUI_KEY_E;
-	case L'f':
-	case L'F': return TERMUI_KEY_F;
-	case L'q':
-	case L'Q': return TERMUI_KEY_Q;
+	case 0x7F: return TERMUI_KEY_BKSPC;
 	default:
 		short v0 = ((PUSHORT) _input_string)[0];
 		short v1 = ((PUSHORT) _input_string)[1];
