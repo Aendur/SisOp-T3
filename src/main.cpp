@@ -15,8 +15,7 @@ int main (int argc, char ** argv) {
 	}
 	try {
 		size_t fsize = std::stoull(argv[2]);
-		char size_str[STS_MAX_FORMAT_SIZE];
-		std::cout << "Creating file: " << argv[1] << " - " << size_to_string(size_str, fsize, true) << "\n";
+		std::cout << "Creating file: " << argv[1] << " - " << size_to_string(fsize, true) << "\n";
 		RandomFile rf(argv[1], fsize);
 		rf.write();
 	} catch (std::exception & e) {

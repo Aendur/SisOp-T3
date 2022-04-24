@@ -17,14 +17,20 @@ private:
 	BYTE * _buffer = nullptr;
 	Device _device;
 	Page _page;
+	long _adv_N = 1;
 
 	fat32 _sector0;
 
-	void set_print(void);
-	void read_set_print(void);
+	void setpage(void);
+	void read_setpage(void);
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
-	void proc_fat32_info(void);
+	void show_fat32_info(void);
+	void print_commands(void);
+	
+	ULONG cluster_size(void) const;
+	LONG first_data_sector(void) const;
+	LONGLONG fds_offset(void) const;
 
 public:
 	DiskExplorer(void);

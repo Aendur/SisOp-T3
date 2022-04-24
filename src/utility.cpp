@@ -1,7 +1,11 @@
 #include "utility.h"
 #include <cstdio>
 
-const char* size_to_string(char * output, size_t size, bool append_unit) {
+#define STS_MAX_FORMAT_SIZE 64
+static char sts_buffer[STS_MAX_FORMAT_SIZE];
+static wchar_t sts_wbuffer[STS_MAX_FORMAT_SIZE];
+
+const char* size_to_string(size_t size, bool append_unit) {
 	const char    unit[ ] = {' ', 'B'};
 	const char  suffix[ ] = {' ', 'k', 'M', 'G', 'T'};
 	const size_t isize[2] = { size,  size };
@@ -23,34 +27,34 @@ const char* size_to_string(char * output, size_t size, bool append_unit) {
 
 	if (index[0] == 0) {
 		if (index[1] == 0) {
-			snprintf(output, STS_MAX_FORMAT_SIZE, "%zu %c%c (%zu %c%c)",
+			snprintf(sts_buffer, STS_MAX_FORMAT_SIZE, "%zu %c%c (%zu %c%c)",
 				isize[0], suffix[index[0]], unit[append_unit],
 				isize[1], suffix[index[1]], unit[append_unit]
 			);
 		} else {
-			snprintf(output, STS_MAX_FORMAT_SIZE, "%zu %c%c (%.1f %ci%c)",
+			snprintf(sts_buffer, STS_MAX_FORMAT_SIZE, "%zu %c%c (%.1f %ci%c)",
 				isize[0], suffix[index[0]], unit[append_unit],
 				fsize[1], suffix[index[1]], unit[append_unit]
 			);
 		}
 	} else {
 		if (index[1] == 0) {
-			snprintf(output, STS_MAX_FORMAT_SIZE, "%.1f %c%c (%zu %c%c)",
+			snprintf(sts_buffer, STS_MAX_FORMAT_SIZE, "%.1f %c%c (%zu %c%c)",
 				fsize[0], suffix[index[0]], unit[append_unit],
 				isize[1], suffix[index[1]], unit[append_unit]
 			);
 		} else {
-			snprintf(output, STS_MAX_FORMAT_SIZE, "%.1f %c%c (%.1f %ci%c)",
+			snprintf(sts_buffer, STS_MAX_FORMAT_SIZE, "%.1f %c%c (%.1f %ci%c)",
 				fsize[0], suffix[index[0]], unit[append_unit],
 				fsize[1], suffix[index[1]], unit[append_unit]
 			);
 		}
 	}
 
-	return output;
+	return sts_buffer;
 }
 
-const wchar_t* size_to_wstring(wchar_t * output, size_t size, bool append_unit) {
+const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 	const wchar_t   unit[ ] = {L' ', L'B'};
 	const wchar_t suffix[ ] = {L' ', L'k', L'M', L'G', L'T'};
 	const size_t   isize[2] = { size,  size };
@@ -72,30 +76,30 @@ const wchar_t* size_to_wstring(wchar_t * output, size_t size, bool append_unit) 
 
 	if (index[0] == 0) {
 		if (index[1] == 0) {
-			_snwprintf_s(output, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%zu %c%c (%zu %c%c)",
+			_snwprintf_s(sts_wbuffer, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%zu %c%c (%zu %c%c)",
 				isize[0], suffix[index[0]], unit[append_unit],
 				isize[1], suffix[index[1]], unit[append_unit]
 			);
 		} else {
-			_snwprintf_s(output, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%zu %c%c (%.1f %ci%c)",
+			_snwprintf_s(sts_wbuffer, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%zu %c%c (%.1f %ci%c)",
 				isize[0], suffix[index[0]], unit[append_unit],
 				fsize[1], suffix[index[1]], unit[append_unit]
 			);
 		}
 	} else {
 		if (index[1] == 0) {
-			_snwprintf_s(output, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%.1f %c%c (%zu %c%c)",
+			_snwprintf_s(sts_wbuffer, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%.1f %c%c (%zu %c%c)",
 				fsize[0], suffix[index[0]], unit[append_unit],
 				isize[1], suffix[index[1]], unit[append_unit]
 			);
 		} else {
-			_snwprintf_s(output, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%.1f %c%c (%.1f %ci%c)",
+			_snwprintf_s(sts_wbuffer, STS_MAX_FORMAT_SIZE, STS_MAX_FORMAT_SIZE, L"%.1f %c%c (%.1f %ci%c)",
 				fsize[0], suffix[index[0]], unit[append_unit],
 				fsize[1], suffix[index[1]], unit[append_unit]
 			);
 		}
 	}
 
-	return output;
+	return sts_wbuffer;
 }
 

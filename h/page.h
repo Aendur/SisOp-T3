@@ -4,6 +4,7 @@
 #include <Windows.h>
 
 class TermUI;
+class Device;
 class Page {
 private:
 	enum class Mode : int {
@@ -13,10 +14,11 @@ private:
 		MAX,
 	};
 
-	TermUI * _ui = nullptr;
 	PBYTE _buffer;
-	DWORD _length;
 	ULONGLONG _offset;
+	
+	DWORD _sector_length;
+	DWORD _clustr_length;
 
 	Mode _mode = Mode::HEX;
 
@@ -27,13 +29,10 @@ private:
 	void print_hex_block(PBYTE line, int i0, int i1) const;
 	void print_str(PBYTE line, int len) const;
 public:
-	//Page(void);
-	inline void init(TermUI * t) { _ui = t; }
-	inline void set(PBYTE buffer, DWORD length, ULONGLONG offset) { _buffer = buffer; _length = length; _offset = offset; }
+	inline void init(DWORD sl, DWORD cl) { _sector_length = sl; _clustr_length = cl; }
+	inline void set(PBYTE buffer, ULONGLONG offset) { _buffer = buffer; _offset = offset; }
 	inline void toggle_mode(void) { _mode = (Mode)(((int)_mode + 1) % (int)Mode::MAX); }
-	void print(bool reset) const;
-
-	//void await(void) const;
+	void print(void) const;
 };
 
 #endif

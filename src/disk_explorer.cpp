@@ -5,7 +5,6 @@
 
 DiskExplorer::DiskExplorer(void) {
 	_ui.init();
-	_page.init(&_ui);
 	_device.open_drive('G');
 	
 	if (_device.geometry().BytesPerSector != 512) {
@@ -13,82 +12,71 @@ DiskExplorer::DiskExplorer(void) {
 	}
 }
 
-static const std::vector<std::pair<std::string, std::string>> commands = {
-	{"0:"        , "show sector 0"      },
-	{"UP:"       , "last sector"        },
-	{"DOWN:"     , "next sector"        },
-	{"RIGHT:"    , "rew 100 sectors"    },
-	{"LEFT:"     , "fwd 100 sectors"    },
-	{"PGUP:"     , "rew 10000 sectors"  },
-	{"PGDOWN:"   , "fwd 10000 sectors"  },
-	{"S_PGUP:"   , "rew 1000000 sectors"},
-	{"S_PGDOWN:" , "fwd 1000000 sectors"},
-	{"HOME:"     , "goto first sector"  },
-	{"END:"      , "goto last sector"   },
-	{"-----"     , "-----"              },
-	{"D:"        , "show drive info"    },
-	{"F:"        , "show fat32 info"    },
-	{"Q:"        , "quit"               },
-};
-
-
-void print_commands(void) {
-	printf("\n");
-	for (const auto & i : commands) {
-		printf("%-10s %-22s\n", i.first.c_str(), i.second.c_str());
-	}
+void DiskExplorer::print_commands(void) {
+	printf("\033[1;1H\n\n");
+	printf("-- NAV --                 \n");
+	printf("SPACE  : show current sec \n");
+	printf("0      : show sector 0    \n");
+	printf("1      : goto FirstDataSec\n");
+	printf("UP     : rew %d sector%c  \n", _adv_N, _adv_N == 1 ? ' ' : 's');
+	printf("DOWN   : fwd %d sector%c  \n", _adv_N, _adv_N == 1 ? ' ' : 's');
+	printf("L/R    : set N=%-10d\n", _adv_N);
+	printf("PGUP   : goto last cluster\n");
+	printf("PGDOWN : goto next cluster\n");
+	printf("HOME   : goto first sector\n");
+	printf("END    : goto last sector \n");
+	printf("-- DISP --                \n");
+	printf("TAB : toggle display mode \n");
+	printf("D   : show drive info     \n");
+	printf("F   : show fat32 info     \n");
+	printf("Q   : quit                \n");
 }
 
 void DiskExplorer::run(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
-	_ui.clear_screen();
-	print_commands();
-
 
 	// save fat32 _sector0 data
-	_device.read();
+	read_setpage();
 	memcpy(&_sector0, _device.buffer(), _device.geometry().BytesPerSector);
-	set_print();
+	_page.init(_device.geometry().BytesPerSector, cluster_size());
+
+	_ui.clear_screen();
+	print_commands();
+	_page.print();
 
 	
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	while ((key = _ui.read()) != TERMUI_KEY_Q) {
 		switch(key) {
-		case TERMUI_KEY_TAB: _page.toggle_mode(); _page.print(true); break;
-		case TERMUI_KEY_0:
-			_page.set((PBYTE)(&_sector0), LEN, 0);
-			_page.print(true);
-			break;
-		case TERMUI_KEY_D: printf("\033[0J"); _device.print_geometry(); _page.print(true); break;
-		case TERMUI_KEY_F: proc_fat32_info(); _page.print(true); break;
-		case TERMUI_KEY_ARROW_UP: advance_sectors(-2 * (long) LEN); read_set_print(); break;
-		case TERMUI_KEY_ARROW_DOWN: read_set_print(); break;
-		case TERMUI_KEY_ARROW_LEFT: advance_sectors(99 * (long) LEN); read_set_print(); break;
-		case TERMUI_KEY_ARROW_RIGHT: advance_sectors(-101 * (long) LEN); read_set_print(); break;
-		// case TERMUI_KEY_HOME: advance_sectors(-_device.offset()); read_set_print(); break;
-		// case TERMUI_KEY_END: advance_sectors(_device.capacity()); read_set_print(); break;
-		case TERMUI_KEY_HOME: goto_sector(0); read_set_print(); break;
-		case TERMUI_KEY_END: goto_sector(-(long)LEN); read_set_print(); break;
-		case TERMUI_KEY_PGUP: advance_sectors(-10001 * (long) LEN); read_set_print(); break;
-		case TERMUI_KEY_PGDOWN: advance_sectors(9999 * (long) LEN); read_set_print(); break;
-		case TERMUI_KEY_SHIFT_PGUP: advance_sectors(-1000001 * (long) LEN); read_set_print(); break;
-		case TERMUI_KEY_SHIFT_PGDOWN: advance_sectors(999999 * (long) LEN); read_set_print(); break;
-		default:
-			set_print();
-			break;
+		case TERMUI_KEY_TAB        : _page.toggle_mode()                             ;                 break;
+		case TERMUI_KEY_0          : _page.set((PBYTE)(&_sector0), 0)                ;                 break;
+		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpage(); break;
+		case TERMUI_KEY_D          : printf("\033[0J"); _device.print_geometry()     ;                 break;
+		case TERMUI_KEY_F          : show_fat32_info()                               ;                 break;
+		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+1) * (long) LEN)       ; read_setpage(); break;
+		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-1) * (long) LEN)       ; read_setpage(); break;
+		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                 break;
+		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                 break;
+		case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-LEN) ; read_setpage(); break;
+		case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-LEN) ; read_setpage(); break;
+		case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpage(); break;
+		case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpage(); break;
+		case TERMUI_KEY_SPACE      : setpage()                                       ;                 break;
+		default                    : setpage()                                       ;                 break;
 		}
+		print_commands();
+		_page.print();
 	}
 }
 
-void DiskExplorer::set_print(void) {
+void DiskExplorer::setpage(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
-	_page.set(_device.buffer(), LEN, _device.offset() - LEN);
-	_page.print(true);
+	_page.set(_device.buffer(), _device.offset() - LEN);
 }
 
-void DiskExplorer::read_set_print(void) {
+void DiskExplorer::read_setpage(void) {
 	_device.read();
-	set_print();
+	setpage();
 }
 
 void DiskExplorer::advance_sectors(LONGLONG offset) {
@@ -124,11 +112,7 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 	_device.seek(offset, false);
 }
 
-void DiskExplorer::proc_fat32_info(void) {
-	unsigned long cluster_size = _sector0.BPB_BytsPerSec() * _sector0.BPB_SecPerClus();
-	size_t FirstDataSector = _sector0.BPB_RsvdSecCnt() + _sector0.BPB_FATSz32() * _sector0.BPB_NumFATs();
-	size_t FDS_offset = FirstDataSector * _sector0.BPB_BytsPerSec();
-	
+void DiskExplorer::show_fat32_info(void) {
 	printf("\033[0J");
 	printf("BPB_FATSz16:     %u\n", _sector0.BPB_FATSz16());
 	printf("BPB_FATSz32:     %u\n", _sector0.BPB_FATSz32());
@@ -136,14 +120,25 @@ void DiskExplorer::proc_fat32_info(void) {
 	printf("BPB_RsvdSecCnt:  %u\n", _sector0.BPB_RsvdSecCnt());
 	printf("Bytes/sector:    %u\n", _sector0.BPB_BytsPerSec());
 	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
-	printf("Cluster size   : %u\n", cluster_size);
+	printf("Cluster size   : %lu\n", cluster_size());
 	printf("\n");
-	printf("FirstDataSector: %llu\n", FirstDataSector);
-	printf("FDS offset     : %llu\n", FDS_offset);
+	printf("FirstDataSector: %lu\n" , first_data_sector());
+	printf("FDS offset     : %llu\n", fds_offset());
 	printf("BPB_RootClus   : %d\n"  , _sector0.BPB_RootClus());
 
 	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
 	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
 	// SEEK
 	//FDS_offset
+}
+
+
+ULONG DiskExplorer::cluster_size(void) const {
+	return _sector0.BPB_BytsPerSec() * _sector0.BPB_SecPerClus();
+}
+LONG DiskExplorer::first_data_sector(void) const {
+	return _sector0.BPB_RsvdSecCnt() + _sector0.BPB_FATSz32() * _sector0.BPB_NumFATs();
+}
+LONGLONG DiskExplorer::fds_offset(void) const {
+	return first_data_sector() * _sector0.BPB_BytsPerSec();
 }

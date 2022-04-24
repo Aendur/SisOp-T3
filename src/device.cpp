@@ -34,8 +34,7 @@ void Device::print_geometry(void) const {
 	fwprintf(_out, L"TracksPerCylinder %d\n", /*DWORD*/ _geometry.TracksPerCylinder);
 	fwprintf(_out, L"SectorsPerTrack   %d\n", /*DWORD*/ _geometry.SectorsPerTrack);
 	fwprintf(_out, L"BytesPerSector    %d\n", /*DWORD*/ _geometry.BytesPerSector);
-	wchar_t sts[STS_MAX_FORMAT_SIZE];
-	fwprintf(_out, L"Capacity          %lld B - %s\n", _capacity, size_to_wstring(sts, _capacity, true));
+	fwprintf(_out, L"Capacity          %lld B - %s\n", _capacity, size_to_wstring(_capacity, true));
 	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
@@ -51,7 +50,7 @@ void Device::open_drive(wchar_t drive) {
 
 		this->_device = CreateFileW(
 			drive_path,
-			GENERIC_READ, // | GENERIC_WRITE,
+			GENERIC_READ | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
 			NULL,
 			OPEN_EXISTING,
@@ -128,7 +127,7 @@ void Device::seek(LONGLONG offset, bool relative) {
 			? _offset + offset
 			: offset;
 	} else {
-		print_error(L"device::seek", error);
+		print_error(L"\n\n\n\n\n\ndevice::seek", error);
 	}
 }
 
