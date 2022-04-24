@@ -45,18 +45,15 @@ void InputField::erase_one(void) {
 
 bool InputField::get(long long * out) {
 	bool captured = capture_input();
-	//printf("\033[1Kcaptured: %s", _buffer.chr);
 	if (captured) {
 		try {
 			*out = std::stoll(_buffer.chr);
 		} catch (std::exception & e) {
-			//printf("\033[1Kconversion error: %s", e.what());
+			printf("\033[1KError: %s", e.what());
 			return false;
 		}
-		//printf("\033[1Kconverted: %lld", *out);
 		return true;
 	} else {
-		//printf("\033[1Kinput canceled");
 		return false;
 	}
 }
