@@ -20,11 +20,14 @@
 #define PAGE_ADR \
 	"\033[2m|  %08llX  |  \033[0m"
 
+#define PAGE_SEP0 \
+	" "
+
 #define PAGE_SEP1 \
-	"   "
+	"  "
 
 #define PAGE_SEP2 \
-	"\033[2m  |  \033[0m"
+	"\033[2m |  \033[0m"
 
 #define PAGE_LMARGIN \
 	"  \033[40G"
@@ -59,40 +62,50 @@ void Page::print_adr(ULONGLONG offset) const {
 }
 
 static char color_char_buffer[32];
-const char * colorize_char(char c) {
-	if (0x20 <= c && c <= 0x7E) {
-		snprintf(color_char_buffer, 32, "%c", c);
-	} else if (c == 0) {
-		snprintf(color_char_buffer, 32, "\033[31;2m.\033[0m");
-	} else {
-		snprintf(color_char_buffer, 32, "\033[31;1m.\033[0m");
-	}
+const char * colorize_char(char c, const char * ctl) {
+	const int width = (int) strlen(ctl);
+	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, 32, "%*c", width, c); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, 32, "\033[31;2m%s\033[0m", ctl); }
+	else                             { snprintf(color_char_buffer, 32, "\033[31;1m%s\033[0m", ctl); }
+	return color_char_buffer;
+}
+const char * colorize_char(unsigned char c, int width) {
+	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, 32, "\033[1m%*c\033[0m"    , width,     c); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, 32, "\033[31;2m%0*X\033[0m", width,     c); }
+	else if (             c == '\t') { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m" , width, "\\t"); }
+	else if (             c == '\n') { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m" , width, "\\n"); }
+	else if (             c == '\r') { snprintf(color_char_buffer, 32, "\033[31;1m%*s\033[0m" , width, "\\r"); }
+	else                             { snprintf(color_char_buffer, 32, "\033[31m%0*X\033[0m"  , width,     c); }
 	return color_char_buffer;
 }
 
+void Page::print_hex_block(PBYTE line, int i0, int i1) const {
+	for (int i =  i0; i < i1; ++i) {
+		switch(_mode) {
+		case Mode::CHR:
+			printf("%s ", colorize_char(line[i], 2));
+			break;
+		case Mode::HEX:
+		default:
+			printf("%02X ", line[i]);
+			break;
+		}
+	}
+}
 void Page::print_hex(PBYTE line, int len) const {
 	static const int q1 = 0x08;
 	static const int q2 = 0x10;
 	static const int q3 = 0x18;
-	for (int i =  0; i < q1; ++i) { if (_mode == Mode::HEX) printf("%02X ", line[i]); else printf("%2s ", colorize_char(line[i])); } // "?"); } //
-	for (int i = q1; i < q2; ++i) { if (_mode == Mode::HEX) printf(" %02X", line[i]); else printf(" %2s", colorize_char(line[i])); } // "?"); } //
-	printf(PAGE_SEP1);
-	for (int i = q2; i < q3; ++i)  { if (_mode == Mode::HEX) printf("%02X ", line[i]); else printf("%2s ", colorize_char(line[i])); } // "?"); } //
-	for (int i = q3; i < len; ++i) { if (_mode == Mode::HEX) printf(" %02X", line[i]); else printf(" %2s", colorize_char(line[i])); } // "?"); } //
-	printf(PAGE_SEP2);
+	print_hex_block(line,  0,  q1); printf(PAGE_SEP0);
+	print_hex_block(line, q1,  q2); printf(PAGE_SEP1);
+	print_hex_block(line, q2,  q3); printf(PAGE_SEP0);
+	print_hex_block(line, q3, len); printf(PAGE_SEP2);
 }
 
 void Page::print_str(PBYTE line, int len) const {
 	for (int i = 0x00; i < len; ++i) {
 		char c = line[i];
-		printf("%s", colorize_char(c));
-		//if (0x20 <= c && c <= 0x7E) {
-		//	printf("%c", c);
-		//} else if (c == 0) {
-		//	printf("\033[31;2m.\033[0m");
-		//} else {
-		//	printf("\033[31;1m.\033[0m");
-		//}
+		printf("%s", colorize_char(c, "."));
 	}
 	printf(PAGE_RMARGIN PAGE_LE);
 }

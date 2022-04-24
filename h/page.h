@@ -22,6 +22,7 @@ private:
 	void print_ftr(void) const;
 	void print_adr(ULONGLONG offset) const;
 	void print_hex(PBYTE line, int len) const;
+	void print_hex_block(PBYTE line, int i0, int i1) const;
 	void print_str(PBYTE line, int len) const;
 public:
 	//Page(void);
