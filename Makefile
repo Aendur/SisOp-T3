@@ -2,12 +2,12 @@
 CFLAGS=/W4 /EHsc /std:c++17 /Ih /utf-8 /nologo
 
 FGLIBN=random_file utility
-DXLIBN=disk_explorer term_ui device utility page input_field fat32 entry
+DXLIBN=disk_explorer term_ui device utility page input_field editor
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
 
-all: dirs filegen diskexp
+all: dirs diskexp
 
 filegen: src\filegen.cpp $(FGLIBS)
 	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:bin\filegen.exe $?

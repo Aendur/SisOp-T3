@@ -1,6 +1,4 @@
 #include "device.h"
-#include "utility.h"
-
 #include <Windows.h>
 
 using std::vector;
@@ -24,18 +22,6 @@ vector<wchar_t> Device::get_drives(void) {
 
 Device::~Device(void) {
 	this->close_drive();
-}
-
-void Device::print_geometry(void) const {
-	fwprintf(_out, L"MediaType         %d\n", /*MEDIA_TYPE*/ _geometry.MediaType);
-	fwprintf(_out, L"Cylinders (Quad)  %lld\n", /*LARGE_INTEGER*/ _geometry.Cylinders.QuadPart);
-	fwprintf(_out, L"Cylinders (High)  %d\n", /*LARGE_INTEGER*/ _geometry.Cylinders.HighPart);
-	fwprintf(_out, L"Cylinders (Low)   %d\n", /*LARGE_INTEGER*/ _geometry.Cylinders.LowPart);
-	fwprintf(_out, L"TracksPerCylinder %d\n", /*DWORD*/ _geometry.TracksPerCylinder);
-	fwprintf(_out, L"SectorsPerTrack   %d\n", /*DWORD*/ _geometry.SectorsPerTrack);
-	fwprintf(_out, L"BytesPerSector    %d\n", /*DWORD*/ _geometry.BytesPerSector);
-	fwprintf(_out, L"Capacity          %lld B - %s\n", _capacity, size_to_wstring(_capacity, true));
-	fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
 void Device::open_drive(wchar_t drive) {

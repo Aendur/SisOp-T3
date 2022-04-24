@@ -5,6 +5,7 @@
 
 class TermUI;
 class Device;
+class entry;
 class Page {
 private:
 	enum class Mode : int {
@@ -21,6 +22,7 @@ private:
 	DWORD _clustr_length;
 
 	Mode _mode = Mode::HEX;
+	bool _extended_entry_info = false;
 
 	void print_hdr(void) const;
 	void print_ftr(void) const;
@@ -28,10 +30,17 @@ private:
 	void print_hex(PBYTE line, int len) const;
 	void print_hex_block(PBYTE line, int i0, int i1) const;
 	void print_str(PBYTE line, int len) const;
+
+	///
+	void print_entry(bool extended) const;
+	void print_short(const entry & ref, bool extended) const;
+	void print_long(const entry & ref, bool extended) const;
+
 public:
 	inline void init(DWORD sl, DWORD cl) { _sector_length = sl; _clustr_length = cl; }
 	inline void set(PBYTE buffer, ULONGLONG offset) { _buffer = buffer; _offset = offset; }
 	inline void toggle_mode(void) { _mode = (Mode)(((int)_mode + 1) % (int)Mode::MAX); }
+	inline void toggle_extended(void) { _extended_entry_info = !_extended_entry_info; }
 	void print(void) const;
 };
 

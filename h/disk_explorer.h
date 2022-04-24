@@ -31,9 +31,10 @@ private:
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
 	void input_and_go(void);
-	void show_fat32_info(void);
-	void show_entry_info(void);
-	void print_commands(void);
+	void show_geom_info(void) const;
+	void show_fat32_info(void) const;
+	void show_entry_info(void) const;
+	void print_commands(void) const;
 	
 	ULONG cluster_size(void) const;
 	LONG first_data_sector(void) const;

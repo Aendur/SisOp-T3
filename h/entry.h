@@ -53,12 +53,6 @@ public:
 		entry_long  dl;
 	} dir;
 
-	static void print(void * addr, bool extended);
-
-private:
-	void print_short(bool extended) const;
-	void print_long(bool extended) const;
-
 	inline bool is_long(void) const { return (dir.ds.DIR_Attr & ATTR_LONG_NAME) == ATTR_LONG_NAME; }
 	inline bool is_dir(void) const  { return (dir.ds.DIR_Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
 };

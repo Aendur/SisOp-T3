@@ -1,5 +1,6 @@
 #include "disk_explorer.h"
 #include "entry.h"
+#include "utility.h"
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -14,7 +15,7 @@ DiskExplorer::DiskExplorer(void) {
 	}
 }
 
-void DiskExplorer::print_commands(void) {
+void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H\n\n");
 	printf("-- NAV --                 \n");
 	printf("SPACE : show current sec  \n");
@@ -48,7 +49,6 @@ void DiskExplorer::run(void) {
 	_ui.clear_screen();
 	print_commands();
 	_page.print();
-	show_entry_info();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q) {
@@ -57,9 +57,9 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_0          : _page.set((PBYTE)(&_sector0), 0)                ;                 break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpage(); break;
 		case TERMUI_KEY_d          :
-		case TERMUI_KEY_D          : printf("\033[0J"); _device.print_geometry()     ;                 break;
+		case TERMUI_KEY_D          : show_geom_info()                                ;                 break;
 		case TERMUI_KEY_e          :
-		case TERMUI_KEY_E          : _extended_entry_info = !_extended_entry_info    ;                 break;
+		case TERMUI_KEY_E          : _page.toggle_extended()                         ;                 break;
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : show_fat32_info()                               ;                 break;
 		case TERMUI_KEY_g          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpage(); break;
@@ -78,7 +78,6 @@ void DiskExplorer::run(void) {
 		}
 		print_commands();
 		_page.print();
-		show_entry_info();
 	}
 }
 
@@ -132,14 +131,29 @@ void DiskExplorer::input_and_go(void) {
 	}
 }
 
-void DiskExplorer::show_entry_info(void) {
-	entry::print(_device.buffer(), _extended_entry_info);
+void DiskExplorer::show_geom_info(void) const {
+	printf("\033[0J");
+	wprintf(L"MediaType         %d\n",   _device.geometry().MediaType);
+	wprintf(L"Cylinders (Quad)  %lld\n", _device.geometry().Cylinders.QuadPart);
+	wprintf(L"Cylinders (High)  %d\n",   _device.geometry().Cylinders.HighPart);
+	wprintf(L"Cylinders (Low)   %d\n",   _device.geometry().Cylinders.LowPart);
+	wprintf(L"TracksPerCylinder %d\n",   _device.geometry().TracksPerCylinder);
+	wprintf(L"SectorsPerTrack   %d\n",   _device.geometry().SectorsPerTrack);
+	wprintf(L"BytesPerSector    %d\n",   _device.geometry().BytesPerSector);
+	wprintf(L"Total capacity    %lld B\n", _device.capacity());
+	wprintf(L"      %s\n"    , size_to_wstring(_device.capacity(), true));
+	//fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 }
 
-
-void DiskExplorer::show_fat32_info(void) {
+void DiskExplorer::show_fat32_info(void) const {
 	printf("\033[0J");
-	_sector0.print();
+	printf("BPB_FATSz16    : %u\n", _sector0.BPB_FATSz16());
+	printf("BPB_FATSz32    : %u\n", _sector0.BPB_FATSz32());
+	printf("BPB_NumFATs    : %u\n", _sector0.BPB_NumFATs());
+	printf("BPB_RsvdSecCnt : %u\n", _sector0.BPB_RsvdSecCnt());
+	printf("Bytes/sector   : %u\n", _sector0.BPB_BytsPerSec());
+	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
+	printf("BPB_RootClus   : %d\n", _sector0.BPB_RootClus());
 	printf("\n");
 	printf("Cluster size   : %lu\n", cluster_size());
 	printf("FirstDataSector: %lu\n" , first_data_sector());

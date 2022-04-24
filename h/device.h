@@ -30,8 +30,6 @@ public:
 	const PBYTE read(void);
 	void seek(LONGLONG offset, bool relative);
 
-	void print_geometry(void) const;
-	
 	inline const DISK_GEOMETRY & geometry(void) const { return _geometry; }
 	inline LONGLONG offset(void) const { return _offset; }
 	inline LONGLONG capacity(void) const { return _capacity; }
