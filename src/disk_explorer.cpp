@@ -29,6 +29,7 @@ void DiskExplorer::print_commands(void) {
 	printf("-- DISP --                \n");
 	printf("TAB : toggle display mode \n");
 	printf("D   : show drive info     \n");
+	printf("E   : show ext entry info \n");
 	printf("F   : show fat32 info     \n");
 	printf("Q   : quit                \n");
 }
@@ -44,6 +45,7 @@ void DiskExplorer::run(void) {
 	_ui.clear_screen();
 	print_commands();
 	_page.print();
+	show_entry_info();
 
 	
 	KeyCode key = TERMUI_KEY_UNDEFINED;
@@ -53,6 +55,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_0          : _page.set((PBYTE)(&_sector0), 0)                ;                 break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpage(); break;
 		case TERMUI_KEY_D          : printf("\033[0J"); _device.print_geometry()     ;                 break;
+		case TERMUI_KEY_E          : _extended_entry_info = !_extended_entry_info    ;                 break;
 		case TERMUI_KEY_F          : show_fat32_info()                               ;                 break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+1) * (long) LEN)       ; read_setpage(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-1) * (long) LEN)       ; read_setpage(); break;
@@ -115,30 +118,12 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 }
 
 void DiskExplorer::show_entry_info(void) {
-	entry * entries = (entry*) _device.buffer();
-	int X0 = 36, X = X0, Y = 26;
-	entries[0].print(X      , Y, false, true);
-	entries[1].print(X += 26, Y, false, false);
-	entries[2].print(X += 14, Y, false, false);
-	entries[3].print(X += 14, Y, false, false);
-	entries[4].print(X += 14, Y, false, false);
-	entries[5].print(X += 14, Y, false, false);
-	entries[6].print(X += 14, Y, false, false);
-	entries[7].print(X += 14, Y, false, false);
-	X = X0; Y += 6;
-	entries[8].print(X      , Y, false, true);
-	entries[9].print(X += 26, Y, false, false);
-	entries[10].print(X += 14, Y, false, false);
-	entries[11].print(X += 14, Y, false, false);
-	entries[12].print(X += 14, Y, false, false);
-	entries[13].print(X += 14, Y, false, false);
-	entries[14].print(X += 14, Y, false, false);
-	entries[15].print(X += 14, Y, false, false);
+	entry::print(_device.buffer(), _extended_entry_info);
 }
+
 
 void DiskExplorer::show_fat32_info(void) {
 	printf("\033[0J");
-	printf("\n");
 	_sector0.print();
 	printf("\n");
 	printf("Cluster size   : %lu\n", cluster_size());

@@ -136,6 +136,7 @@ KeyCode TermUI::handle_esc(void) {
 	wprintf(L" )\033[0K\n");
 	return TERMUI_KEY_UNDEFINED;
 }
+
 KeyCode TermUI::handle_input(void) {
 	_input_string[_input_nreads] = 0;
 	
@@ -163,6 +164,8 @@ KeyCode TermUI::handle_input(void) {
 	case L' ': return TERMUI_KEY_SPACE;
 	case L'd':
 	case L'D': return TERMUI_KEY_D;
+	case L'e':
+	case L'E': return TERMUI_KEY_E;
 	case L'f':
 	case L'F': return TERMUI_KEY_F;
 	case L'q':

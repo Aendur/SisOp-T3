@@ -34,7 +34,10 @@ public:
 	unsigned short DIR_FstClusLO;
 	unsigned long  DIR_FileSize;
 
-	void print(int x, int y, bool extended, bool labels) const;
+	static void print(void * addr, bool extended);
+
+private:
+	void print(bool extended) const;
 };
 
 #endif

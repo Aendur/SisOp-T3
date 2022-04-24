@@ -18,6 +18,7 @@ private:
 	Device _device;
 	Page _page;
 	long _adv_N = 1;
+	bool _extended_entry_info = false;
 
 	fat32 _sector0;
 
