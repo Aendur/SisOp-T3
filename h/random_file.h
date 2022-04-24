@@ -3,10 +3,12 @@
 
 #include <string>
 
-#define RF_HEAD_SIZE 224
-#define RF_TAIL_SIZE 32
-#define RF_LINE_SIZE 32
-#define RF_FILD_SIZE 25
+static const int RF_LABL_SIZE = 5;
+static const int RF_FILD_SIZE = 33;
+static const int RF_LINE_SIZE = RF_LABL_SIZE + RF_FILD_SIZE + 2;
+static const int RF_HEAD_SIZE = RF_LINE_SIZE * 7;
+static const int RF_TAIL_SIZE = RF_LINE_SIZE;
+static const int RF_MINF_SIZE = (RF_HEAD_SIZE + RF_TAIL_SIZE + RF_LINE_SIZE);
 
 #pragma warning(disable:4820)
 class RandomFile {
@@ -17,6 +19,7 @@ private:
 	char * body = nullptr;
 	char   head[RF_HEAD_SIZE + 1];
 	char   tail[RF_TAIL_SIZE + 1];
+	long   id;
 
 	void init_head(void);
 	void init_body(void);

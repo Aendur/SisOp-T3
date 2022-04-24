@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <fstream>
+#include <stdexcept>
 
 using std::string;
 using std::vector;
@@ -18,25 +19,30 @@ using std::vector;
 	"Body: %*zu\n"    \
 	"Tail: %*d\n"     \
 	"Time: %*s\n"     \
-	"------------ START ------------\n"
+	"---------------- START ----------------\n"
 
 #define tail_template \
-	"------------- END -------------\n"
+	"----------------- END -----------------\n"
 
 #define LOG_FILE stderr
 
 RandomFile::RandomFile(const char * name, size_t size) : file_size(size) {
 	if (strlen(name) > RF_FILD_SIZE) {
-		throw std::runtime_error("file_name too long");
+		throw std::runtime_error("file_name must be at most " + std::to_string(RF_FILD_SIZE) + " characters");
 	}
 	snprintf(this->file_name,  RF_FILD_SIZE + 1, "%s", name);
 
-	if (this->file_size < RF_HEAD_SIZE + RF_TAIL_SIZE) {
-		throw std::runtime_error("file_size must be greater than " + std::to_string(RF_HEAD_SIZE + RF_TAIL_SIZE));
+	if (this->file_size < RF_MINF_SIZE) {
+		throw std::runtime_error("file_size must be at least " + std::to_string(RF_MINF_SIZE) +" bytes");
 	}
 	
 	this->body_size = this->file_size - RF_HEAD_SIZE - RF_TAIL_SIZE;
 	this->body = new char[body_size + 1];
+	int r1 = rand();
+	int r2 = rand() << 8;
+	int r3 = rand() << 16;
+	int r4 = rand() << 24;
+	this->id = r1 ^ r2 ^ r3 ^ r4;
 	this->init_head();
 	this->init_body();
 	this->init_tail();
@@ -70,23 +76,26 @@ void RandomFile::init_head(void) {
 	//delete[] time_buffer;
 }
 #define HYAKU_SIZE 100
-#define IROHA_SIZE 500
-#define hyakusen \
-	"%-9llu ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:----\n"
-#define iroha \
-	"                                ※・・・・・【　　　いろ は　　】・・・・・※\n" \
-	"                                ※・・【　いろはにほへと ちりぬるを　】・・※\n" \
-	"                                ※・・【　わかよたれそつ 　ねならむ　】・・※\n" \
-	"                                ※・・【　うゐのおくやま けふこえて　】・・※\n" \
-	"                                ※・・【　あさきゆめみし ゑひもせす　】・・※\n"
-#define torinaku \
-	"                                ※・・・・・【　　　とり なく　】・・・・・※\n" \
-	"                                ※・・【　とりなくこゑす ゆめさませ　】・・※\n" \
-	"                                ※・・【　みよあけわたる ひんかしを　】・・※\n" \
-	"                                ※・・【　そらいろはえて おきつへに　】・・※\n" \
-	"                                ※・・【　ほふねむれゐぬ もやのうち　】・・※\n"
+#define IROHA_SIZE 600
+#define HYAKUSEN \
+	   "%-9llu ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:----\n"
+#define IROHA \
+	"IROHA   1 ----:---- ----:---- --: ・※・・・・　【　いろ は　】　・・・※・ :-- ----:---- ----:----\n" \
+	"IROHA   2 ----:---- ----:---- --: ※・【　いろはにほへと ちりぬるを　】・※ :-- ----:---- ----:----\n" \
+	"IROHA   3 ----:---- ----:---- --: ※・【　わかよたれそつ 　ねならむ　】・※ :-- ----:---- ----:----\n" \
+	"IROHA   4 ----:---- ----:---- --: ※・【　うゐのおくやま けふこえて　】・※ :-- ----:---- ----:----\n" \
+	"IROHA   5 ----:---- ----:---- --: ※・【　あさきゆめみし ゑひもせす　】・※ :-- ----:---- ----:----\n"
+
+#define TORIN \
+	"TORINAKU1 ----:---- ----:---- --: ・※・・・・　【　とり なく　】　・・※・ :-- ----:---- ----:----\n" \
+	"TORINAKU2 ----:---- ----:---- --: ※・【　とりなくこゑす ゆめさませ　】・※ :-- ----:---- ----:----\n" \
+	"TORINAKU3 ----:---- ----:---- --: ※・【　みよあけわたる ひんかしを　】・※ :-- ----:---- ----:----\n" \
+	"TORINAKU4 ----:---- ----:---- --: ※・【　そらいろはえて おきつへに　】・※ :-- ----:---- ----:----\n" \
+	"TORINAKU5 ----:---- ----:---- --: ※・【　ほふねむれゐぬ もやのうち　】・※ :-- ----:---- ----:----\n"
 
 void RandomFile::init_body(void) {
+	static char id_buffer[16];
+	
 	if (this->body_size == 0) {
 		this->body[0] = 0;
 		return;
@@ -99,16 +108,21 @@ void RandomFile::init_body(void) {
 	char * end = this->body + this->body_size;
 	while (pos < end) {
 		unsigned long long off = (unsigned long long) (RF_HEAD_SIZE + 1) + (unsigned long long) (pos - this->body);
-		snprintf(pos, (size_t) (end - pos), hyakusen, off);
+		snprintf(pos, (size_t) (end - pos), HYAKUSEN, off);
 		pos += HYAKU_SIZE;
 	}
 
+	snprintf(id_buffer, 16, "%08xh", id);
+	memcpy(this->body + 20, id_buffer, 9);
+
 	long long offset;
-	if (5*IROHA_SIZE <= this->body_size) {
+	if (4*IROHA_SIZE <= this->body_size) {
 		offset = (long long) (this->body_size - IROHA_SIZE) / 2;
 		offset -= offset % HYAKU_SIZE;
-		if (rand() % 2 == 0) memcpy(this->body + offset, iroha, IROHA_SIZE);
-		else                 memcpy(this->body + offset, torinaku, IROHA_SIZE);
+		if (id % 2 == 0) memcpy(this->body + offset, IROHA, IROHA_SIZE);
+		else             memcpy(this->body + offset, TORIN, IROHA_SIZE);
+		
+		
 	}
 
 	this->body[this->body_size - 1] = '\n';
@@ -120,7 +134,7 @@ void RandomFile::init_tail(void) {
 }
 
 void RandomFile::write(void) const {
-	std::ofstream stream(this->file_name);
+	std::ofstream stream(this->file_name, std::ios_base::binary);
 	if (stream.good()) {
 		stream << this->head;
 		stream << this->body;
@@ -141,19 +155,71 @@ void RandomFile::write(void) const {
 #include <cstdlib>
 #include <ctime>
 
+int get_len(int x) {
+	int len = 1;
+	while (x > 9) {
+		x /= 10;
+		++len;
+	}
+	return len;
+}
+
+char * find_dot(char * str) {
+	printf("search dot @ %p\n", str);
+	++str;
+	while(*str != '\0') {
+		if (*str == '.') {
+			printf("found dot @ %p\n", str);
+			return str;
+		}
+		++str;
+	}
+	return NULL;
+}
+
+const char * get_filename(char * name, int current, int N) {
+	if (N == 1) return name;
+	if (strlen(name) < 2) return name;
+	
+	static const int BUFSIZE = 64;
+	static char file_name_buffer[BUFSIZE];
+	static char * ext = find_dot(name);
+	if (ext != NULL) {
+		*ext = 0;
+		int L = get_len(N);
+		snprintf(file_name_buffer, BUFSIZE, "%s%0*d.%s", name, L, current + 1, ext + 1);
+		return file_name_buffer;
+	} else {
+		int L = get_len(N);
+		snprintf(file_name_buffer, BUFSIZE, "%s%0*d", name, L, current + 1);
+		return file_name_buffer;
+	}
+
+}
+
 int main (int argc, char ** argv) {
 	srand((unsigned int) time(NULL));
-	if (argc < 3) {
-		std::cout << "a.out file_name file_size\n\n";
+	if (argc < 4) {
+		std::cout << "a.out file_name file_size num_files [dry_run]\n\n";
 		std::cout << "      file_name max 25 characters\n";
 		std::cout << "      file_size in bytes\n";
 		return 0;
 	}
+	bool dry_run = argc == 5;
 	try {
 		size_t fsize = std::stoull(argv[2]);
-		std::cout << "Creating file: " << argv[1] << " - " << size_to_string(fsize, true) << "\n";
-		RandomFile rf(argv[1], fsize);
-		rf.write();
+		int max_files = std::stoi(argv[3]);
+		for (int i = 0; i < 100; ++i) {
+			printf("%d\n", rand());
+		}
+		for (int i = 0; i < max_files; ++i) {
+			const char * fname = get_filename(argv[1], i, max_files);
+			std::cout << "Creating file: " << fname << " - " << size_to_string(fsize, true) << "\n";
+			if (!dry_run) {
+				RandomFile rf(fname, fsize);
+				rf.write();
+			}
+		}
 	} catch (std::exception & e) {
 		std::cout << "Error: " << e.what() << std::endl;
 	}
