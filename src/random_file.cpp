@@ -70,15 +70,17 @@ void RandomFile::init_head(void) {
 	//delete[] time_buffer;
 }
 #define HYAKU_SIZE 100
-#define IROHA_SIZE 400
+#define IROHA_SIZE 500
 #define hyakusen \
 	"%-9llu ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:---- ----:----\n"
 #define iroha \
+	"                                ※・・・・・【　　　いろ は　　】・・・・・※\n" \
 	"                                ※・・【　いろはにほへと ちりぬるを　】・・※\n" \
 	"                                ※・・【　わかよたれそつ 　ねならむ　】・・※\n" \
 	"                                ※・・【　うゐのおくやま けふこえて　】・・※\n" \
 	"                                ※・・【　あさきゆめみし ゑひもせす　】・・※\n"
 #define torinaku \
+	"                                ※・・・・・【　　　とり なく　】・・・・・※\n" \
 	"                                ※・・【　とりなくこゑす ゆめさませ　】・・※\n" \
 	"                                ※・・【　みよあけわたる ひんかしを　】・・※\n" \
 	"                                ※・・【　そらいろはえて おきつへに　】・・※\n" \
@@ -102,28 +104,12 @@ void RandomFile::init_body(void) {
 	}
 
 	long long offset;
-	if (2*IROHA_SIZE <= this->body_size && this->body_size < 3*IROHA_SIZE) {
+	if (5*IROHA_SIZE <= this->body_size) {
 		offset = (long long) (this->body_size - IROHA_SIZE) / 2;
 		offset -= offset % HYAKU_SIZE;
-		memcpy(this->body + offset, iroha, IROHA_SIZE);
-	} else if (this->body_size >= 3*IROHA_SIZE) {
-		offset = (long long) (this->body_size - IROHA_SIZE * 2) / 3;
-		offset -= offset % HYAKU_SIZE;
-		memcpy(this->body + offset, iroha, IROHA_SIZE);
-		offset += offset + IROHA_SIZE + HYAKU_SIZE;
-		memcpy(this->body + offset, torinaku, IROHA_SIZE);
+		if (rand() % 2 == 0) memcpy(this->body + offset, iroha, IROHA_SIZE);
+		else                 memcpy(this->body + offset, torinaku, IROHA_SIZE);
 	}
-
-	/*if (POEM_SIZE + 2*GOJU_SIZE <= this->body_size && this->body_size < 2*POEM_SIZE + 3*GOJU_SIZE) {
-		int offset = (this->body_size - POEM_SIZE) / 2;
-		offset -= offset % GOJU_SIZE;
-		memcpy(this->body + offset, iroha, POEM_SIZE);
-	} else if (this->body_size >= 2*POEM_SIZE + 3*GOJU_SIZE) {
-		int offset = (this->body_size - POEM_SIZE * 2) / 3;
-		offset -= offset % GOJU_SIZE;
-		memcpy(this->body + offset, iroha, POEM_SIZE);
-		memcpy(this->body + offset*2 + POEM_SIZE, torinaku, POEM_SIZE);
-	}*/
 
 	this->body[this->body_size - 1] = '\n';
 	this->body[this->body_size] = 0;
@@ -144,3 +130,34 @@ void RandomFile::write(void) const {
 	}
 	stream.close();
 }
+
+
+#include "random_file.h"
+#include "utility.h"
+
+#include <stdexcept>
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <ctime>
+
+int main (int argc, char ** argv) {
+	srand((unsigned int) time(NULL));
+	if (argc < 3) {
+		std::cout << "a.out file_name file_size\n\n";
+		std::cout << "      file_name max 25 characters\n";
+		std::cout << "      file_size in bytes\n";
+		return 0;
+	}
+	try {
+		size_t fsize = std::stoull(argv[2]);
+		std::cout << "Creating file: " << argv[1] << " - " << size_to_string(fsize, true) << "\n";
+		RandomFile rf(argv[1], fsize);
+		rf.write();
+	} catch (std::exception & e) {
+		std::cout << "Error: " << e.what() << std::endl;
+	}
+
+	return 0;
+}
+

@@ -1,24 +1,19 @@
 #CFLAGS=/Wall /W4 /EHsc /std:c++17 /Ih /utf-8 /wd5045 /nologo
 CFLAGS=/W4 /EHsc /std:c++17 /Ih /utf-8 /nologo
 
-FGLIBN=random_file utility
-DXLIBN=disk_explorer term_ui device utility page input_field fat32 entry
-TMLIBN=term_ui
+FGLIBN=utility
+DXLIBN=term_ui device utility page input_field fat32 entry
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
-TMLIBS=$(patsubst %,obj\\%.obj,$(TMLIBN))
 
-all: dirs diskexp
+all: dirs filegen diskexp
 
-filegen: src\main.cpp $(FGLIBS)
+filegen: src\random_file.cpp $(FGLIBS)
 	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:bin\filegen.exe $?
 
-diskexp: src\main.cpp $(DXLIBS)
+diskexp: src\disk_explorer.cpp $(DXLIBS)
 	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:bin\diskexp.exe $?
-
-termui: src\main.cpp $(TMLIBS)
-	cl $(CFLAGS) /DTERMUI_TEST /Fo:obj\ /Fe:bin\termui.exe $?
 
 {src\}.cpp{obj\}.obj::
 	cl $(CFLAGS) /c /Fo:obj\ $<
