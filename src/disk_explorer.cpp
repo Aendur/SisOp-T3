@@ -160,15 +160,3 @@ LONG DiskExplorer::first_data_sector(void) const {
 LONGLONG DiskExplorer::fds_offset(void) const {
 	return first_data_sector() * _sector0.BPB_BytsPerSec();
 }
-
-
-
-
-#include "disk_explorer.h"
-
-int main(int, char **) {
-	DiskExplorer de;
-	de.run();
-	return 0;
-}
-
