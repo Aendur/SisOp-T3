@@ -1,4 +1,5 @@
 #include "disk_explorer.h"
+#include "entry.h"
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -66,6 +67,7 @@ void DiskExplorer::run(void) {
 		}
 		print_commands();
 		_page.print();
+		show_entry_info();
 	}
 }
 
@@ -112,20 +114,36 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 	_device.seek(offset, false);
 }
 
+void DiskExplorer::show_entry_info(void) {
+	entry * entries = (entry*) _device.buffer();
+	int X0 = 36, X = X0, Y = 26;
+	entries[0].print(X      , Y, false, true);
+	entries[1].print(X += 26, Y, false, false);
+	entries[2].print(X += 14, Y, false, false);
+	entries[3].print(X += 14, Y, false, false);
+	entries[4].print(X += 14, Y, false, false);
+	entries[5].print(X += 14, Y, false, false);
+	entries[6].print(X += 14, Y, false, false);
+	entries[7].print(X += 14, Y, false, false);
+	X = X0; Y += 6;
+	entries[8].print(X      , Y, false, true);
+	entries[9].print(X += 26, Y, false, false);
+	entries[10].print(X += 14, Y, false, false);
+	entries[11].print(X += 14, Y, false, false);
+	entries[12].print(X += 14, Y, false, false);
+	entries[13].print(X += 14, Y, false, false);
+	entries[14].print(X += 14, Y, false, false);
+	entries[15].print(X += 14, Y, false, false);
+}
+
 void DiskExplorer::show_fat32_info(void) {
 	printf("\033[0J");
-	printf("BPB_FATSz16:     %u\n", _sector0.BPB_FATSz16());
-	printf("BPB_FATSz32:     %u\n", _sector0.BPB_FATSz32());
-	printf("BPB_NumFATs:     %u\n", _sector0.BPB_NumFATs());
-	printf("BPB_RsvdSecCnt:  %u\n", _sector0.BPB_RsvdSecCnt());
-	printf("Bytes/sector:    %u\n", _sector0.BPB_BytsPerSec());
-	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
-	printf("Cluster size   : %lu\n", cluster_size());
 	printf("\n");
+	_sector0.print();
+	printf("\n");
+	printf("Cluster size   : %lu\n", cluster_size());
 	printf("FirstDataSector: %lu\n" , first_data_sector());
 	printf("FDS offset     : %llu\n", fds_offset());
-	printf("BPB_RootClus   : %d\n"  , _sector0.BPB_RootClus());
-
 	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
 	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
 	// SEEK

@@ -1,20 +1,26 @@
 #ifndef ENTRY_SPEC_H
 #define ENTRY_SPEC_H
 
-#define ENTRY_ATTR_READ_ONLY 0x01
-#define ENTRY_ATTR_HIDDEN    0x02
-#define ENTRY_ATTR_SYSTEM    0x04
-#define ENTRY_ATTR_VOLUME_ID 0x08
-#define ENTRY_ATTR_DIRECTORY 0x10
-#define ENTRY_ATTR_ARCHIVE   0x20
-#define ENTRY_ATTR_LONG_NAME ENTRY_ATTR_READ_ONLY | ENTRY_ATTR_HIDDEN | ENTRY_ATTR_SYSTEM | ENTRY_ATTR_VOLUME_ID
+// #define ENTRY_ATTR_READ_ONLY 0x01
+// #define ENTRY_ATTR_HIDDEN    0x02
+// #define ENTRY_ATTR_SYSTEM    0x04
+// #define ENTRY_ATTR_VOLUME_ID 0x08
+// #define ENTRY_ATTR_DIRECTORY 0x10
+// #define ENTRY_ATTR_ARCHIVE   0x20
+// #define ENTRY_ATTR_LONG_NAME ENTRY_ATTR_READ_ONLY | ENTRY_ATTR_HIDDEN | ENTRY_ATTR_SYSTEM | ENTRY_ATTR_VOLUME_ID
 
 class entry {
-private:
-	// buffer
-	//unsigned char sector[512];
-
 public:
+	enum attr {
+		ATTR_READ_ONLY  = 0x01,
+		ATTR_HIDDEN     = 0x02,
+		ATTR_SYSTEM     = 0x04,
+		ATTR_VOLUME_ID  = 0x08,
+		ATTR_DIRECTORY  = 0x10,
+		ATTR_ARCHIVE    = 0x20,
+		ATTR_LONG_NAME  = ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID,
+	};
+
 	unsigned char  DIR_Name[11];
 	unsigned char  DIR_Attr;
 	unsigned char  DIR_NTRes;
@@ -26,9 +32,9 @@ public:
 	unsigned short DIR_WrtTime;
 	unsigned short DIR_WrtDate;
 	unsigned short DIR_FstClusLO;
-	unsigned int   DIR_FileSize;
-};
+	unsigned long  DIR_FileSize;
 
-//char .* Size=(([2-9])|(1[1-9]+))
+	void print(int x, int y, bool extended, bool labels) const;
+};
 
 #endif

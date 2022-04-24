@@ -14,7 +14,7 @@ private:
 	unsigned long long _offset_start = 0;
 	unsigned long long _offset_current = 0;
 	unsigned long long _buffer_length = 0;
-	BYTE * _buffer = nullptr;
+
 	Device _device;
 	Page _page;
 	long _adv_N = 1;
@@ -26,6 +26,7 @@ private:
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
 	void show_fat32_info(void);
+	void show_entry_info(void);
 	void print_commands(void);
 	
 	ULONG cluster_size(void) const;
