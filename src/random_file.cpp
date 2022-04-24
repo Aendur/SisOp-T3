@@ -209,9 +209,6 @@ int main (int argc, char ** argv) {
 	try {
 		size_t fsize = std::stoull(argv[2]);
 		int max_files = std::stoi(argv[3]);
-		for (int i = 0; i < 100; ++i) {
-			printf("%d\n", rand());
-		}
 		for (int i = 0; i < max_files; ++i) {
 			const char * fname = get_filename(argv[1], i, max_files);
 			std::cout << "Creating file: " << fname << " - " << size_to_string(fsize, true) << "\n";
