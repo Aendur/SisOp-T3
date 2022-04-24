@@ -1,23 +1,36 @@
 #include "device.h"
 #include <Windows.h>
 
-using std::vector;
+#include <set>
+using std::set;
 
 void print_error(const wchar_t *, DWORD);
 
-vector<wchar_t> Device::get_drives(void) {
+bool Device::check_drive(WCHAR drive) {
 	DWORD drives = GetLogicalDrives();
 	
-	vector<wchar_t> result;
-	wchar_t letter = L'A';
-	for (int i = 0; i < sizeof(DWORD) * 2; ++i) {
-		if (drives & 0x01) { result.push_back(letter); } ++letter;
-		if (drives & 0x02) { result.push_back(letter); } ++letter;
-		if (drives & 0x04) { result.push_back(letter); } ++letter;
-		if (drives & 0x08) { result.push_back(letter); } ++letter;
-		drives >>= 4;
+	set<WCHAR> result;
+	set<WCHAR> RESULT;
+	WCHAR letter = L'A';
+	for (int i = 0; i < sizeof(DWORD) * 8; ++i) {
+		if (drives & 0x01) {
+			WCHAR LETTER = letter + 0x20;
+			result.insert(letter);
+			RESULT.insert(letter);
+			RESULT.insert(LETTER);
+		}
+		++letter;
+		drives >>= 1;
 	}
-	return result;
+	
+	if (RESULT.find(drive) == RESULT.end()) {
+		printf("Available drives: ");
+		for (WCHAR dri : result) { wprintf(L"%c: ", dri); }
+		printf("\n");
+		return false;
+	} else {
+		return true;
+	}
 }
 
 Device::~Device(void) {

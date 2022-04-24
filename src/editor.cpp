@@ -7,8 +7,15 @@
 
 #define ERASE_SEQ "\033[1K"
 
+void Editor::init(TermUI * t, Page * p) {
+	_term = t;
+	_page = p;
+	_input.init(t);
+	_initialized = true;
+}
+
 bool Editor::edit(void) {
-	if (_term == nullptr) {
+	if (!_initialized) {
 		printf(LAYOUT_FREE "input field not initialized");
 		return false;
 	}

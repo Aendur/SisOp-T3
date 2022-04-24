@@ -6,6 +6,7 @@
 #include "page.h"
 #include "fat32.h"
 #include "input_field.h"
+#include "editor.h"
 #include <Windows.h>
 
 class DiskExplorer {
@@ -19,6 +20,7 @@ private:
 	Device _device;
 	Page _page;
 	InputField _input;
+	Editor _editor;
 
 	long _adv_N = 1;
 	LONGLONG _sector_bookmark = 0;
@@ -41,7 +43,7 @@ private:
 	LONGLONG fds_offset(void) const;
 
 public:
-	DiskExplorer(void);
+	DiskExplorer(WCHAR drive);
 	//~DiskExplorer(void);
 
 	void run(void);

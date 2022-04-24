@@ -5,14 +5,20 @@
 #include <vector>
 #include <string>
 
-DiskExplorer::DiskExplorer(void) {
+DiskExplorer::DiskExplorer(WCHAR drive) {
 	_ui.init();
-	_device.open_drive('G');
+	_device.open_drive(drive);
 	_input.init(&_ui);
 	
 	if (_device.geometry().BytesPerSector != 512) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
 	}
+
+	// save fat32 _sector0 data
+	read_setpage();
+	memcpy(&_sector0, _device.buffer(), _device.geometry().BytesPerSector);
+	_page.init(_device.geometry().BytesPerSector, cluster_size());
+	_editor.init(&_ui, &_page);
 }
 
 void DiskExplorer::print_commands(void) const {
@@ -40,11 +46,6 @@ void DiskExplorer::print_commands(void) const {
 
 void DiskExplorer::run(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
-
-	// save fat32 _sector0 data
-	read_setpage();
-	memcpy(&_sector0, _device.buffer(), _device.geometry().BytesPerSector);
-	_page.init(_device.geometry().BytesPerSector, cluster_size());
 
 	_ui.clear_screen();
 	print_commands();

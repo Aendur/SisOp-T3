@@ -3,7 +3,7 @@
 
 
 #include <Windows.h>
-#include <vector>
+#include <cstdio>
 
 class Device {
 private:
@@ -23,7 +23,7 @@ private:
 public:
 	~Device(void);
 
-	static std::vector<wchar_t> get_drives(void);
+	static bool check_drive(WCHAR drive);
 	void open_drive(WCHAR drive);
 	void close_drive(void);
 	
