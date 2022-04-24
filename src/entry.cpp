@@ -15,28 +15,39 @@
 //	unsigned short DIR_FstClusLO;
 //	unsigned long  DIR_FileSize;
 
-//#define ASH_VBAR "\033[2m|\033[0m"
+// unsigned char  LDIR_Ord;
+// unsigned char  LDIR_Name1[10];
+// unsigned char  LDIR_Attr;
+// unsigned char  LDIR_Type;
+// unsigned char  LDIR_Chksum;
+// unsigned char  LDIR_Name2[12];
+// unsigned short LDIR_FstClusLO;
+// unsigned char  LDIR_Name3[4];
+
 #define ASH_VBAR "\033[2m|\033[0m"
 
 #define ASH_ELEA "\033[%d;53H\033[2m| %X \033[0m"
-#define ASH_EBAR "\033[%d;53H\033[2m+---+-------------+------+------+-----+-------+-------+-------+-------+-------+-------+-------+------------+\033[0m\033[0K\033[25;1H"
-#define ASH_ELAB "\033[%d;53H\033[2m|   |    NAME     | ATTR | NTR  | Cms | CTime | CDate | ADate | ClusH | WTime | WDate | ClusL | Size       |\033[0m\033[0K"
-#define ASH_ELIN "\033[%d;53H\033[2m| 0 | .X.MSDOS5.0 | 0x00 | 0x02 | 16  | 6280  | 2     | 0     | 63488 | 0     | 63    | 255   | 128        |\033[0m\033[0K"
+#define ASH_EBAR "\033[%d;53H\033[2m+---+-------------+-----+-----+-----+-------+-------+-------+-------+-------+-------+-------+------------+\033[0m\033[0K\033[25;1H"
+#define ASH_ELAB "\033[%d;53H\033[2m|   |    Name     | ATT | NTR | Cms | CTime | CDate | ADate | ClusH | WTime | WDate | ClusL | Size       |\033[0m\033[0K"
+#define ASH_ELIN "\033[%d;53H\033[2m| 0 | .X.MSDOS5.0 |  00 |  02 | 16  | 6280  | 2     | 0     | 63488 | 0     | 63    | 255   | 128        |\033[0m\033[0K"
+
+
+#define ASH_LLEA "\033[%d;53H\033[2m| %X \033[0m"
+#define ASH_LBAR "\033[%d;53H\033[2m+---+-----+------------+-----+-----+-----+-------------+-------+------+\033[0m\033[0K\033[25;1H"
+#define ASH_LLAB "\033[%d;53H\033[2m|   | Ord |   Name1    | ATT | Typ | CKS | Name2       | ClusL | Nam3 |\033[0m\033[0K"
+#define ASH_LLIN "\033[%d;53H\033[2m| 1 | E5  |  .I.n.f.o. | 0F  | 00  | 72  | r.m.a.t.i.o.| 0     | n... |\033[0m\033[0K"
 
 #define ASH_SLEA "\033[%d;53H\033[2m| %X \033[0m"
-#define ASH_SBAR "\033[%d;53H\033[2m+---+-------------+------+-------+-------+------------+\033[0m\033[0K\033[25;1H"
-#define ASH_SLAB "\033[%d;53H\033[2m|   |    NAME     | ATTR | ClusH | ClusL | Size       |\033[0m\033[0K"
-#define ASH_SLIN "\033[%d;53H\033[2m| 0 | RRaA....... | 0x00 | 0     | 0     | 0          |\033[0m\033[0K"
+#define ASH_SBAR "\033[%d;53H\033[2m+---+-------------+-----+-------+-------+------------+\033[0m\033[0K\033[25;1H"
+#define ASH_SLAB "\033[%d;53H\033[2m|   |    NAME     | ATT | ClusH | ClusL | Size       |\033[0m\033[0K"
+#define ASH_SLIN "\033[%d;53H\033[2m| 0 | RRaA....... |  00 | 0     | 0     | 0          |\033[0m\033[0K"
 
 void print_str(const unsigned char * str, int len) {
 	for (int i = 0; i < len; ++i) {
 		char c = str[i];
 		printf("%s", colorize_char(c, '.'));
 	}
-	//printf(" " ASH_VBAR " ");
 }
-
-
 
 void entry::print(void*addr, bool extended) {
 	entry * entries = (entry*) addr;
@@ -48,7 +59,8 @@ void entry::print(void*addr, bool extended) {
 		printf(ASH_EBAR, Y0-1);
 		for (i = 0; i < 16; ++i) {
 			printf(ASH_ELEA, i + Y0, i);
-			entries[i].print(extended);
+			if (entries[i].is_long()) entries[i].print_long(extended);
+			else                      entries[i].print_short(extended);
 		}
 		printf(ASH_EBAR, i+Y0);
 	} else {
@@ -57,19 +69,20 @@ void entry::print(void*addr, bool extended) {
 		printf(ASH_SBAR, Y0-1);
 		for (i = 0; i < 16; ++i) {
 			printf(ASH_SLEA, i + Y0, i);
-			entries[i].print(extended);
+			if (entries[i].is_long()) entries[i].print_long(extended);
+			else                      entries[i].print_short(extended);
 		}
 		printf(ASH_SBAR, i+Y0);
 	}
 }
 
-void entry::print(bool extended) const {
+void entry::print_short(bool extended) const {
 	printf(ASH_VBAR " ");
-	print_str(DIR_Name, 11);
+	print_str(dir.ds.DIR_Name, 11);
 	if (extended) {
 		printf(" "     ASH_VBAR
-			" 0x%02X " ASH_VBAR // DIR_Attr
-			" 0x%02X " ASH_VBAR // DIR_NTRes
+			" %02X  "  ASH_VBAR // DIR_Attr
+			" %02X  "  ASH_VBAR // DIR_NTRes
 			" %-3u "   ASH_VBAR // DIR_CrtTimeTenth
 			" %-5u "   ASH_VBAR // DIR_CrtTime
 			" %-5u "   ASH_VBAR // DIR_CrtDate
@@ -79,66 +92,37 @@ void entry::print(bool extended) const {
 			" %-5u "   ASH_VBAR // DIR_WrtDate
 			" %-5u "   ASH_VBAR // DIR_FstClusLO
 			" %-10lu " ASH_VBAR // DIR_FileSize
-			, DIR_Attr, DIR_NTRes, DIR_CrtTimeTenth, DIR_CrtTime, DIR_CrtDate, DIR_LstAccDate, DIR_FstClusHI, DIR_WrtTime, DIR_WrtDate, DIR_FstClusLO, DIR_FileSize
+			, dir.ds.DIR_Attr, dir.ds.DIR_NTRes, dir.ds.DIR_CrtTimeTenth, dir.ds.DIR_CrtTime
+			, dir.ds.DIR_CrtDate, dir.ds.DIR_LstAccDate, dir.ds.DIR_FstClusHI, dir.ds.DIR_WrtTime
+			, dir.ds.DIR_WrtDate, dir.ds.DIR_FstClusLO, dir.ds.DIR_FileSize
 		);
 	} else {
 		printf(" "     ASH_VBAR
-			" 0x%02X " ASH_VBAR // DIR_Attr
+			" %02X  "  ASH_VBAR // DIR_Attr
 			" %-5u "   ASH_VBAR // DIR_FstClusHI
 			" %-5u "   ASH_VBAR // DIR_FstClusLO
 			" %-10lu " ASH_VBAR // DIR_FileSize
-			, DIR_Attr, DIR_FstClusHI, DIR_FstClusLO, DIR_FileSize
+			, dir.ds.DIR_Attr, dir.ds.DIR_FstClusHI, dir.ds.DIR_FstClusLO, dir.ds.DIR_FileSize
 		);
 	}
 	printf("\033[0K");
 }
 
 
+void entry::print_long(bool extended) const {
+	(void) extended;
+	printf(ASH_VBAR " %02X  " ASH_VBAR " ", dir.dl.LDIR_Ord);
+	print_str(dir.dl.LDIR_Name1, 10);
+	printf(" "     ASH_VBAR
+			" %02X  "  ASH_VBAR     // dir.dl.LDIR_Attr
+			" %02X  "  ASH_VBAR     // dir.dl.LDIR_Type
+			" %02X  "  ASH_VBAR " " // dir.dl.LDIR_Chksum
+			, dir.dl.LDIR_Attr, dir.dl.LDIR_Type, dir.dl.LDIR_Chksum
+	);
 
-// void entry::print(int x, int y, bool extended, bool labels) const {
-// 	if (labels) {
-// 			printf("\033[%d;%dH" ASH_HBAR2                                             , y++, x);
-// 			printf("\033[%d;%dH" ASH_VBAR " Name      " ASH_VBAR " "                   , y++, x); print_str(DIR_Name, 11);
-// 			printf("\033[%d;%dH" ASH_VBAR " Attr      " ASH_VBAR " 0x%02X%8s" ASH_VBAR , y++, x, DIR_Attr, "");
-// 		if (extended) {
-// 			printf("\033[%d;%dH" ASH_VBAR " NTRes     " ASH_VBAR " 0x%02X%8s" ASH_VBAR , y++, x, DIR_NTRes, "");     // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " CrtTimeTen" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_CrtTimeTenth);   // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " CrtTime   " ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_CrtTime);        // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " CrtDate   " ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_CrtDate);        // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " LstAccDate" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_LstAccDate);     // extended
-// 		}   printf("\033[%d;%dH" ASH_VBAR " FstClusHI " ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_FstClusHI);
-// 		if (extended) {
-// 			printf("\033[%d;%dH" ASH_VBAR " WrtTime   " ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_WrtTime);        // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " WrtDate   " ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_WrtDate);        // extended
-// 		}   printf("\033[%d;%dH" ASH_VBAR " FstClusLO " ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_FstClusLO);
-// 			printf("\033[%d;%dH" ASH_VBAR " FileSize  " ASH_VBAR " %-11lu " ASH_VBAR   , y++, x, DIR_FileSize);
-// 			printf("\033[%d;%dH" ASH_HBAR2                                             , y++, x);
-// 	} else {
-// 			printf("\033[%d;%dH" ASH_HBAR1           , y++, x);
-// 			printf("\033[%d;%dH" ASH_VBAR " "                   , y++, x); print_str(DIR_Name, 11);
-// 			printf("\033[%d;%dH" ASH_VBAR " 0x%02X%8s" ASH_VBAR , y++, x, DIR_Attr, "");
-// 		if (extended) {
-// 			printf("\033[%d;%dH" ASH_VBAR " 0x%02X%8s" ASH_VBAR , y++, x, DIR_NTRes, "");     // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_CrtTimeTenth);   // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_CrtTime);        // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_CrtDate);        // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_LstAccDate);     // extended
-// 		}   printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_FstClusHI);
-// 		if (extended) {
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_WrtTime);        // extended
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_WrtDate);        // extended
-// 		}   printf("\033[%d;%dH" ASH_VBAR " %-11u " ASH_VBAR    , y++, x, DIR_FstClusLO);
-// 			printf("\033[%d;%dH" ASH_VBAR " %-11lu " ASH_VBAR   , y++, x, DIR_FileSize);
-// 			printf("\033[%d;%dH" ASH_HBAR1           , y++, x);
-// 	}
-// }
+	print_str(dir.dl.LDIR_Name2, 12);
+	printf(ASH_VBAR " %-5u " ASH_VBAR " ", dir.dl.LDIR_FstClusLO);
+	print_str(dir.dl.LDIR_Name3,  4);
+	printf(" " ASH_VBAR  "\033[0K");
+}
 
-// enum attr {
-// 	ATTR_READ_ONLY  = 0x01,
-// 	ATTR_HIDDEN     = 0x02,
-// 	ATTR_SYSTEM     = 0x04,
-// 	ATTR_VOLUME_ID  = 0x08,
-// 	ATTR_DIRECTORY  = 0x10,
-// 	ATTR_ARCHIVE    = 0x20,
-// 	ATTR_LONG_NAME  = ATTR_READ_ONLY | ATTR_HIDDEN | ATTR_SYSTEM | ATTR_VOLUME_ID,
-// };
