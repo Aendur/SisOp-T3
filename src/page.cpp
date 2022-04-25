@@ -163,16 +163,16 @@ void Page::print_entry(void) const {
 void Page::print_short(const entry& ref, bool extended) const {
 	if (extended) {
 		print_entry_str(ref.dir.ds.DIR_Name, 11, 3, "  ", 0, 1);
-		printf( " %02X "   ENTRY_ASH_VBAR // DIR_Attr
-				" %02X "   ENTRY_ASH_VBAR // DIR_NTRes
-				" %02X "   ENTRY_ASH_VBAR // DIR_CrtTimeTenth
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_CrtTime
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_CrtDate
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_LstAccDate
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_FstClusHI
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_WrtTime
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_WrtDate
-				"  %-5u  "   ENTRY_ASH_VBAR // DIR_FstClusLO
+		printf( " %02X "         ENTRY_ASH_VBAR // DIR_Attr
+				" %02X "         ENTRY_ASH_VBAR // DIR_NTRes
+				" %02X "         ENTRY_ASH_VBAR // DIR_CrtTimeTenth
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_CrtTime
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_CrtDate
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_LstAccDate
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_FstClusHI
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_WrtTime
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_WrtDate
+				"  %-5u  "       ENTRY_ASH_VBAR // DIR_FstClusLO
 				"  %-11lu      " ENTRY_ASH_VBAR // DIR_FileSize
 				, ref.dir.ds.DIR_Attr, ref.dir.ds.DIR_NTRes, ref.dir.ds.DIR_CrtTimeTenth, ref.dir.ds.DIR_CrtTime
 				, ref.dir.ds.DIR_CrtDate, ref.dir.ds.DIR_LstAccDate, ref.dir.ds.DIR_FstClusHI, ref.dir.ds.DIR_WrtTime
