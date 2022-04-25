@@ -18,7 +18,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	read_setpages();
 	memcpy(&_sector0, _device.buffer(0), _device.geometry().BytesPerSector);
 	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), 36, 1);
-	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 25);
+	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 22);
 	_editor.init(&_ui, &_page[0]);
 }
 
@@ -67,8 +67,9 @@ void DiskExplorer::run(void) {
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q) {
 		switch(key) {
-		case TERMUI_KEY_TAB        : _page[0].toggle_mode(); _page[1].toggle_mode();                    break;
-		case TERMUI_KEY_STAB       : _page[0].toggle_extended(); _page[1].toggle_extended();            break;
+		case TERMUI_KEY_TAB        : _page[0].toggle_view() ; _page[1].toggle_view() ;                  break;
+		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
+		case TERMUI_KEY_F2         : _page[1].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_0          : _page[0].set((PBYTE)(&_sector0), 0)             ;                  break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpages(); break;
 		case TERMUI_KEY_d          :
@@ -79,8 +80,8 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
 		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
-		case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-LEN) ; read_setpages(); break;
-		case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-LEN) ; read_setpages(); break;
+		case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
+		case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
 		case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpages(); break;
 		case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpages(); break;
 		case TERMUI_KEY_SPACE      : setpages()                           ;                 break;

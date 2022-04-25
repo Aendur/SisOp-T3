@@ -21,42 +21,24 @@ void Page::init(DWORD sl, DWORD cl, int x, int y) {
 		_clustr_length = cl;
 		_X0 = x;
 		_Y0 = y;
+		_mode[View::SECTOR] = 0;
+		_mode[View::ENTRIES] = 0;
 		_initialized = true;
 	}
 }
 
-void Page::print_hdr(void) const {
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
-	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
-}
-
-void Page::print_ftr(void) const {
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + 16, _X0);
-	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + 16, _X0,
-		_offset,
-		size_to_string(_offset, true),
-		_offset /_clustr_length,
-		_offset /_sector_length
-	);
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + 16, _X0);
-}
 
 //// Data line BEGIN
-void Page::print_adr(int nline, ULONGLONG offset) const {
-	printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset);
-}
-
 void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	for (int i =  i0; i < i1; ++i) {
-		switch(_mode) {
-		case Mode::CHR:
+		switch(_mode.at(_view) % 3) {
+		case 2:
 			printf("%s ", colorize_char(line[i], 2));
 			break;
-		case Mode::CHX:
+		case 1:
 			printf("%s ", colorize_char(line[i], " .", 2));
 			break;
-		case Mode::HEX:
+		case 0:
 		default:
 			printf("%02X ", line[i]);
 			break;
@@ -74,31 +56,46 @@ void Page::print_hex(PBYTE line, int len) const {
 	print_hex_block(line, q3, len); printf(PAGE_SEP2);
 }
 
-void Page::print_str(PBYTE line, int len) const {
+void Page::print_sector_str(PBYTE line, int len) const {
 	for (int i = 0x00; i < len; ++i) {
 		char c = line[i];
 		printf("%s", colorize_char(c, '.'));
 	}
 	printf(PAGE_RMARGIN PAGE_LE);
 }
-//// Data line END
-
 
 #define LINE_WIDTH 0x20
-void Page::print(void) const {
+void Page::print_sector(void) const {
 	PBYTE end = _buffer + _sector_length;
 	PBYTE pos = _buffer;
-
-	print_hdr();
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
+	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
+	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 3, _X0,
+		_offset , size_to_string(_offset, true),
+		_offset / _clustr_length,
+		_offset / _sector_length
+	);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 4, _X0);
+	
 	int nline = 0;
 	while(pos < end) {
-		print_adr(nline++, _offset + pos - _buffer);
+		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 5 + nline, _X0, nline, _offset + pos - _buffer);
 		print_hex(pos, LINE_WIDTH);
-		print_str(pos, LINE_WIDTH);
+		print_sector_str(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;
+		++nline;
 	}
-	print_ftr();
-	//print_entry(_extended_entry_info);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
+}
+//// Data line END
+
+void Page::print(void) const {
+	if (_view == View::SECTOR) {
+		print_sector();
+	} else if (_view == View::ENTRIES) {
+		print_entry();
+	}
 }
 
 
@@ -127,10 +124,10 @@ void print_entry_str(const unsigned char * str, int len, int width, const char *
 	printf("%s%*s" ENTRY_ASH_VBAR, colorize_char(str[i], "~", width), rpad, "");
 }
 
-void Page::print_entry(bool extended) const {
+void Page::print_entry(void) const {
 	entry * entries = (entry*) _buffer;
-	//const int Y0 = 29;
 	int i = 0;
+	bool extended = (_mode.at(_view) % 2) == 0;
 	if (extended) {
 		printf(ENTRY_ASH_EBAR, _Y0 + 0, _X0);
 		printf(ENTRY_ASH_ELAS, _Y0 + 1, _X0);
