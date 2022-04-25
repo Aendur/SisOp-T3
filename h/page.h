@@ -24,6 +24,7 @@ private:
 	int _X0;
 	int _Y0;
 	bool _initialized = false;
+	int _selected = -1;
 
 	std::map<View, BYTE> _mode;
 	View _view = View::SECTOR;
@@ -43,13 +44,8 @@ public:
 	void init(DWORD sl, DWORD cl, int x, int y);
 	inline void set(PBYTE buffer, ULONGLONG offset) { _buffer = buffer; _offset = offset; }
 	inline void toggle_mode(void) { ++_mode[_view]; }
-	inline void toggle_view(void) { _view = _view == View::SECTOR ? View::ENTRIES : View::SECTOR;
-		// printf("\033[48;1H%d\n", _view);
-		// printf("%d\n", _view);
-		// printf("%d\n", _view);
-		// printf("%d\n", _view);
-		// printf("%d\n", _view);
-	 } // = (View) (((int)_view + 1) % (int) View::MAX); }
+	inline void toggle_view(void) { _view = _view == View::SECTOR ? View::ENTRIES : View::SECTOR; }
+	inline void select(int p) { _selected = p; }
 	void print(void) const;
 };
 

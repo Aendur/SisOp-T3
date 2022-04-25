@@ -1,28 +1,55 @@
 #include "editor.h"
 #include "layout.h"
 #include "term_ui.h"
+#include "device.h"
+#include "page.h"
 
 #include <cstdio>
 #include <stdexcept>
 
-#define ERASE_SEQ "\033[1K"
+// #define ERASE_SEQ "\033[1K"
 
-void Editor::init(TermUI * t, Page * p) {
-	_term = t;
-	_page = p;
-	_input.init(t);
-	_initialized = true;
+Editor::~Editor(void) {
+	delete[] _buffer[0];
+	delete[] _buffer[1];
 }
 
-bool Editor::edit(void) {
+void Editor::init(DWORD nbytes, TermUI * t, Page * p1, Page * p2) {
+	if (!_initialized) {
+		_term = t;
+		_page[0] = p1;
+		_page[1] = p2;
+		_input.init(t);
+		_buf_len = nbytes;
+
+		_buffer[0] = new BYTE[_buf_len];
+		_buffer[1] = new BYTE[_buf_len];
+
+		_initialized = true;
+	}
+}
+
+bool Editor::edit(const Device & dev) {
+	memcpy(_buffer[0], dev.buffer(0), _buf_len);
+	memcpy(_buffer[1], dev.buffer(1), _buf_len);
+	_page[0]->set(_buffer[0], dev.offset() - _buf_len - _buf_len);
+	_page[1]->set(_buffer[1], dev.offset() - _buf_len);
+
+	return edit_run();
+}
+
+
+bool Editor::edit_run(void) {
 	if (!_initialized) {
 		printf(LAYOUT_FREE "input field not initialized");
 		return false;
 	}
 	//_position = 0;
-
-	printf(LAYOUT_FREE "INPUT: ");
+	//printf(LAYOUT_FREE "INPUT: ");
 	KeyCode key = TERMUI_KEY_UNDEFINED;
+
+	_page[0]->print();
+	_page[1]->print();
 
 	while (true) {
 		key = _term->read();
@@ -42,14 +69,19 @@ bool Editor::edit(void) {
 			case TERMUI_KEY_ARROW_LEFT:  move_cursor(-1); break;
 			case TERMUI_KEY_ARROW_RIGHT: move_cursor(1); break;
 		}
+
+		_page[0]->print();
+		_page[1]->print();
 	}
 }
 
 
 void Editor::move_cursor(int offset) {
 	int future = _position + offset;
-	if (0 <= future && future < 512) {
+	if (0 <= future && future < 2 * (int) _buf_len) {
 		_position = future;
+		_page[0]->select(_position);
+		_page[1]->select(_position - _buf_len);
 	}
 }
 

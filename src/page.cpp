@@ -31,16 +31,21 @@ void Page::init(DWORD sl, DWORD cl, int x, int y) {
 //// Data line BEGIN
 void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	for (int i =  i0; i < i1; ++i) {
+		bool selected = i == _selected;
 		switch(_mode.at(_view) % 3) {
 		case 2:
-			printf("%s ", colorize_char(line[i], 2));
+			printf("%s ", colorize_char(line[i], 2, selected));
 			break;
 		case 1:
-			printf("%s ", colorize_char(line[i], " .", 2));
+			printf("%s ", colorize_char(line[i], " .", 2, selected));
 			break;
 		case 0:
 		default:
-			printf("%02X ", line[i]);
+			if (selected) {
+				printf("\033[7m%02X\033\0m ", line[i]);
+			} else {
+				printf("%02X ", line[i]);
+			}
 			break;
 		}
 	}
@@ -59,7 +64,7 @@ void Page::print_hex(PBYTE line, int len) const {
 void Page::print_sector_str(PBYTE line, int len) const {
 	for (int i = 0x00; i < len; ++i) {
 		char c = line[i];
-		printf("%s", colorize_char(c, '.'));
+		printf("%s", colorize_char(c, '.', i == _selected));
 	}
 	printf(PAGE_RMARGIN PAGE_LE);
 }
@@ -119,9 +124,9 @@ void print_entry_str(const unsigned char * str, int len, int width, const char *
 	printf(ENTRY_ASH_VBAR "%*s", lpad, "");
 	int i = 0;
 	for (i = 0; i < len-1; ++i) {
-		printf("%s%s", colorize_char(str[i], "~", width), spc);
+		printf("%s%s", colorize_char(str[i], "~", width, false), spc);
 	}
-	printf("%s%*s" ENTRY_ASH_VBAR, colorize_char(str[i], "~", width), rpad, "");
+	printf("%s%*s" ENTRY_ASH_VBAR, colorize_char(str[i], "~", width, false), rpad, "");
 }
 
 void Page::print_entry(void) const {

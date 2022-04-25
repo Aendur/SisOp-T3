@@ -104,36 +104,31 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 }
 
 static char color_char_buffer[FORMAT_SIZE];
-const char * colorize_char(char c, char ctl) {
-	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE, "%c", c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%c\033[0m", ctl); }
-	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%c\033[0m", ctl); }
+const char * colorize_char(char c, char ctl, bool negative) {
+	const char * neg = negative ? "\033[7m" : "";
+	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,           "%s%c\033[0m", neg, c); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%s%c\033[0m", neg, ctl); }
+	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%c\033[0m", neg, ctl); }
 	return color_char_buffer;
 }
-const char * colorize_char(unsigned char c, int width) {
-	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[1m%*c\033[0m"    , width,   c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%0*X\033[0m", width,   c); }
-	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m" , width, "T"); }
-	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m" , width, "N"); }
-	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m" , width, "R"); }
-	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31m%0*X\033[0m"  , width,   c); }
+const char * colorize_char(unsigned char c, int width, bool negative) {
+	const char * neg = negative ? "\033[7m" : "";
+	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,    "\033[1m%s%*c\033[0m" , neg, width,   c); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%s%0*X\033[0m", neg, width,   c); }
+	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m" , neg, width, "T"); }
+	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m" , neg, width, "N"); }
+	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m" , neg, width, "R"); }
+	else                             { snprintf(color_char_buffer, FORMAT_SIZE,   "\033[31m%s%0*X\033[0m", neg, width,   c); }
 	return color_char_buffer;
 }
-const char * colorize_char(char c, const char * ctl, int width) {
-	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE, "%*c", width, c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%*s\033[0m", width, ctl); }
-	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m", width, "T"); }
-	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m", width, "N"); }
-	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m", width, "R"); }
-	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m", width, ctl); }
+const char * colorize_char(char c, const char * ctl, int width, bool negative) {
+	const char * neg = negative ? "\033[7m" : "";
+	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,           "%s%*c\033[0m", neg, width, c); }
+	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%s%*s\033[0m", neg, width, ctl); }
+	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, "T"); }
+	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, "N"); }
+	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, "R"); }
+	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, ctl); }
 	return color_char_buffer;
 }
-// const char * colorize_char(char c, const char * ctl, int width, const char * spacer) {
-// 	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,                  "%*c%s", width,   c, spacer); }
-// 	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%*s\033[0m%s", width, ctl, spacer); }
-// 	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m%s", width, "T", spacer); }
-// 	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m%s", width, "N", spacer); }
-// 	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m%s", width, "R", spacer); }
-// 	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%*s\033[0m%s", width, ctl, spacer); }
-// 	return color_char_buffer;
-// }
+

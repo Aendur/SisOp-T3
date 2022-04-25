@@ -20,7 +20,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	memcpy(&_sector0, _device.buffer(0), _device.geometry().BytesPerSector);
 	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), 36, 1);
 	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 22);
-	_editor.init(&_ui, &_page[0]);
+	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 }
 
 void DiskExplorer::print_commands(void) const {
@@ -86,6 +86,7 @@ void DiskExplorer::run(void) {
 		//case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
 		case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpages(); break;
 		//case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpages(); break;
+		case TERMUI_KEY_INSERT     : _editor.edit(_device)                ;                 break;
 		case TERMUI_KEY_SPACE      : setpages()                           ;                 break;
 		default                    : setpages()                           ;                 break;
 		}

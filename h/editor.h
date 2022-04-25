@@ -6,20 +6,26 @@
 
 class TermUI;
 class Page;
+class Device;
 class Editor {
 private:
-	TermUI * _term = nullptr;
-	Page * _page = nullptr;
-	PBYTE _buffer = nullptr;
-	int _position = 0;
+	TermUI *   _term = nullptr;
+	Page *  _page[2] = { nullptr, nullptr};
+	PBYTE _buffer[2] = { nullptr, nullptr};
+	int    _position = 0;
+	DWORD _buf_len;
 
 	InputField _input;
 	bool _initialized = false;
 
 	void move_cursor(int offset);
-	bool edit(void);
+	void edit_start(void);
+	bool edit_run(void);
 public:
-	void init(TermUI * t, Page * p);
+	~Editor(void);
+	void init(DWORD size, TermUI * t, Page * p1, Page * p2);
+	bool edit(const Device& dev);
+
 
 };
 
