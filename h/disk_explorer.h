@@ -18,7 +18,7 @@ private:
 	unsigned long long _buffer_length = 0;
 
 	Device _device;
-	Page _page;
+	Page _page[2];
 	InputField _input;
 	Editor _editor;
 
@@ -28,8 +28,9 @@ private:
 
 	fat32 _sector0;
 
-	void setpage(void);
-	void read_setpage(void);
+	void setpages(void);
+	void read_setpages(void);
+
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
 	void input_and_go(void);

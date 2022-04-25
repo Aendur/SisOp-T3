@@ -11,7 +11,7 @@ private:
 	FILE * _log = stderr;
 	HANDLE _device = INVALID_HANDLE_VALUE;
 	DISK_GEOMETRY _geometry;
-	PBYTE _buffer;
+	PBYTE _buffer[2];
 	DWORD _geom_nbytes;
 	DWORD _read_nbytes;
 
@@ -27,13 +27,13 @@ public:
 	void open_drive(WCHAR drive);
 	void close_drive(void);
 	
-	const PBYTE read(void);
+	void read(void);
 	void seek(LONGLONG offset, bool relative);
 
 	inline const DISK_GEOMETRY & geometry(void) const { return _geometry; }
 	inline LONGLONG offset(void) const { return _offset; }
 	inline LONGLONG capacity(void) const { return _capacity; }
-	const PBYTE buffer(void) const { return _buffer; }
+	const PBYTE buffer(int i) const { return i <= 0 ? _buffer[0] : _buffer[1]; }
 };
 
 #endif

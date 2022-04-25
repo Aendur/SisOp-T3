@@ -68,7 +68,8 @@ void Device::close_drive(void) {
 	if (this->_device == INVALID_HANDLE_VALUE) {
 		fprintf(_log, "device not open\n");
 	} else {
-		delete[] _buffer;
+		delete[] _buffer[0];
+		delete[] _buffer[1];
 		CloseHandle(this->_device);
 		this->_device = INVALID_HANDLE_VALUE;
 	}
@@ -87,7 +88,8 @@ void Device::get_geometry(void) {
 			fprintf(_log, "device io ctl geometry error\n");
 			close_drive();
 		} else {
-			_buffer = new BYTE[_geometry.BytesPerSector];
+			_buffer[0] = new BYTE[_geometry.BytesPerSector];
+			_buffer[1] = new BYTE[_geometry.BytesPerSector];
 			_offset = 0;
 			_capacity = (LONGLONG) (
 				_geometry.Cylinders.LowPart *
@@ -99,32 +101,30 @@ void Device::get_geometry(void) {
 	}
 }
 
-const PBYTE Device::read(void) {
-	BOOL status = ReadFile(_device, _buffer, _geometry.BytesPerSector, &_read_nbytes, NULL);
-	if (!status) {
+void Device::read(void) {
+	BOOL status0 = ReadFile(_device, _buffer[0], _geometry.BytesPerSector, &_read_nbytes, NULL);
+	BOOL status1 = ReadFile(_device, _buffer[1], _geometry.BytesPerSector, &_read_nbytes, NULL);
+	if (!status0 || !status1) {
 		fprintf(stderr, "device read error\n");
-		return NULL;
 	} else {
-		_offset += _geometry.BytesPerSector;
-		return _buffer;
+		// sets offset;
+		seek(0, true);
 	}
 }
-//0x00000000FFFFFE00
+
 void Device::seek(LONGLONG offset, bool relative) {
 	LARGE_INTEGER lin;
 	lin.QuadPart = offset;
 
 	DWORD error = NO_ERROR;
-	DWORD status = relative
+	lin.LowPart = relative
 		? SetFilePointer(_device, lin.LowPart, &lin.HighPart, FILE_CURRENT)
 		: SetFilePointer(_device, lin.LowPart, &lin.HighPart, FILE_BEGIN);
 
-	if (status == INVALID_SET_FILE_POINTER) { error = GetLastError(); }
+	if (lin.LowPart == INVALID_SET_FILE_POINTER) { error = GetLastError(); }
 
 	if (error == NO_ERROR) {
-		_offset = relative
-			? _offset + offset
-			: offset;
+		_offset = lin.QuadPart;
 	} else {
 		print_error(L"\n\n\n\n\n\ndevice::seek", error);
 	}

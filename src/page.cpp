@@ -11,32 +11,40 @@
 #define PAGE_SEP0 " "
 #define PAGE_SEP1 "  "
 #define PAGE_SEP2 "\033[2m |  \033[0m"
-#define PAGE_LMARGIN "  \033[36G"
+#define PAGE_LMARGIN "  \033[%d;%dH"
 #define PAGE_RMARGIN "  \033[2m|\033[0m"
-#define PAGE_LE   "\033[1B"
-#define PAGE_LOAD "\033[1;1H"
+#define PAGE_LE   "\033[0K"
+
+void Page::init(DWORD sl, DWORD cl, int x, int y) {
+	if (!_initialized) {
+		_sector_length = sl;
+		_clustr_length = cl;
+		_X0 = x;
+		_Y0 = y;
+		_initialized = true;
+	}
+}
 
 void Page::print_hdr(void) const {
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
-	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE);
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
+	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
 }
 
 void Page::print_ftr(void) const {
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
-	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE,
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + 16, _X0);
+	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + 16, _X0,
 		_offset,
 		size_to_string(_offset, true),
 		_offset /_clustr_length,
 		_offset /_sector_length
 	);
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE);
-	printf("\n\n");
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + 16, _X0);
 }
 
 //// Data line BEGIN
 void Page::print_adr(int nline, ULONGLONG offset) const {
-	printf(PAGE_LMARGIN PAGE_ADR, nline, offset);
+	printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset);
 }
 
 void Page::print_hex_block(PBYTE line, int i0, int i1) const {
@@ -81,8 +89,6 @@ void Page::print(void) const {
 	PBYTE end = _buffer + _sector_length;
 	PBYTE pos = _buffer;
 
-	printf(PAGE_LOAD);
-
 	print_hdr();
 	int nline = 0;
 	while(pos < end) {
@@ -92,8 +98,7 @@ void Page::print(void) const {
 		pos += LINE_WIDTH;
 	}
 	print_ftr();
-
-	print_entry(_extended_entry_info);
+	//print_entry(_extended_entry_info);
 }
 
 
@@ -102,15 +107,15 @@ void Page::print(void) const {
 #include "entry.h"
 
 #define ENTRY_ASH_VBAR "\033[2m|\033[0m"
-#define ENTRY_ASH_LEAD "\033[%d;36H\033[2m| %X \033[0m"
-#define ENTRY_ASH_CBAR "\033[%d;36H\033[2m+---+----+------------+----+----+----+-------+-------+-------+-------+-------+-------+-------+------------+\033[0m\033[0K\033[25;1H"
-#define ENTRY_ASH_CLAS "\033[%d;36H\033[2m| S |      name       |attr|NTRs|mili| Ctime | Cdate | Adate | clusH | Wtime | Wdate | clusL |    size    |\033[0m\033[0K"
-#define ENTRY_ASH_CLAL "\033[%d;36H\033[2m| L |ordn|    name1   |attr|type|cksm|                     name2                     | clusL |    name3   |\033[0m\033[0K"
-#define ENTRY_ASH_EBAR "\033[%d;36H\033[2m+---+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+\033[0m\033[0K\033[25;1H"
-#define ENTRY_ASH_EDEC "\033[%d;36H\033[2m| d |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 |\033[0m\033[0K\033[25;1H"
-#define ENTRY_ASH_EHEX "\033[%d;36H\033[2m| h | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 0A | 0B | 0C | 0D | 0E | 0F | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 1A | 1B | 1C | 1D | 1E | 1F |\033[0m\033[0K\033[25;1H"
-#define ENTRY_ASH_ELAS "\033[%d;36H\033[2m| S |                         name                         |attr|NTRs|mili|  Ctime  |  Cdate  |  Adate  |  clusH  |  Wtime  |  Wdate  |  clusL  |       size        |\033[0m\033[0K"
-#define ENTRY_ASH_ELAL "\033[%d;36H\033[2m| L |ordn|                      name1                      |attr|type|cksm|                           Name2                           |  clusL  |       name3       |\033[0m\033[0K"
+#define ENTRY_ASH_LEAD "\033[%d;%dH\033[2m| %X \033[0m"
+#define ENTRY_ASH_CBAR "\033[%d;%dH\033[2m+---+----+------------+----+----+----+-------+-------+-------+-------+-------+-------+-------+------------+\033[0m\033[0K\033[25;1H"
+#define ENTRY_ASH_CLAS "\033[%d;%dH\033[2m| S |      name       |attr|NTRs|mili| Ctime | Cdate | Adate | clusH | Wtime | Wdate | clusL |    size    |\033[0m\033[0K"
+#define ENTRY_ASH_CLAL "\033[%d;%dH\033[2m| L |ordn|    name1   |attr|type|cksm|                     name2                     | clusL |    name3   |\033[0m\033[0K"
+#define ENTRY_ASH_EBAR "\033[%d;%dH\033[2m+---+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+----+\033[0m\033[0K\033[25;1H"
+#define ENTRY_ASH_EDEC "\033[%d;%dH\033[2m| d |  0 |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 |\033[0m\033[0K\033[25;1H"
+#define ENTRY_ASH_EHEX "\033[%d;%dH\033[2m| h | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 0A | 0B | 0C | 0D | 0E | 0F | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 1A | 1B | 1C | 1D | 1E | 1F |\033[0m\033[0K\033[25;1H"
+#define ENTRY_ASH_ELAS "\033[%d;%dH\033[2m| S |                         name                         |attr|NTRs|mili|  Ctime  |  Cdate  |  Adate  |  clusH  |  Wtime  |  Wdate  |  clusL  |       size        |\033[0m\033[0K"
+#define ENTRY_ASH_ELAL "\033[%d;%dH\033[2m| L |ordn|                      name1                      |attr|type|cksm|                           Name2                           |  clusL  |       name3       |\033[0m\033[0K"
 
 
 void print_entry_str(const unsigned char * str, int len, int width, const char * spc, int lpad, int rpad) {
@@ -124,32 +129,32 @@ void print_entry_str(const unsigned char * str, int len, int width, const char *
 
 void Page::print_entry(bool extended) const {
 	entry * entries = (entry*) _buffer;
-	const int Y0 = 29;
+	//const int Y0 = 29;
 	int i = 0;
 	if (extended) {
-		printf(ENTRY_ASH_EBAR, Y0-5);
-		printf(ENTRY_ASH_ELAS, Y0-4);
-		printf(ENTRY_ASH_EBAR, Y0-3);
-		printf(ENTRY_ASH_ELAL, Y0-2);
-		printf(ENTRY_ASH_EBAR, Y0-1);
+		printf(ENTRY_ASH_EBAR, _Y0 + 0, _X0);
+		printf(ENTRY_ASH_ELAS, _Y0 + 1, _X0);
+		printf(ENTRY_ASH_EBAR, _Y0 + 2, _X0);
+		printf(ENTRY_ASH_ELAL, _Y0 + 3, _X0);
+		printf(ENTRY_ASH_EBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
-			printf(ENTRY_ASH_LEAD, i + Y0, i);
+			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
 			if (entries[i].is_long()) print_long(entries[i], extended);
 			else                      print_short(entries[i], extended);
 		}
-		printf(ENTRY_ASH_EBAR, i + Y0);
+		printf(ENTRY_ASH_EBAR, i + _Y0 + 5, _X0);
 	} else {
-		printf(ENTRY_ASH_CBAR, Y0-5);
-		printf(ENTRY_ASH_CLAS, Y0-4);
-		printf(ENTRY_ASH_CBAR, Y0-3);
-		printf(ENTRY_ASH_CLAL, Y0-2);
-		printf(ENTRY_ASH_CBAR, Y0-1);
+		printf(ENTRY_ASH_CBAR, _Y0 + 0, _X0);
+		printf(ENTRY_ASH_CLAS, _Y0 + 1, _X0);
+		printf(ENTRY_ASH_CBAR, _Y0 + 2, _X0);
+		printf(ENTRY_ASH_CLAL, _Y0 + 3, _X0);
+		printf(ENTRY_ASH_CBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
-			printf(ENTRY_ASH_LEAD, i + Y0, i);
+			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
 			if (entries[i].is_long()) print_long(entries[i], extended);
 			else                      print_short(entries[i], extended);
 		}
-		printf(ENTRY_ASH_CBAR, i + Y0);
+		printf(ENTRY_ASH_CBAR, i + _Y0 + 5, _X0);
 	}
 }
 
