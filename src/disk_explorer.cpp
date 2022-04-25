@@ -1,6 +1,7 @@
 #include "disk_explorer.h"
 #include "entry.h"
 #include "utility.h"
+#include "layout.h"
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -25,22 +26,19 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H\n");
 	printf("-- NAV --                 \n");
-	printf("SPACE : show current sec  \n");
-	printf("0     : show sector 0     \n");
 	printf("1     : goto FirstDataSec \n");
-	printf("g     : goto sector %-7lld\n", _sector_bookmark);
-	printf("G     : goto sector (type)\n");
+	//printf("f/F   : NOT IMPLEMENTED   \n");
+	printf("g/G   : goto sector %-7lld\n", _sector_bookmark);
+	printf("h/H   : goto sector (sel.)\n");
 	printf("U_ARR : rewind %d sector%c\n", _adv_N, _adv_N == 1 ? ' ' : 's');
 	printf("D_ARR : forwrd %d sector%c\n", _adv_N, _adv_N == 1 ? ' ' : 's');
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
-	printf("PGUP  : goto prev cluster \n");
-	printf("PGDOWN: goto next cluster \n");
 	printf("HOME  : goto first sector \n");
-	printf("END   : goto last sector  \n");
 	printf("-- DISP --                \n");
 	printf("INS : edit current sector \n");
-	printf("TAB : toggle sector disp. \n");
-	printf("^TAB: toggle entry disp.  \n");
+	printf("TAB : toggle view         \n");
+	printf("F1  : toggle disp. mode 1 \n");
+	printf("F2  : toggle disp. mode 2 \n");
 	printf("d/D : show drive info     \n");
 	printf("q/Q : quit                \n");
 
@@ -70,20 +68,24 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_TAB        : _page[0].toggle_view() ; _page[1].toggle_view() ;                  break;
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F2         : _page[1].toggle_mode()                          ;                  break;
-		case TERMUI_KEY_0          : _page[0].set((PBYTE)(&_sector0), 0)             ;                  break;
+		//case TERMUI_KEY_0          : _page[0].set((PBYTE)(&_sector0), 0)             ;                  break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpages(); break;
 		case TERMUI_KEY_d          :
 		case TERMUI_KEY_D          : _show_drive_info = !_show_drive_info            ;                  break;
-		case TERMUI_KEY_g          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
-		case TERMUI_KEY_G          : input_and_go()                                  ;                  break;
+		case TERMUI_KEY_f          :
+		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
+		case TERMUI_KEY_g          :
+		case TERMUI_KEY_G          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
+		case TERMUI_KEY_h          :
+		case TERMUI_KEY_H          : input_and_go()                                  ;                  break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
 		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
-		case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
-		case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
+		//case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
+		//case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
 		case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpages(); break;
-		case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpages(); break;
+		//case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpages(); break;
 		case TERMUI_KEY_SPACE      : setpages()                           ;                 break;
 		default                    : setpages()                           ;                 break;
 		}
