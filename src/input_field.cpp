@@ -40,7 +40,7 @@ bool InputField::capture_input(KeyCode feed, bool reset) {
 			_buffer.chr[_position] = 0;
 		} else {
 			switch (key) {
-			case TERMUI_KEY_BKSPC:  erase_one(); break;
+			case TERMUI_KEY_BACKSPACE:  erase_one(); break;
 			}
 		}
 	}

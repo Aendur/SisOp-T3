@@ -27,7 +27,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 
 void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H");
-	printf("\n-- NAV --               \n");
+	printf("\n--- NAV ---               \n");
 	printf("0     : goto sector 0     \n");
 	printf("1     : goto FirstDataSec \n");
 	//printf("F   : NOT IMPLEMENTED   \n");
@@ -36,7 +36,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
-	printf("\n-- DISP --                \n");
+	printf("\n--- DISP ---                \n");
 	printf("INS   : edit current sector \n");
 	printf("F1~3  : toggle disp 1 modes \n");
 	printf("F5~7  : toggle disp 2 modes \n");
@@ -44,9 +44,9 @@ void DiskExplorer::print_commands(void) const {
 	printf("ESC   : exit                \n");
 
 	if (_show_drive_info) {
-		printf("\n-- GEOMETRY --\n");
+		printf("\n--- GEOMETRY ---\n");
 		show_geom_info();
-		printf("\n-- FAT32 --\n");
+		printf("\n--- FAT32 ---\n");
 		show_fat32_info();
 	} else {
 		printf("\033[0J");
