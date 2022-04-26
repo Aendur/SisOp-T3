@@ -19,7 +19,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	read_setpages();
 	memcpy(&_sector0, _device.buffer(0), _device.geometry().BytesPerSector);
 	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), 36, 1);
-	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 22);
+	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 25);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 }
 

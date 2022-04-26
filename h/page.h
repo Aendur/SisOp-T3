@@ -25,6 +25,7 @@ private:
 	int _Y0;
 	bool _initialized = false;
 	int _selected = -1;
+	bool _editing = false;
 
 	std::map<View, BYTE> _mode;
 	View _view = View::SECTOR;
@@ -45,6 +46,7 @@ public:
 	inline void set(PBYTE buffer, ULONGLONG offset) { _buffer = buffer; _offset = offset; }
 	inline void toggle_mode(void) { ++_mode[_view]; }
 	inline void toggle_view(void) { _view = _view == View::SECTOR ? View::ENTRIES : View::SECTOR; }
+	inline void toggle_edit(bool val) { _editing = val; }
 	inline void select(int p) { _selected = p; }
 	inline int selected(void) const  { return _selected; }
 	void print(void) const;
