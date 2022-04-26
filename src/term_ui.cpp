@@ -104,25 +104,31 @@ KeyCode TermUI::handle_esc(void) {
 		{ L"\033\\[C", TERMUI_KEY_ARROW_RIGHT },
 		{ L"\033\\[B", TERMUI_KEY_ARROW_DOWN },
 		{ L"\033\\[D", TERMUI_KEY_ARROW_LEFT },
+		{ L"\033\\[1;5A", TERMUI_KEY_CTRL_ARROW_UP },
+		{ L"\033\\[1;5C", TERMUI_KEY_CTRL_ARROW_RIGHT },
+		{ L"\033\\[1;5B", TERMUI_KEY_CTRL_ARROW_DOWN },
+		{ L"\033\\[1;5D", TERMUI_KEY_CTRL_ARROW_LEFT },
 		{ L"\033\\[2~", TERMUI_KEY_INSERT },
 		{ L"\033\\[3~", TERMUI_KEY_DELETE },
 		{ L"\033\\[H", TERMUI_KEY_HOME },
 		{ L"\033\\[F", TERMUI_KEY_END },
-		{ L"\033\\[Z", TERMUI_KEY_STAB },
+		{ L"\033\\[Z", TERMUI_KEY_SHIFT_TAB },
 		{ L"\033\\[5~", TERMUI_KEY_PGUP },
 		{ L"\033\\[6~", TERMUI_KEY_PGDOWN },
 		{ L"\033" L"OP", TERMUI_KEY_F1 },
 		{ L"\033" L"OQ", TERMUI_KEY_F2 },
 		{ L"\033" L"OR", TERMUI_KEY_F3 },
 		{ L"\033" L"OS", TERMUI_KEY_F4 },
-		{ L"\033", TERMUI_KEY_ESC },
 	};
 
 	for(const auto & [pat,ret] : patterns) {
-		if (std::regex_match(_input_string, std::wregex(pat))) {
-			//wprintf(L"\033[48;1HMATCH - Key pressed: ESC %ls\033[0K\n", &_input_string[1]);
+		if (std::regex_search(_input_string, std::wregex(pat))) {
 			return ret;
 		}
+	}
+
+	if (std::regex_match(_input_string, std::wregex(L"\033"))) {
+		return TERMUI_KEY_ESC;
 	}
 
 	PUSHORT val = (PUSHORT) _input_string;

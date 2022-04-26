@@ -1,7 +1,7 @@
 #include "utility.h"
 #include <cstdio>
 
-#define FORMAT_SIZE 64
+#define FORMAT_SIZE 128
 static char sts_buffer[FORMAT_SIZE];
 static wchar_t sts_wbuffer[FORMAT_SIZE];
 
@@ -103,32 +103,79 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 	return sts_wbuffer;
 }
 
-static char color_char_buffer[FORMAT_SIZE];
-const char * colorize_char(char c, char ctl, bool negative) {
-	const char * neg = negative ? "\033[7m" : "";
-	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,           "%s%c\033[0m", neg, c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%s%c\033[0m", neg, ctl); }
-	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%c\033[0m", neg, ctl); }
-	return color_char_buffer;
-}
-const char * colorize_char(unsigned char c, int width, bool negative) {
-	const char * neg = negative ? "\033[7m" : "";
-	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,    "\033[1m%s%*c\033[0m" , neg, width,   c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%s%0*X\033[0m", neg, width,   c); }
-	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m" , neg, width, "T"); }
-	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m" , neg, width, "N"); }
-	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m" , neg, width, "R"); }
-	else                             { snprintf(color_char_buffer, FORMAT_SIZE,   "\033[31m%s%0*X\033[0m", neg, width,   c); }
-	return color_char_buffer;
-}
-const char * colorize_char(char c, const char * ctl, int width, bool negative) {
-	const char * neg = negative ? "\033[7m" : "";
-	if      (0x20 <= c && c <= 0x7E) { snprintf(color_char_buffer, FORMAT_SIZE,           "%s%*c\033[0m", neg, width, c); }
-	else if (             c == 0   ) { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;2m%s%*s\033[0m", neg, width, ctl); }
-	else if (             c == '\t') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, "T"); }
-	else if (             c == '\n') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, "N"); }
-	else if (             c == '\r') { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, "R"); }
-	else                             { snprintf(color_char_buffer, FORMAT_SIZE, "\033[31;1m%s%*s\033[0m", neg, width, ctl); }
-	return color_char_buffer;
-}
+#define NEGATIVE "\033[7m"
+#define EMPTYSTR ""
+#define ATTRSTR "%s"
+#define HEXSTR "%02X"
+#define CHRSTR "%*c"
+#define CTLSTR "%*s"
+#define LMAR "%*s"
+#define RMAR "%*s"
+#define LPAD "%*s"
+#define RPAD "%*s"
+#define CLRSTR "\033[0m"
+#define RED_0 "\033[31m"
+#define RED_1 "\033[31;1m"
+#define RED_2 "\033[31;2m"
+#define WHITE_0 "\033[37;0m"
+#define WHITE_1 "\033[37;1m"
+#define WHITE_2 "\033[37;2m"
 
+const char * colorize_byte(const ColorizeOptions & opts) {
+	static char color_char_buffer[FORMAT_SIZE];
+	const char * attr_negative = opts.negative ? NEGATIVE : EMPTYSTR;
+	const char * attr_color_ctl = opts.chr_hex ? WHITE_0 : (opts.byte == 0 ? RED_2 : RED_0);
+	const char * attr_color_chr = WHITE_1; // : WHITE_0;
+
+	if (0x20 <= opts.byte && opts.byte <= 0x7E) {
+		if (opts.chr_hex) {
+			snprintf(color_char_buffer, FORMAT_SIZE,
+				LMAR ATTRSTR ATTRSTR LPAD HEXSTR RPAD CLRSTR RMAR,
+				opts.margin_left, EMPTYSTR,
+				attr_color_chr,
+				attr_negative,
+				opts.padding_left, EMPTYSTR,
+				opts.byte,
+				opts.padding_right, EMPTYSTR,
+				opts.margin_right, EMPTYSTR
+			);
+		} else {
+			snprintf(color_char_buffer, FORMAT_SIZE,
+				LMAR ATTRSTR ATTRSTR LPAD CHRSTR RPAD CLRSTR RMAR,
+				opts.margin_left, EMPTYSTR,
+				attr_color_chr,
+				attr_negative,
+				opts.padding_left, EMPTYSTR,
+				opts.width, opts.byte,
+				opts.padding_right, EMPTYSTR,
+				opts.margin_right, EMPTYSTR
+			);
+		}
+	} else {
+		#pragma message ("warning: FIX THIS")
+		if (opts.ctl_str == NULL) {
+			snprintf(color_char_buffer, FORMAT_SIZE,
+				LMAR ATTRSTR ATTRSTR LPAD HEXSTR RPAD CLRSTR RMAR,
+				opts.margin_left, EMPTYSTR,
+				attr_color_ctl,
+				attr_negative,
+				opts.padding_left, EMPTYSTR,
+				opts.byte,
+				opts.padding_right, EMPTYSTR,
+				opts.margin_right, EMPTYSTR
+			);
+		} else {
+			snprintf(color_char_buffer, FORMAT_SIZE,
+				LMAR ATTRSTR ATTRSTR LPAD CTLSTR RPAD CLRSTR RMAR,
+				opts.margin_left, EMPTYSTR,
+				attr_color_ctl,
+				attr_negative,
+				opts.padding_left, EMPTYSTR,
+				opts.width, opts.ctl_str,
+				opts.padding_right, EMPTYSTR,
+				opts.margin_right, EMPTYSTR
+			);
+		}
+	}
+	return color_char_buffer;
+}

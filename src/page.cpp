@@ -30,24 +30,30 @@ void Page::init(DWORD sl, DWORD cl, int x, int y) {
 
 //// Data line BEGIN
 void Page::print_hex_block(PBYTE line, int i0, int i1) const {
+	ColorizeOptions opts;
+	opts.negative = false;
+	opts.width = 2;
+	opts.margin_right = 1;
+	switch(_mode.at(_view) % 3) {
+	case 2:
+		opts.chr_hex = false;
+		opts.ctl_str = "..";
+		break;
+	case 1:
+		opts.chr_hex = false;
+		opts.ctl_str = NULL;
+		break;
+	case 0:
+	default:
+		opts.chr_hex = true;
+		opts.ctl_str = NULL;
+		break;
+	}
+
 	for (int i =  i0; i < i1; ++i) {
-		bool selected = i == _selected;
-		switch(_mode.at(_view) % 3) {
-		case 2:
-			printf("%s ", colorize_char(line[i], 2, selected));
-			break;
-		case 1:
-			printf("%s ", colorize_char(line[i], " .", 2, selected));
-			break;
-		case 0:
-		default:
-			if (selected) {
-				printf("\033[7m%02X\033\0m ", line[i]);
-			} else {
-				printf("%02X ", line[i]);
-			}
-			break;
-		}
+		opts.negative = (line - _buffer + i) == _selected;
+		opts.byte = line[i];
+		printf("%s", colorize_byte(opts));
 	}
 }
 
@@ -62,9 +68,15 @@ void Page::print_hex(PBYTE line, int len) const {
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
+	ColorizeOptions opts;
+	opts.chr_hex = false;
+	opts.ctl_str = ".";
+	opts.width = 1;
+
 	for (int i = 0x00; i < len; ++i) {
-		char c = line[i];
-		printf("%s", colorize_char(c, '.', i == _selected));
+		opts.negative = (line - _buffer + i) == _selected;
+		opts.byte = line[i];
+		printf("%s", colorize_byte(opts));
 	}
 	printf(PAGE_RMARGIN PAGE_LE);
 }
@@ -120,14 +132,6 @@ void Page::print(void) const {
 #define ENTRY_ASH_ELAL "\033[%d;%dH\033[2m| L |ordn|                      name1                      |attr|type|cksm|                           Name2                           |  clusL  |       name3       |\033[0m\033[0K"
 
 
-void print_entry_str(const unsigned char * str, int len, int width, const char * spc, int lpad, int rpad) {
-	printf(ENTRY_ASH_VBAR "%*s", lpad, "");
-	int i = 0;
-	for (i = 0; i < len-1; ++i) {
-		printf("%s%s", colorize_char(str[i], "~", width, false), spc);
-	}
-	printf("%s%*s" ENTRY_ASH_VBAR, colorize_char(str[i], "~", width, false), rpad, "");
-}
 
 void Page::print_entry(void) const {
 	entry * entries = (entry*) _buffer;
@@ -160,9 +164,34 @@ void Page::print_entry(void) const {
 	}
 }
 
+
+void print_colorized_str(const unsigned char * str, int len, ColorizeOptions * opts, int lm, int rm) {
+	printf(ENTRY_ASH_VBAR);
+	printf("%*s", lm, "");
+	for (int i = 0; i < len-1; ++i) {
+		opts->byte = str[i];
+		printf("%s", colorize_byte(*opts));
+	}
+	opts->padding_right = 0;
+	opts->byte = str[len-1];
+	printf("%s", colorize_byte(*opts));
+	printf("%*s", rm, "");
+	printf(ENTRY_ASH_VBAR);
+}
+
 void Page::print_short(const entry& ref, bool extended) const {
+	ColorizeOptions opts;	
+	opts.chr_hex = false;
+	opts.ctl_str = "~";
+	opts.negative = false;
+	opts.width = 1;
+	opts.margin_left = 0;
+	opts.margin_right = 0;
+
 	if (extended) {
-		print_entry_str(ref.dir.ds.DIR_Name, 11, 3, "  ", 0, 1);
+		opts.padding_left = 2;
+		opts.padding_right = 2;
+		print_colorized_str(ref.dir.ds.DIR_Name, 11, &opts, 0, 1);
 		printf( " %02X "         ENTRY_ASH_VBAR // DIR_Attr
 				" %02X "         ENTRY_ASH_VBAR // DIR_NTRes
 				" %02X "         ENTRY_ASH_VBAR // DIR_CrtTimeTenth
@@ -179,7 +208,9 @@ void Page::print_short(const entry& ref, bool extended) const {
 				, ref.dir.ds.DIR_WrtDate, ref.dir.ds.DIR_FstClusLO, ref.dir.ds.DIR_FileSize
 		);
 	} else {
-		print_entry_str(ref.dir.ds.DIR_Name, 11, 1, "", 3, 3);
+		opts.padding_left = 0;
+		opts.padding_right = 0;
+		print_colorized_str(ref.dir.ds.DIR_Name, 11, &opts, 3, 3);
 		printf( " %02X "   ENTRY_ASH_VBAR // DIR_Attr
 				" %02X "   ENTRY_ASH_VBAR // DIR_NTRes
 				" %02X "   ENTRY_ASH_VBAR // DIR_CrtTimeTenth
@@ -199,30 +230,57 @@ void Page::print_short(const entry& ref, bool extended) const {
 	printf("\033[0K");
 }
 
-
 void Page::print_long(const entry& ref, bool extended) const {
+	ColorizeOptions opts;	
+	opts.chr_hex = false;
+	opts.ctl_str = "~";
+	opts.negative = false;
+	opts.width = 1;
+	opts.margin_left = 0;
+	opts.margin_right = 0;
+
 	if (extended) {
+		opts.padding_left = 2;
+		opts.padding_right = 2;
 		printf(ENTRY_ASH_VBAR " %02X ", ref.dir.dl.LDIR_Ord);
-		print_entry_str(ref.dir.dl.LDIR_Name1, 10, 3, "  ", 0, 1);
+		print_colorized_str(ref.dir.dl.LDIR_Name1, 10, &opts, 0, 1);
 		printf( " %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Attr
 				" %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Type
 				" %02X "           // ref.dir.dl.LDIR_Chksum
 				, ref.dir.dl.LDIR_Attr, ref.dir.dl.LDIR_Type, ref.dir.dl.LDIR_Chksum
 		);
-		print_entry_str(ref.dir.dl.LDIR_Name2, 12, 3, "  ", 0, 1);
+
+		opts.padding_left = 2;
+		opts.padding_right = 2;
+		print_colorized_str(ref.dir.dl.LDIR_Name2, 12, &opts, 0, 1);
 		printf("  %-5u  ", ref.dir.dl.LDIR_FstClusLO);
-		print_entry_str(ref.dir.dl.LDIR_Name3,  4, 3, "  ", 0, 1);
+
+		opts.padding_left = 2;
+		opts.padding_right = 2;
+		print_colorized_str(ref.dir.dl.LDIR_Name3, 4, &opts, 0, 1);
 	} else {
 		printf(ENTRY_ASH_VBAR " %02X ", ref.dir.dl.LDIR_Ord);
-		print_entry_str(ref.dir.dl.LDIR_Name1, 10, 1, "", 1, 1);
+		
+		//|    name1   |
+		opts.padding_left = 0;
+		opts.padding_right = 0;
+		print_colorized_str(ref.dir.dl.LDIR_Name1, 10, &opts, 1, 1);
 		printf( " %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Attr
 				" %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Type
 				" %02X "           // ref.dir.dl.LDIR_Chksum
 				, ref.dir.dl.LDIR_Attr, ref.dir.dl.LDIR_Type, ref.dir.dl.LDIR_Chksum
 		);
-		print_entry_str(ref.dir.dl.LDIR_Name2, 12, 2, "  ", 0, 1);
+		
+		//|                     name2                     |
+		opts.padding_left = 1;
+		opts.padding_right = 2;
+		print_colorized_str(ref.dir.dl.LDIR_Name2, 12, &opts, 0, 1);
 		printf(" %-5u ", ref.dir.dl.LDIR_FstClusLO);
-		print_entry_str(ref.dir.dl.LDIR_Name3,  4, 2, " ", 0, 1);
+
+		//|    name3   |
+		opts.padding_left = 1;
+		opts.padding_right = 1;
+		print_colorized_str(ref.dir.dl.LDIR_Name3, 4, &opts, 0, 1);
 	}
 	printf("\033[0K");
 }

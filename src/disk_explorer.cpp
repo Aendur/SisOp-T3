@@ -30,8 +30,8 @@ void DiskExplorer::print_commands(void) const {
 	//printf("f/F   : NOT IMPLEMENTED   \n");
 	printf("g/G   : goto sector %-7lld\n", _sector_bookmark);
 	printf("h/H   : goto sector (sel.)\n");
-	printf("U_ARR : rewind %d sector%c\n", _adv_N, _adv_N == 1 ? ' ' : 's');
-	printf("D_ARR : forwrd %d sector%c\n", _adv_N, _adv_N == 1 ? ' ' : 's');
+	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
+	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
 	printf("HOME  : goto first sector \n");
 	printf("-- DISP --                \n");

@@ -4,8 +4,20 @@
 // Converts a size value to human-readable string
 const char* size_to_string(size_t size, bool append_unit);
 const wchar_t* size_to_wstring(size_t size, bool append_unit);
-const char * colorize_char(char c, char ctl, bool negative);
-const char * colorize_char(unsigned char c, int width, bool negative);
-const char * colorize_char(char c, const char * ctl, int width, bool negative);
+
+
+struct ColorizeOptions {
+	unsigned char byte = 0;
+	bool   chr_hex = true;
+	char * ctl_str = nullptr;
+	bool negative = false;
+	int width = 1;
+	int padding_left = 0;
+	int padding_right = 0;
+	int margin_left = 0;
+	int margin_right = 0;
+};
+
+const char * colorize_byte(const struct ColorizeOptions & opts);
 
 #endif
