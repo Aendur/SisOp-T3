@@ -9,11 +9,18 @@ class Page;
 class Device;
 class Editor {
 private:
+	enum class EditMode {
+		HEX,
+		CHR,
+		LONG,
+	};
 	TermUI *   _term = nullptr;
 	Page *  _page[2] = { nullptr, nullptr};
 	PBYTE _buffer[2] = { nullptr, nullptr};
 	int    _position = 0;
 	DWORD _buf_len;
+
+	EditMode _edit_mode = EditMode::HEX;
 
 	InputField _input;
 	bool _initialized = false;

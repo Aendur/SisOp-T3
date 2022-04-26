@@ -19,7 +19,7 @@ void Editor::init(DWORD nbytes, TermUI * t, Page * p1, Page * p2) {
 		_term = t;
 		_page[0] = p1;
 		_page[1] = p2;
-		_input.init(t);
+		_input.init(t, 48, 20, "EDITING: ");
 		_buf_len = nbytes;
 
 		_buffer[0] = new BYTE[_buf_len];

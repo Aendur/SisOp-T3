@@ -9,7 +9,8 @@
 DiskExplorer::DiskExplorer(WCHAR drive) {
 	_ui.init();
 	_device.open_drive(drive);
-	_input.init(&_ui);
+	_input.init(&_ui, 36, 24, "\033[1mGOTO SECTOR:\033[0m ");
+	//_input.set_maxlen(5);
 	
 	if (_device.geometry().BytesPerSector != 512) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
@@ -19,7 +20,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	read_setpages();
 	memcpy(&_sector0, _device.buffer(0), _device.geometry().BytesPerSector);
 	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), 36, 1);
-	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 25);
+	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 }
 

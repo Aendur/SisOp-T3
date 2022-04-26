@@ -123,6 +123,7 @@ KeyCode TermUI::handle_esc(void) {
 
 	for(const auto & [pat,ret] : patterns) {
 		if (std::regex_search(_input_string, std::wregex(pat))) {
+			//wprintf(L"\033[48;1HMATCH - Key pressed: ESC %ls (", &_input_string[1]);
 			return ret;
 		}
 	}
@@ -143,8 +144,7 @@ KeyCode TermUI::handle_esc(void) {
 		(USHORT)(val[7] & 0x00FF),
 	};
 	
-	wprintf(L"\033[48;1HNO MATCH - ");
-	wprintf(L"Key pressed: ESC %ls (", &_input_string[1]);
+	wprintf(L"\033[48;1HNO MATCH - Key pressed: ESC %ls (", &_input_string[1]);
 	for (int p = 0; p < 8; ++p) { wprintf(L" 0x%02X", bytes[p]); }
 	wprintf(L" )\033[0K\n");
 	return TERMUI_KEY_UNDEFINED;
@@ -160,6 +160,13 @@ KeyCode TermUI::handle_input(void) {
 		return (KeyCode) _input_string[0];
 	}
 
+	short v0 = ((PUSHORT) _input_string)[0];
+	short v1 = ((PUSHORT) _input_string)[1];
+	short v2 = ((PUSHORT) _input_string)[1];
+	short v3 = ((PUSHORT) _input_string)[1];
+	//wprintf(L"\033[47;1H\n\n\n");
+	//wprintf(L"Key pressed: %ls\n(0x%02X 0x%02X 0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF, v2 & 0x00FF, v3 & 0x00FF);
+
 	switch(_input_string[0]) {
 	case L'\033': return handle_esc();
 	case L'\n': return TERMUI_KEY_RETURN;
@@ -167,9 +174,7 @@ KeyCode TermUI::handle_input(void) {
 	case L'\t': return TERMUI_KEY_TAB;
 	case 0x7F: return TERMUI_KEY_BKSPC;
 	default:
-		short v0 = ((PUSHORT) _input_string)[0];
-		short v1 = ((PUSHORT) _input_string)[1];
-		wprintf(L"\n\n\nKey pressed: %ls (0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF);
+		wprintf(L"\033[48;1HKey pressed: %ls (0x%02X 0x%02X 0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF, v2 & 0x00FF, v3 & 0x00FF);
 		return TERMUI_KEY_UNDEFINED;
 	}
 }
