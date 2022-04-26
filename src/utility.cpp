@@ -104,6 +104,7 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 }
 
 #define NEGATIVE "\033[7m"
+#define UNDERLINE "\033[4m"
 #define EMPTYSTR ""
 #define ATTRSTR "%s"
 #define HEXSTR "%02X"
@@ -113,7 +114,8 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 #define RMAR "%*s"
 #define LPAD "%*s"
 #define RPAD "%*s"
-#define CLRSTR "\033[0m"
+#define CLRSTR "\033[37;0m\033[27m"
+//#define CLRSTR "\033[0m"
 #define RED_0 "\033[31m"
 #define RED_1 "\033[31;1m"
 #define RED_2 "\033[31;2m"
@@ -123,7 +125,7 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 
 const char * colorize_byte(const ColorizeOptions & opts) {
 	static char color_char_buffer[FORMAT_SIZE];
-	const char * attr_negative = opts.negative ? NEGATIVE : EMPTYSTR;
+	const char * attr_negative = opts.negative ? (opts.underline ? NEGATIVE UNDERLINE : NEGATIVE) : (opts.underline ? UNDERLINE : EMPTYSTR);
 	const char * attr_color_ctl = opts.chr_hex ? WHITE_0 : (opts.byte == 0 ? RED_2 : RED_0);
 	const char * attr_color_chr = WHITE_1; // : WHITE_0;
 

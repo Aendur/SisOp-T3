@@ -144,9 +144,10 @@ void Page::print_entry(void) const {
 		printf(ENTRY_ASH_ELAL, _Y0 + 3, _X0);
 		printf(ENTRY_ASH_EBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
+			bool selected = 0 <= _selected && _selected < 512 && i == (_selected / 32);
 			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
-			if (entries[i].is_long()) print_long(entries[i], extended);
-			else                      print_short(entries[i], extended);
+			if (entries[i].is_long()) print_long(entries[i], extended, selected);
+			else                      print_short(entries[i], extended, selected);
 		}
 		printf(ENTRY_ASH_EBAR, i + _Y0 + 5, _X0);
 	} else {
@@ -156,9 +157,10 @@ void Page::print_entry(void) const {
 		printf(ENTRY_ASH_CLAL, _Y0 + 3, _X0);
 		printf(ENTRY_ASH_CBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
+			bool selected = i == (_selected / 32);
 			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
-			if (entries[i].is_long()) print_long(entries[i], extended);
-			else                      print_short(entries[i], extended);
+			if (entries[i].is_long()) print_long(entries[i], extended, selected);
+			else                      print_short(entries[i], extended, selected);
 		}
 		printf(ENTRY_ASH_CBAR, i + _Y0 + 5, _X0);
 	}
@@ -179,7 +181,7 @@ void print_colorized_str(const unsigned char * str, int len, ColorizeOptions * o
 	printf(ENTRY_ASH_VBAR);
 }
 
-void Page::print_short(const entry& ref, bool extended) const {
+void Page::print_short(const entry& ref, bool extended, bool selected) const {
 	ColorizeOptions opts;	
 	opts.chr_hex = false;
 	opts.ctl_str = "~";
@@ -187,6 +189,7 @@ void Page::print_short(const entry& ref, bool extended) const {
 	opts.width = 1;
 	opts.margin_left = 0;
 	opts.margin_right = 0;
+	opts.underline = selected;
 
 	if (extended) {
 		opts.padding_left = 2;
@@ -230,7 +233,7 @@ void Page::print_short(const entry& ref, bool extended) const {
 	printf("\033[0K");
 }
 
-void Page::print_long(const entry& ref, bool extended) const {
+void Page::print_long(const entry& ref, bool extended, bool selected) const {
 	ColorizeOptions opts;	
 	opts.chr_hex = false;
 	opts.ctl_str = "~";
@@ -238,6 +241,7 @@ void Page::print_long(const entry& ref, bool extended) const {
 	opts.width = 1;
 	opts.margin_left = 0;
 	opts.margin_right = 0;
+	opts.underline = selected;
 
 	if (extended) {
 		opts.padding_left = 2;

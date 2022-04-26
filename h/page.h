@@ -37,8 +37,8 @@ private:
 
 	///
 	void print_entry(void) const;
-	void print_short(const entry & ref, bool extended) const;
-	void print_long(const entry & ref, bool extended) const;
+	void print_short(const entry & ref, bool extended, bool selected) const;
+	void print_long(const entry & ref, bool extended, bool selected) const;
 
 public:
 	void init(DWORD sl, DWORD cl, int x, int y);

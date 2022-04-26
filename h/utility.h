@@ -11,6 +11,7 @@ struct ColorizeOptions {
 	bool   chr_hex = true;
 	char * ctl_str = nullptr;
 	bool negative = false;
+	bool underline = false;
 	int width = 1;
 	int padding_left = 0;
 	int padding_right = 0;
