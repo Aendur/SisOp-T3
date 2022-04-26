@@ -57,7 +57,7 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	}
 
 	for (int i =  i0; i < i1; ++i) {
-		opts.negative = (line - _buffer + i) == _selected;
+		opts.negative = actual_selected_byte((int)(line - _buffer + i));
 		opts.byte = line[i];
 		printf("%s", colorize_byte(opts));
 	}
@@ -80,7 +80,7 @@ void Page::print_sector_str(PBYTE line, int len) const {
 	opts.width = 1;
 
 	for (int i = 0x00; i < len; ++i) {
-		opts.negative = (line - _buffer + i) == _selected;
+		opts.negative = actual_selected_byte((int)(line - _buffer + i));
 		opts.byte = line[i];
 		printf("%s", colorize_byte(opts));
 	}
@@ -142,6 +142,17 @@ void Page::print(void) const {
 //#define ENTRY_ASH_STAT "\033[%d;%dH\033[2m|                                                                                                                          %s                                  |\033[0m\033[0K"
 #define ENTRY_ASH_STAT "\033[%d;%dH%s"
 
+// 0 <= i < 512
+bool Page::actual_selected_byte(int i) const {
+	return _selected == (int)(i + _sector_length * _selected_buffer);
+}
+
+//0 <= i < 16
+bool Page::actual_selected_entry(int i) const {
+	int i0 = i * 32 + _sector_length * _selected_buffer;
+	int i1 = i0 + 32;
+	return (i0 <= _selected && _selected < i1);
+}
 
 void Page::print_entry(void) const {
 	entry * entries = (entry*) _buffer;
@@ -156,7 +167,7 @@ void Page::print_entry(void) const {
 		//printf(ENTRY_ASH_STAT, _Y0 + 3, _X0, _editing ? EDITSTR : VIEWSTR);
 		printf(ENTRY_ASH_EBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
-			bool selected = 0 <= _selected && _selected < 512 && i == (_selected / 32);
+			bool selected = actual_selected_entry(i);
 			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
 			if (entries[i].is_long()) print_long(entries[i], extended, selected);
 			else                      print_short(entries[i], extended, selected);
@@ -171,7 +182,7 @@ void Page::print_entry(void) const {
 		//printf(ENTRY_ASH_STAT, _Y0 + 3, _X0, _editing ? EDITSTR : VIEWSTR);
 		printf(ENTRY_ASH_CBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
-			bool selected = i == (_selected / 32);
+			bool selected = actual_selected_entry(i);
 			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
 			if (entries[i].is_long()) print_long(entries[i], extended, selected);
 			else                      print_short(entries[i], extended, selected);

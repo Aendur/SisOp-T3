@@ -44,6 +44,9 @@ private:
 	void print_short(const entry & ref, bool extended, bool selected) const;
 	void print_long(const entry & ref, bool extended, bool selected) const;
 
+	bool actual_selected_byte(int i) const;
+	bool actual_selected_entry(int i) const;
+
 public:
 	void init(DWORD sl, DWORD cl, int x, int y);
 	//inline void set(PBYTE * buffers, ULONGLONG offset) { _buffers[0] = buffers[0]; _buffers[1] = buffers[1]; _buffer = _buffers[_selected]; _offset = offset; }

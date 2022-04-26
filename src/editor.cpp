@@ -46,7 +46,11 @@ bool Editor::edit_run(void) {
 	}
 	//printf(LAYOUT_FREE "INPUT: ");
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	if (_position < 0) { move_cursor(0 - _position); }
+	if (_position < 0) {
+		_position = 0;
+		_page[0]->select(_position);
+		_page[1]->select(_position);
+	}
 	
 	_page[0]->toggle_edit(true);
 	_page[1]->toggle_edit(true);
@@ -57,20 +61,8 @@ bool Editor::edit_run(void) {
 	_page[0]->print();
 	_page[1]->print();
 
-	bool edit = true;
-	while (edit) {
-		key = _term->read();
-
-		//if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
-		//	printf("%c", key);
-		//	_buffer.chr[_position++] = (char) key;
-		//	_buffer.chr[_position] = 0;
-		//}
-
+	while ((key = _term->read()) != TERMUI_KEY_ESC) {
 		switch (key) {
-			case TERMUI_KEY_ESC: edit = false;
-			//case TERMUI_KEY_RETURN: printf(ERASE_SEQ); return true;
-			//case TERMUI_KEY_BKSPC:  erase_one(); break;
 			case TERMUI_KEY_ARROW_UP:    move_cursor(-0x20); break;
 			case TERMUI_KEY_ARROW_DOWN:  move_cursor(0x20); break;
 			case TERMUI_KEY_ARROW_LEFT:  move_cursor(-1); break;
@@ -93,8 +85,9 @@ void Editor::move_cursor(int offset) {
 	if (0 <= future && future < 2 * (int) _buf_len) {
 		_position = future;
 		_page[0]->select(_position);
-		_page[1]->select(_position - _buf_len);
+		_page[1]->select(_position);
 	}
+	printf(LAYOUT_FREE "          SELECTED: %d", _position);
 }
 
 // void Editor::erase_one(void) {

@@ -154,7 +154,6 @@ const char * colorize_byte(const ColorizeOptions & opts) {
 			);
 		}
 	} else {
-		#pragma message ("warning: FIX THIS")
 		if (opts.ctl_str == NULL) {
 			snprintf(color_char_buffer, FORMAT_SIZE,
 				LMAR ATTRSTR ATTRSTR LPAD HEXSTR RPAD CLRSTR RMAR,
