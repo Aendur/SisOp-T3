@@ -2,7 +2,7 @@
 CFLAGS=/W4 /EHsc /std:c++17 /Ih /utf-8 /nologo
 
 FGLIBN=random_file utility
-DXLIBN=disk_explorer term_ui device utility page input_field editor
+DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
@@ -37,7 +37,8 @@ obj\input_field.obj::        src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\editor.obj::             src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-
+obj\dialog.obj::             src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 
 
 .PHONY: clean

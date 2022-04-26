@@ -2,6 +2,7 @@
 #include "entry.h"
 #include "utility.h"
 #include "layout.h"
+#include "dialog.h"
 #include <stdexcept>
 #include <vector>
 #include <string>
@@ -64,7 +65,8 @@ void DiskExplorer::run(void) {
 	_page[1].print();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	while ((key = _ui.read()) != TERMUI_KEY_ESC) {
+	Dialog quit_dialog(&_ui, "Confirm exit?", {"Cancel", "OK"});
+	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) != 1) {
 		switch(key) {
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F2         : _page[0].toggle_view()                          ;                  break;
