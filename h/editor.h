@@ -9,6 +9,7 @@
 class TermUI;
 class Page;
 class Device;
+class Dialog;
 class Editor {
 private:
 	enum class EditMode {
@@ -48,10 +49,11 @@ private:
 
 	void edit_start(void);
 	bool edit_run(void);
+	int proc_dialog(Dialog & dialog);
 public:
 	~Editor(void);
 	void init(DWORD size, TermUI * t, Page * p1, Page * p2);
-	bool edit(const Device& dev);
+	bool edit(Device& dev);
 
 
 };

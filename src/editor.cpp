@@ -4,6 +4,7 @@
 #include "device.h"
 #include "page.h"
 #include "utility.h"
+#include "dialog.h"
 
 #include <cstdio>
 #include <stdexcept>
@@ -49,39 +50,21 @@ void Editor::switch_edit_mode(void) {
 	}
 }
 
-bool Editor::edit(const Device & dev) {
+bool Editor::edit(Device & dev) {
 	memcpy(_buffer[0], dev.buffer(0), _buf_len);
 	memcpy(_buffer[1], dev.buffer(1), _buf_len);
 	_page[0]->set(_buffer, dev.offset());
 	_page[1]->set(_buffer, dev.offset());
-	_device_offset = dev.offset() - 2 * dev.geometry().BytesPerSector;
+	const int LEN = dev.geometry().BytesPerSector;
+	_device_offset = dev.offset() - 2 * LEN;
 
-	return edit_run();
-}
-
-
-void Editor::print_commands(void) const {
-	printf("\033[1;1H");
-	printf("\n--- NAV ---                 \n");
-	printf("ARROWS: move cursor by 1      \n");
-	printf("C+ARR : move cursor by 8      \n");
-	printf("HOME  : move to BOL           \n");
-	printf("END   : move to EOL           \n");
-	printf("\n--- DISP ---                \n");
-	printf("INS   : stop editing\n");
-	printf("TAB   : toggle edit mode    \n");
-	printf("F1~3  : toggle disp 1 modes \n");
-	printf("F5~7  : toggle disp 2 modes \n");
-	printf("ESC   : stop editing        \n");
-	printf("\nEDIT MODE: \033[1m");
-	switch (_edit_mode) {
-		case EditMode::HEX: printf("HEX"); break;
-		case EditMode::CHR: printf("CHR"); break;
-		case EditMode::STR: printf("STR"); break;
-		case EditMode::UNK:
-		default: printf("UNK"); break;
+	bool to_write = edit_run();
+	if (to_write) {
+		//dev.write(_buffer[0], _device_offset, LEN);
+		//dev.write(_buffer[1], _device_offset + LEN, LEN);
 	}
-	printf("\033[m");
+	_history.clear();
+	return to_write;
 }
 
 bool Editor::edit_run(void) {
@@ -100,9 +83,6 @@ bool Editor::edit_run(void) {
 	_page[0]->toggle_edit(true);
 	_page[1]->toggle_edit(true);
 	
-	//printf("\033[48;10H%d", _page[0]->selected());
-	//printf("\033[49;10H%d", _page[1]->selected());
-
 	_term->clear_screen();
 	print_commands();
 	print_stack(show_stack_size);
@@ -111,7 +91,11 @@ bool Editor::edit_run(void) {
 
 	unsigned char input_byte;
 	char input_str[64];
-	while ((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) {
+
+	Dialog quit_dialog(_term, "Write changes to disk and leave editor?", {"Keep editing", "Write & leave", "Discard & leave"});
+	int dialog_result = -1;
+
+	while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == 0) {
 		if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
 			switch(_edit_mode) {
 				case EditMode::HEX: if(_input.get(&input_byte, key, true)) { push_byte(input_byte); }       ; break;
@@ -151,9 +135,33 @@ bool Editor::edit_run(void) {
 
 	_page[0]->toggle_edit(false);
 	_page[1]->toggle_edit(false);
-	return false;
+	_term->clear_screen();
+	return (dialog_result == 1);
 }
 
+void Editor::print_commands(void) const {
+	printf("\033[1;1H");
+	printf("\n--- NAV ---                 \n");
+	printf("ARROWS: move cursor by 1      \n");
+	printf("C+ARR : move cursor by 8      \n");
+	printf("HOME  : move to BOL           \n");
+	printf("END   : move to EOL           \n");
+	printf("\n--- DISP ---                \n");
+	printf("INS   : stop editing\n");
+	printf("TAB   : toggle edit mode    \n");
+	printf("F1~3  : toggle disp 1 modes \n");
+	printf("F5~7  : toggle disp 2 modes \n");
+	printf("ESC   : stop editing        \n");
+	printf("\nEDIT MODE: \033[1m");
+	switch (_edit_mode) {
+		case EditMode::HEX: printf("HEX"); break;
+		case EditMode::CHR: printf("CHR"); break;
+		case EditMode::STR: printf("STR"); break;
+		case EditMode::UNK:
+		default: printf("UNK"); break;
+	}
+	printf("\033[m");
+}
 
 void Editor::move_cursor(int offset, CursorMoveMode mode) {
 	int future = _position + offset;
@@ -242,4 +250,14 @@ void Editor::print_stack(int max) {
 		printf("%16s%16s\n", "...", "");
 	}
 	printf("%32s\n", "");
+}
+
+int Editor::proc_dialog(Dialog & dialog) {
+	if (_history.empty()) {
+		return -1;
+	}
+
+	int code = dialog.query(80, 20);
+	printf(LAYOUT_FREE "          DIALOG RETURNED %d", code);
+	return code;
 }
