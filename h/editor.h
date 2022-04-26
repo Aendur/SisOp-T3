@@ -10,9 +10,10 @@ class Device;
 class Editor {
 private:
 	enum class EditMode {
+		UNK,
 		HEX,
 		CHR,
-		LONG,
+		STR,
 	};
 	TermUI *   _term = nullptr;
 	Page *  _page[2] = { nullptr, nullptr};
@@ -20,11 +21,13 @@ private:
 	int    _position = 0;
 	DWORD _buf_len;
 
-	EditMode _edit_mode = EditMode::HEX;
+	EditMode _edit_mode = EditMode::UNK;
 
 	InputField _input;
 	bool _initialized = false;
 
+	void switch_edit_mode(void);
+	void print_commands(void) const;
 	void move_cursor(int offset);
 	void edit_start(void);
 	bool edit_run(void);

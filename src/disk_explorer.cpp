@@ -9,8 +9,9 @@
 DiskExplorer::DiskExplorer(WCHAR drive) {
 	_ui.init();
 	_device.open_drive(drive);
-	_input.init(&_ui, 36, 24, "\033[1mGOTO SECTOR:\033[0m ");
+	_input.init(&_ui, 38, 24, "\033[1mGOTO SECTOR:\033[0m ");
 	//_input.set_maxlen(5);
+	//_input.set_endkey(TERMUI_KEY_z);
 	
 	if (_device.geometry().BytesPerSector != 512) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
@@ -25,8 +26,8 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 }
 
 void DiskExplorer::print_commands(void) const {
-	printf("\033[1;1H\n");
-	printf("-- NAV --                 \n");
+	printf("\033[1;1H");
+	printf("\n-- NAV --               \n");
 	printf("0     : goto sector 0     \n");
 	printf("1     : goto FirstDataSec \n");
 	//printf("F   : NOT IMPLEMENTED   \n");
@@ -35,13 +36,12 @@ void DiskExplorer::print_commands(void) const {
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
-	printf("-- DISP --                \n");
+	printf("\n-- DISP --                \n");
 	printf("INS   : edit current sector \n");
-	printf("TAB   : toggle view         \n");
 	printf("F1~3  : toggle disp 1 modes \n");
 	printf("F5~7  : toggle disp 2 modes \n");
 	printf("D     : show drive info     \n");
-	printf("Q/ESC : quit                \n");
+	printf("ESC   : exit                \n");
 
 	if (_show_drive_info) {
 		printf("\n-- GEOMETRY --\n");
@@ -64,9 +64,8 @@ void DiskExplorer::run(void) {
 	_page[1].print();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q && key != TERMUI_KEY_ESC) {
+	while ((key = _ui.read()) != TERMUI_KEY_ESC) {
 		switch(key) {
-//		case TERMUI_KEY_TAB        : _page[0].toggle_view() ; _page[1].toggle_view() ;                  break;
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F2         : _page[0].toggle_view()                          ;                  break;
 		case TERMUI_KEY_F3         : _page[0].switch_buff()                          ;                  break;
@@ -144,7 +143,7 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 }
 
 void DiskExplorer::input_and_go(void) {
-	if (_input.get(&_sector_bookmark)) {
+	if (_input.get(&_sector_bookmark, TERMUI_KEY_UNDEFINED)) {
 		goto_sector(_sector_bookmark * _device.geometry().BytesPerSector);
 		read_setpages();
 	}

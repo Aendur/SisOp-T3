@@ -15,11 +15,30 @@ filegen: src\filegen.cpp $(FGLIBS)
 diskexp: src\diskexp.cpp $(DXLIBS)
 	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:bin\diskexp.exe $?
 
-{src\}.cpp{obj\}.obj::
-	cl $(CFLAGS) /c /Fo:obj\ $<
 
-{src\clw\}.cpp{obj\}.obj::
-	cl $(CFLAGS) /c /Fo:obj\ $<
+#{src\}.cpp{obj\}.obj::
+#	cl $(CFLAGS) /c /Fo:obj\ $<
+
+obj\random_file.obj::        src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\utility.obj::            src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\disk_explorer.obj::      src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\term_ui.obj::            src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\device.obj::             src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\utility.obj::            src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\page.obj::               src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\input_field.obj::        src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\editor.obj::             src\$(@B).cpp h\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+
+
 
 .PHONY: clean
 
