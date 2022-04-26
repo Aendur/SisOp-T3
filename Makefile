@@ -7,13 +7,13 @@ DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
 
-all: dirs diskexp
+all: dirs diskexp.exe
 
-filegen: src\filegen.cpp $(FGLIBS)
-	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:bin\filegen.exe $?
+filegen.exe: src\filegen.cpp $(FGLIBS)
+	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:$@ $?
 
-diskexp: src\diskexp.cpp $(DXLIBS)
-	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:bin\diskexp.exe $?
+diskexp.exe: src\diskexp.cpp $(DXLIBS)
+	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:$@ $?
 
 
 #{src\}.cpp{obj\}.obj::
@@ -44,9 +44,15 @@ obj\dialog.obj::             src\$(@B).cpp h\$(@B).h
 .PHONY: clean
 
 dirs:
-	(IF NOT EXIST bin (MKDIR bin)) & (IF NOT EXIST obj (MKDIR obj))
+	(IF NOT EXIST obj (MKDIR obj))
+
+#(IF NOT EXIST bin (MKDIR bin)) & (IF NOT EXIST obj (MKDIR obj))
 
 clean:
-	del "obj\*.obj" /q
+	FOR %I IN (obj\*) DO @((echo Removing file %I) & (del %I))
+	IF EXIST obj (rmdir obj)
+
+#del "obj\*.obj" /q
+
 
 
