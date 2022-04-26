@@ -42,7 +42,7 @@ void Editor::switch_edit_mode(void) {
 	switch(_edit_mode) {
 		case EditMode::HEX: _input.set_maxlen(2) ; /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
 		case EditMode::CHR: _input.set_maxlen(1) ; /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
-		case EditMode::STR: _input.set_maxlen(32); /*_input.set_endkey(TERMUI_KEY_RETURN);*/ break;
+		case EditMode::STR: _input.set_maxlen(64); /*_input.set_endkey(TERMUI_KEY_RETURN);*/ break;
 		case EditMode::UNK:
 		default: break;
 	}
@@ -73,6 +73,7 @@ void Editor::print_commands(void) const {
 		case EditMode::HEX: printf("HEX"); break;
 		case EditMode::CHR: printf("CHR"); break;
 		case EditMode::STR: printf("STR"); break;
+		case EditMode::UNK:
 		default: printf("UNK"); break;
 	}
 	printf("\033[m");
@@ -102,11 +103,25 @@ bool Editor::edit_run(void) {
 	_page[0]->print();
 	_page[1]->print();
 
+	unsigned char input_byte;
+	char input_str[64];
 	while ((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) {
 		if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
-			//printf(LAYOUT_FREE "%c %02X", key, key);
-			unsigned char byte;
-			_input.get(&byte, key);
+			switch(_edit_mode) {
+				case EditMode::HEX:
+					_input.get(&input_byte, key, true);
+					break;
+				case EditMode::CHR:
+					//_input.get(&input_byte, key, false);
+					input_byte = (unsigned char) key;
+					break;
+				case EditMode::STR:
+					_input.get(input_str, 32, key, true);
+					break;
+				case EditMode::UNK:
+				default: printf("UNK"); break;
+			}
+			printf(LAYOUT_FREE "CAPTURED: %c %x %s", input_byte, input_byte, input_str);
 		} else {
 			switch (key) {
 				case TERMUI_KEY_F1         : _page[0]->toggle_mode()  ; break;

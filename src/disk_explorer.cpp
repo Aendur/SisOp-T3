@@ -143,7 +143,7 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 }
 
 void DiskExplorer::input_and_go(void) {
-	if (_input.get(&_sector_bookmark, TERMUI_KEY_UNDEFINED)) {
+	if (_input.get(&_sector_bookmark, TERMUI_KEY_UNDEFINED, true)) {
 		goto_sector(_sector_bookmark * _device.geometry().BytesPerSector);
 		read_setpages();
 	}
