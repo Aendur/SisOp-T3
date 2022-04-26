@@ -46,6 +46,7 @@ public:
 	inline void toggle_mode(void) { ++_mode[_view]; }
 	inline void toggle_view(void) { _view = _view == View::SECTOR ? View::ENTRIES : View::SECTOR; }
 	inline void select(int p) { _selected = p; }
+	inline int selected(void) const  { return _selected; }
 	void print(void) const;
 };
 

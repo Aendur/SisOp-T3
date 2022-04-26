@@ -69,6 +69,7 @@
 		"xhash": "cpp",
 		"xutility": "cpp",
 		"stack": "cpp",
-		"xlocale": "cpp"
+		"xlocale": "cpp",
+		"locale": "cpp"
 	}
 }

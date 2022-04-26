@@ -24,7 +24,7 @@ void Editor::init(DWORD nbytes, TermUI * t, Page * p1, Page * p2) {
 
 		_buffer[0] = new BYTE[_buf_len];
 		_buffer[1] = new BYTE[_buf_len];
-
+		_position = -1;
 		_initialized = true;
 	}
 }
@@ -44,9 +44,12 @@ bool Editor::edit_run(void) {
 		printf(LAYOUT_FREE "input field not initialized");
 		return false;
 	}
-	//_position = 0;
 	//printf(LAYOUT_FREE "INPUT: ");
 	KeyCode key = TERMUI_KEY_UNDEFINED;
+	if (_position < 0) { move_cursor(0 - _position); }
+
+	printf("\033[48;10H%d", _page[0]->selected());
+	printf("\033[49;10H%d", _page[1]->selected());
 
 	_page[0]->print();
 	_page[1]->print();

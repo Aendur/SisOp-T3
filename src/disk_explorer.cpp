@@ -26,21 +26,21 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H\n");
 	printf("-- NAV --                 \n");
+	printf("0     : goto sector 0     \n");
 	printf("1     : goto FirstDataSec \n");
-	//printf("f/F   : NOT IMPLEMENTED   \n");
-	printf("g/G   : goto sector %-7lld\n", _sector_bookmark);
-	printf("h/H   : goto sector (sel.)\n");
+	//printf("F   : NOT IMPLEMENTED   \n");
+	printf("G     : goto sector %-7lld\n", _sector_bookmark);
+	printf("H     : goto sector (sel.)\n");
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
-	printf("HOME  : goto first sector \n");
 	printf("-- DISP --                \n");
-	printf("INS : edit current sector \n");
-	printf("TAB : toggle view         \n");
-	printf("F1  : toggle disp. mode 1 \n");
-	printf("F2  : toggle disp. mode 2 \n");
-	printf("d/D : show drive info     \n");
-	printf("q/Q : quit                \n");
+	printf("INS   : edit current sector \n");
+	printf("TAB   : toggle view         \n");
+	printf("F1    : toggle disp. mode 1 \n");
+	printf("F2    : toggle disp. mode 2 \n");
+	printf("D     : show drive info     \n");
+	printf("Q/ESC : quit                \n");
 
 	if (_show_drive_info) {
 		printf("\n-- GEOMETRY --\n");
@@ -63,12 +63,13 @@ void DiskExplorer::run(void) {
 	_page[1].print();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q) {
+	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q && key != TERMUI_KEY_ESC) {
 		switch(key) {
 		case TERMUI_KEY_TAB        : _page[0].toggle_view() ; _page[1].toggle_view() ;                  break;
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F2         : _page[1].toggle_mode()                          ;                  break;
 		//case TERMUI_KEY_0          : _page[0].set((PBYTE)(&_sector0), 0)             ;                  break;
+		case TERMUI_KEY_0          : goto_sector(0)                                  ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpages(); break;
 		case TERMUI_KEY_d          :
 		case TERMUI_KEY_D          : _show_drive_info = !_show_drive_info            ;                  break;
@@ -84,7 +85,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
 		//case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
 		//case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
-		case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpages(); break;
+		//case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpages(); break;
 		//case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpages(); break;
 		case TERMUI_KEY_INSERT     : _editor.edit(_device)                ;                 break;
 		case TERMUI_KEY_SPACE      : setpages()                           ;                 break;
@@ -94,6 +95,8 @@ void DiskExplorer::run(void) {
 		_page[0].print();
 		_page[1].print();
 	}
+
+	//_ui.clear_screen();
 }
 
 void DiskExplorer::setpages(void) {
