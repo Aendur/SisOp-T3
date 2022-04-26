@@ -32,8 +32,8 @@ void Editor::init(DWORD nbytes, TermUI * t, Page * p1, Page * p2) {
 bool Editor::edit(const Device & dev) {
 	memcpy(_buffer[0], dev.buffer(0), _buf_len);
 	memcpy(_buffer[1], dev.buffer(1), _buf_len);
-	_page[0]->set(_buffer[0], dev.offset() - _buf_len - _buf_len);
-	_page[1]->set(_buffer[1], dev.offset() - _buf_len);
+	_page[0]->set(_buffer, dev.offset());
+	_page[1]->set(_buffer, dev.offset());
 
 	return edit_run();
 }

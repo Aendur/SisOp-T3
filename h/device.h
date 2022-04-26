@@ -34,6 +34,7 @@ public:
 	inline LONGLONG offset(void) const { return _offset; }
 	inline LONGLONG capacity(void) const { return _capacity; }
 	const PBYTE buffer(int i) const { return i <= 0 ? _buffer[0] : _buffer[1]; }
+	const PBYTE * buffers(void) const { return _buffer; }
 };
 
 #endif

@@ -1,5 +1,7 @@
 #include "disk_explorer.h"
 
+#include <stdexcept>
+
 int main(int argc, WCHAR ** argv) {
 	if (argc < 2) {
 		printf("Missing args - ");
@@ -10,8 +12,12 @@ int main(int argc, WCHAR ** argv) {
 
 	WCHAR drive = argv[1][0];
 	if (Device::check_drive(drive)) {
-		DiskExplorer de(drive);
-		de.run();
+		try {
+			DiskExplorer de(drive);
+			de.run();
+		} catch (std::exception & e) {
+			printf("\n\n\n\n\n%s\n\n\n\n\n", e.what());
+		}
 	}
 
 	return 0;

@@ -27,6 +27,12 @@ void Page::init(DWORD sl, DWORD cl, int x, int y) {
 	}
 }
 
+void Page::set(const PBYTE buffers[2], ULONGLONG offset) {
+	_buffers[0] = buffers[0];
+	_buffers[1] = buffers[1];
+	_buffer = _buffers[_selected_buffer];
+	_offset_end = offset;
+}
 
 //// Data line BEGIN
 void Page::print_hex_block(PBYTE line, int i0, int i1) const {
@@ -91,16 +97,16 @@ void Page::print_sector(void) const {
 	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
 	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 3, _X0,
-		_offset , size_to_string(_offset, true),
-		_offset / _clustr_length,
-		_offset / _sector_length,
+		offset_start() , size_to_string(offset_start(), true),
+		offset_start() / _clustr_length,
+		offset_start() / _sector_length,
 		(_editing == true) ? EDITSTR : VIEWSTR
 	);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 4, _X0);
 	
 	int nline = 0;
 	while(pos < end) {
-		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 5 + nline, _X0, nline, _offset + pos - _buffer);
+		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 5 + nline, _X0, nline, offset_start() + pos - _buffer);
 		print_hex(pos, LINE_WIDTH);
 		print_sector_str(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;

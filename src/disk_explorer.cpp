@@ -38,8 +38,8 @@ void DiskExplorer::print_commands(void) const {
 	printf("-- DISP --                \n");
 	printf("INS   : edit current sector \n");
 	printf("TAB   : toggle view         \n");
-	printf("F1    : toggle disp. mode 1 \n");
-	printf("F2    : toggle disp. mode 2 \n");
+	printf("F1~3  : toggle disp 1 modes \n");
+	printf("F5~7  : toggle disp 2 modes \n");
 	printf("D     : show drive info     \n");
 	printf("Q/ESC : quit                \n");
 
@@ -66,10 +66,13 @@ void DiskExplorer::run(void) {
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	while ((key = _ui.read()) != TERMUI_KEY_q && key != TERMUI_KEY_Q && key != TERMUI_KEY_ESC) {
 		switch(key) {
-		case TERMUI_KEY_TAB        : _page[0].toggle_view() ; _page[1].toggle_view() ;                  break;
+//		case TERMUI_KEY_TAB        : _page[0].toggle_view() ; _page[1].toggle_view() ;                  break;
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
-		case TERMUI_KEY_F2         : _page[1].toggle_mode()                          ;                  break;
-		//case TERMUI_KEY_0          : _page[0].set((PBYTE)(&_sector0), 0)             ;                  break;
+		case TERMUI_KEY_F2         : _page[0].toggle_view()                          ;                  break;
+		case TERMUI_KEY_F3         : _page[0].switch_buff()                          ;                  break;
+		case TERMUI_KEY_F5         : _page[1].toggle_mode()                          ;                  break;
+		case TERMUI_KEY_F6         : _page[1].toggle_view()                          ;                  break;
+		case TERMUI_KEY_F7         : _page[1].switch_buff()                          ;                  break;
 		case TERMUI_KEY_0          : goto_sector(0)                                  ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpages(); break;
 		case TERMUI_KEY_d          :
@@ -84,10 +87,6 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
 		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
-		//case TERMUI_KEY_PGUP       : advance_sectors(-(LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
-		//case TERMUI_KEY_PGDOWN     : advance_sectors( (LONGLONG) cluster_size()-2*LEN) ; read_setpages(); break;
-		//case TERMUI_KEY_HOME       : goto_sector(         0)                         ; read_setpages(); break;
-		//case TERMUI_KEY_END        : goto_sector(-(long)LEN)                         ; read_setpages(); break;
 		case TERMUI_KEY_INSERT     : _editor.edit(_device)                ;                 break;
 		case TERMUI_KEY_SPACE      : setpages()                           ;                 break;
 		default                    : setpages()                           ;                 break;
@@ -102,8 +101,8 @@ void DiskExplorer::run(void) {
 
 void DiskExplorer::setpages(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
-	_page[0].set(_device.buffer(0), _device.offset() - LEN - LEN);
-	_page[1].set(_device.buffer(1), _device.offset() - LEN);
+	_page[0].set(_device.buffers(), _device.offset());
+	_page[1].set(_device.buffers(), _device.offset());
 }
 
 void DiskExplorer::read_setpages(void) {
