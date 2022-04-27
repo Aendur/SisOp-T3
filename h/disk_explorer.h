@@ -5,6 +5,7 @@
 #include "device.h"
 #include "page.h"
 #include "fat32.h"
+#include "fsinfo.h"
 #include "input_field.h"
 #include "editor.h"
 #include <Windows.h>
@@ -34,6 +35,7 @@ private:
 	DriveInfoMode _show_drive_info = F32INFO;
 
 	fat32 _sector0;
+	fsinfo _fsi_sector;
 
 	void setpages(void);
 	void read_setpages(void);
@@ -41,7 +43,7 @@ private:
 	inline void toggle_info_mode(void) { _show_drive_info = (DriveInfoMode)((_show_drive_info + 1) % (NO_INFO + 1)); }
 
 	void advance_sectors(LONGLONG offset);
-	void goto_sector(LONGLONG offset);
+	void goto_offset(LONGLONG offset);
 	void input_and_goto_sector(void);
 	void input_and_goto_cluster_raw(void);
 	void input_and_goto_cluster_data(void);

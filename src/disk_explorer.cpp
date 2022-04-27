@@ -19,19 +19,23 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
 	}
 
-	// save fat32 _sector0 data
-	read_setpages();
+	// save fat32 sector0 data
+	_device.read();
 	memcpy(&_sector0, _device.buffer(0), _device.geometry().BytesPerSector);
+
+	// save fsinfo sector data	
+	_device.seek(_sector0.BPB_FSInfo() * _device.geometry().BytesPerSector, false);
+	_device.read();
+	memcpy(&_fsi_sector, _device.buffer(0), _device.geometry().BytesPerSector);
+
+	goto_offset(0);
+	read_setpages();
 	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), 36, 1);
 	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
 	_page[0].toggle_mode();
-	//_page[0].toggle_view();
-	//_page[0].switch_buff();
-	//_page[1].toggle_mode();
 	_page[1].toggle_view();
-	//_page[1].switch_buff();
 }
 
 void DiskExplorer::print_commands(void) const {
@@ -39,6 +43,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("\n--- NAV ---               \n");
 	printf("0     : goto sector 0     \n");
 	printf("1     : goto FirstDataSec \n");
+	printf("2     : goto FSI          \n");
 	//printf("F   : NOT IMPLEMENTED   \n");
 	printf("G     : goto sector       \n");
 	printf("H     : goto cluster (raw)\n");
@@ -85,15 +90,16 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_F5         : _page[1].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F6         : _page[1].toggle_view()                          ;                  break;
 		case TERMUI_KEY_F7         : _page[1].switch_buff()                          ;                  break;
-		case TERMUI_KEY_0          : goto_sector(0)                                  ; read_setpages(); break;
-		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpages(); break;
+		case TERMUI_KEY_0          : goto_offset(0)                                  ; read_setpages(); break;
+		case TERMUI_KEY_1          : goto_offset(fds_offset())                       ; read_setpages(); break;
+		case TERMUI_KEY_2          : goto_offset(_sector0.BPB_FSInfo() * LEN)        ; read_setpages(); break;
 		case TERMUI_KEY_d          :
 		case TERMUI_KEY_D          : toggle_info_mode()                              ;                  break;
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
 		case TERMUI_KEY_g          :
 		case TERMUI_KEY_G          : input_and_goto_sector()                         ; read_setpages(); break;
-		//case TERMUI_KEY_G          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
+		//case TERMUI_KEY_G          : goto_offset(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_raw()                    ; read_setpages(); break;
 		case TERMUI_KEY_n          :
@@ -140,7 +146,7 @@ void DiskExplorer::advance_sectors(LONGLONG offset) {
 	_device.seek(offset, true);
 }
 
-void DiskExplorer::goto_sector(LONGLONG offset) {
+void DiskExplorer::goto_offset(LONGLONG offset) {
 	if (offset < 0) { offset = _device.capacity() + offset; }
 
 	static const DWORD LEN = _device.geometry().BytesPerSector;
@@ -160,31 +166,31 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 void DiskExplorer::input_and_goto_sector(void) {
 	LONGLONG target_sector;
 	if (_input.get(&target_sector, TERMUI_KEY_UNDEFINED, true)) {
-		goto_sector(target_sector * _device.geometry().BytesPerSector);
+		goto_offset(target_sector * _device.geometry().BytesPerSector);
 	}
 }
 void DiskExplorer::input_and_goto_cluster_raw(void) {
 	LONGLONG target_cluster;
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
-		goto_sector(target_cluster * cluster_size());
+		goto_offset(target_cluster * cluster_size());
 	}
 }
 void DiskExplorer::input_and_goto_cluster_data(void) {
 	LONGLONG target_cluster;
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
-		goto_sector(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
+		goto_offset(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
 	}
 }
 
 void DiskExplorer::show_geom_info(void) const {
-	wprintf(L"MediaType         %d\n",   _device.geometry().MediaType);
-	wprintf(L"Cylinders (Quad)  %lld\n", _device.geometry().Cylinders.QuadPart);
-	wprintf(L"Cylinders (High)  %d\n",   _device.geometry().Cylinders.HighPart);
-	wprintf(L"Cylinders (Low)   %d\n",   _device.geometry().Cylinders.LowPart);
-	wprintf(L"TracksPerCylinder %d\n",   _device.geometry().TracksPerCylinder);
-	wprintf(L"SectorsPerTrack   %d\n",   _device.geometry().SectorsPerTrack);
-	wprintf(L"BytesPerSector    %d\n",   _device.geometry().BytesPerSector);
-	wprintf(L"Total capacity    %lld B\n", _device.capacity());
+	wprintf(L"MediaType        : %d\n",   _device.geometry().MediaType);
+	wprintf(L"Cylinders (Quad) : %lld\n", _device.geometry().Cylinders.QuadPart);
+	wprintf(L"Cylinders (High) : %d\n",   _device.geometry().Cylinders.HighPart);
+	wprintf(L"Cylinders (Low)  : %d\n",   _device.geometry().Cylinders.LowPart);
+	wprintf(L"TracksPerCylinder: %d\n",   _device.geometry().TracksPerCylinder);
+	wprintf(L"SectorsPerTrack  : %d\n",   _device.geometry().SectorsPerTrack);
+	wprintf(L"BytesPerSector   : %d\n",   _device.geometry().BytesPerSector);
+	wprintf(L"Total capacity   : %lld B\n", _device.capacity());
 	wprintf(L"      %s\n"    , size_to_wstring(_device.capacity(), true));
 	//fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 	clear_column(5);
@@ -206,8 +212,22 @@ void DiskExplorer::show_fat32_info(void) const {
 	clear_column(1);
 }
 void DiskExplorer::show_fsi_info(void) const {
-	clear_column(1);
+	printf("FSI_LeadSig   : 0x%0lX\n", _fsi_sector.FSI_LeadSig   ());
+	printf("              : 0x41615252\n");
+	//printf("FSI_Reserved1 : %lu\n", _fsi_sector.FSI_Reserved1 ());
+	printf("FSI_StrucSig  : 0x%0lX\n", _fsi_sector.FSI_StrucSig  ());
+	printf("              : 0x61417272\n");
+	printf("FSI_Free_Count: %lu\n", _fsi_sector.FSI_Free_Count());
+	printf("FSI_Nxt_Free  : %lu\n", _fsi_sector.FSI_Nxt_Free  ());
+	//printf("FSI_Reserved2 : %lu\n", _fsi_sector.FSI_Reserved2 ());
+	printf("FSI_TrailSig  : 0x%0lX\n", _fsi_sector.FSI_TrailSig  ());
+	printf("              : 0xAA550000\n");
+	clear_column(5);
 }
+
+
+
+
 
 void DiskExplorer::clear_column(int n) const {
 	for(int i = 0; i < n; ++i) {
