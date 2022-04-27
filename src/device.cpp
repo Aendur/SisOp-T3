@@ -132,10 +132,9 @@ void Device::seek(LONGLONG offset, bool relative) {
 	}
 }
 
-void Device::write(LONGLONG offset, PBYTE buffers[2]) {
-	LONGLONG save_offset = _offset;
+void Device::write(PBYTE buffers[2]) {
 	for (int i = 0; i < 2; ++i) {
-		BOOL status = WriteFile( _device, buffers[i], _geometry.BytesPerSector, &_write_nbytes, NULL);
+		BOOL status = WriteFile(_device, buffers[i], _geometry.BytesPerSector, &_write_nbytes, NULL);
 		if (status == FALSE) {
 			print_error(L"\n\n\n\n\n\ndevice::write", GetLastError());
 			seek(0, true);
@@ -143,11 +142,6 @@ void Device::write(LONGLONG offset, PBYTE buffers[2]) {
 		}
 	}
 	seek(0, true);
-	if (_offset != save_offset + _geometry.BytesPerSector + _geometry.BytesPerSector) {
-		throw std::runtime_error("device write error");
-	} else {
-		seek(save_offset, false);
-	}
 }
 
 void print_error(const wchar_t * msg, DWORD error) {

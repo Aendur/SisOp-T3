@@ -52,7 +52,7 @@ private:
 	void push_byte(unsigned char byte);
 	void push_str(const char * str);
 	void pop_byte(void);
-	void write_changes(void);
+	void write_changes(Device & dev);
 
 	EditorAction edit_run(void);
 	EditorAction proc_dialog(Dialog & dialog);

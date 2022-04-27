@@ -59,16 +59,18 @@ bool Editor::edit(Device & dev) {
 
 	EditorAction action = edit_run();
 	if (action == WRITE_CHANGES) {
-		printf(LAYOUT_FREE "    WOULD WRITE CHANGES");
+		printf(LAYOUT_FREE "    CHANGES WRITTEN");
+		write_changes(dev);
 	} else {
-		printf(LAYOUT_FREE "    WOULD DISCARD CHANGES");
+		printf(LAYOUT_FREE "    CHANGES DISCARDED");
 	}
 	_history.clear();
 	return action == WRITE_CHANGES;
 }
 
-void Editor::write_changes(void) {
-
+void Editor::write_changes(Device & dev) {
+	dev.write(_buffer);
+	dev.seek(_device_offset, false);
 }
 
 Editor::EditorAction Editor::edit_run(void) {

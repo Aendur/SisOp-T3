@@ -30,7 +30,7 @@ public:
 	
 	void read(void);
 	void seek(LONGLONG offset, bool relative);
-	void write(LONGLONG offset, PBYTE buffers[2]);
+	void write(PBYTE buffers[2]);
 
 	inline const DISK_GEOMETRY & geometry(void) const { return _geometry; }
 	inline LONGLONG offset(void) const { return _offset; }
