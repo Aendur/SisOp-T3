@@ -50,7 +50,8 @@ void Device::open_drive(wchar_t drive) {
 
 		this->_device = CreateFileW(
 			drive_path,
-			GENERIC_READ | GENERIC_WRITE,
+			GENERIC_READ | GENERIC_WRITE, // | STANDARD_RIGHTS_ALL,
+			//GENERIC_ALL | STANDARD_RIGHTS_ALL,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
 			NULL,
 			OPEN_EXISTING,
@@ -61,7 +62,39 @@ void Device::open_drive(wchar_t drive) {
 			fprintf(_log, "device open error\n");
 		} else {
 			get_geometry();
+			dismount_drive();
+			lock_drive();
 		}
+	}
+}
+
+void Device::dismount_drive(void)  {
+	DWORD nbytes;
+	BOOL status = DeviceIoControl (
+		_device, FSCTL_DISMOUNT_VOLUME,
+		NULL, 0,
+		NULL, 0,
+		&nbytes,
+		(LPOVERLAPPED) NULL
+	);
+	if (status == FALSE) {
+		print_error(L"\n\n\ndevice dismount error", GetLastError());
+		throw std::runtime_error("device error");
+	}
+}
+
+void Device::lock_drive(void)  {
+	DWORD nbytes;
+	BOOL status = DeviceIoControl (
+		_device, FSCTL_LOCK_VOLUME,
+		NULL, 0,
+		NULL, 0,
+		&nbytes,
+		(LPOVERLAPPED) NULL
+	);
+	if (status == FALSE) {
+		print_error(L"\n\n\ndevice lock error", GetLastError());
+		throw std::runtime_error("device error");
 	}
 }
 

@@ -26,6 +26,8 @@ public:
 
 	static bool check_drive(WCHAR drive);
 	void open_drive(WCHAR drive);
+	void dismount_drive(void);
+	void lock_drive(void);
 	void close_drive(void);
 	
 	void read(void);
