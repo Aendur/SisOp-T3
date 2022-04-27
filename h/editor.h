@@ -4,6 +4,7 @@
 #include <Windows.h>
 #include <deque>
 #include "input_field.h"
+#include "layout.h"
 
 class TermUI;
 class Page;
@@ -21,6 +22,12 @@ private:
 		STAY,
 		HALT,
 		WRAP,
+	};
+
+	enum EditorAction {
+		KEEP_EDITING     = DIALOG_NO_SELECTION,
+		WRITE_CHANGES   = 1,
+		DISCARD_CHANGES = 2,
 	};
 
 	TermUI *   _term = nullptr;
@@ -47,8 +54,8 @@ private:
 	void pop_byte(void);
 	void write_changes(void);
 
-	int edit_run(void);
-	int proc_dialog(Dialog & dialog);
+	EditorAction edit_run(void);
+	EditorAction proc_dialog(Dialog & dialog);
 public:
 	~Editor(void);
 	void init(DWORD size, TermUI * t, Page * p1, Page * p2);

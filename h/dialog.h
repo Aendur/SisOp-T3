@@ -13,10 +13,6 @@ struct DialogOption {
 
 typedef std::vector<DialogOption> DialogOptions;
 
-enum DialogSelection {
-	DIALOG_NO_SELECTION = -1,
-};
-
 class TermUI;
 class Dialog {
 private:

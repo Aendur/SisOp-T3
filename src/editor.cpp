@@ -1,5 +1,4 @@
 #include "editor.h"
-#include "layout.h"
 #include "term_ui.h"
 #include "device.h"
 #include "page.h"
@@ -50,12 +49,6 @@ void Editor::switch_edit_mode(void) {
 	}
 }
 
-enum LeaveEditorAction {
-	KEEP_EDITING     = DIALOG_NO_SELECTION,
-	WRITE_CHANGES   = 1,
-	DISCARD_CHANGES = 2,
-};
-
 bool Editor::edit(Device & dev) {
 	memcpy(_buffer[0], dev.buffer(0), _buf_len);
 	memcpy(_buffer[1], dev.buffer(1), _buf_len);
@@ -64,7 +57,7 @@ bool Editor::edit(Device & dev) {
 	const int LEN = dev.geometry().BytesPerSector;
 	_device_offset = dev.offset() - 2 * LEN;
 
-	LeaveEditorAction action = (LeaveEditorAction) edit_run();
+	EditorAction action = edit_run();
 	if (action == WRITE_CHANGES) {
 		printf(LAYOUT_FREE "    WOULD WRITE CHANGES");
 	} else {
@@ -75,10 +68,10 @@ bool Editor::edit(Device & dev) {
 }
 
 void Editor::write_changes(void) {
-	
+
 }
 
-int Editor::edit_run(void) {
+Editor::EditorAction Editor::edit_run(void) {
 	static const DialogOptions dialog_options = {
 		{ "Keep editing"   , [](void) { return KEEP_EDITING; } },
 		{ "Write & leave"  , [](void) { return WRITE_CHANGES; } },
@@ -88,7 +81,7 @@ int Editor::edit_run(void) {
 
 	if (!_initialized) {
 		printf(LAYOUT_FREE "input field not initialized");
-		return false;
+		return DISCARD_CHANGES;
 	}
 	//printf(LAYOUT_FREE "INPUT: ");
 	KeyCode key = TERMUI_KEY_UNDEFINED;
@@ -109,7 +102,7 @@ int Editor::edit_run(void) {
 	char input_str[64];
 
 	Dialog quit_dialog("Write changes to disk and leave editor?", dialog_options);
-	int dialog_result = KEEP_EDITING;
+	EditorAction dialog_result = KEEP_EDITING;
 
 	//while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
 	while (((key = _term->read()) != TERMUI_KEY_ESC) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
@@ -269,12 +262,12 @@ void Editor::print_stack(int max) {
 	printf("%32s\n", "");
 }
 
-int Editor::proc_dialog(Dialog & dialog) {
+Editor::EditorAction Editor::proc_dialog(Dialog & dialog) {
 	if (_history.empty()) {
 		return DISCARD_CHANGES;
 	}
 
 	int code = dialog.query(80, 20);
 	printf(LAYOUT_FREE "          DIALOG RETURNED %d", code);
-	return code;
+	return (EditorAction)code;
 }
