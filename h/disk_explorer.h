@@ -11,8 +11,15 @@
 
 class DiskExplorer {
 private:
-	TermUI _ui;
+	enum DriveInfoMode {
+		F32INFO,
+		FSIINFO,
+		DEVINFO,
+		NO_INFO,
+	};
 
+
+	TermUI _ui;
 	unsigned long long _offset_start = 0;
 	unsigned long long _offset_current = 0;
 	unsigned long long _buffer_length = 0;
@@ -24,12 +31,14 @@ private:
 
 	long _adv_N = 1;
 	//LONGLONG _sector_bookmark = 0;
-	bool _show_drive_info = true;
+	DriveInfoMode _show_drive_info = F32INFO;
 
 	fat32 _sector0;
 
 	void setpages(void);
 	void read_setpages(void);
+
+	inline void toggle_info_mode(void) { _show_drive_info = (DriveInfoMode)((_show_drive_info + 1) % (NO_INFO + 1)); }
 
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
@@ -38,6 +47,9 @@ private:
 	void input_and_goto_cluster_data(void);
 	void show_geom_info(void) const;
 	void show_fat32_info(void) const;
+	void show_fsi_info(void) const;
+	void show_fat32_info_ext(void) const;
+	void clear_column(int n) const;
 	void show_entry_info(void) const;
 	void print_commands(void) const;
 	

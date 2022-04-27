@@ -29,8 +29,8 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_page[0].toggle_mode();
 	//_page[0].toggle_view();
 	//_page[0].switch_buff();
+	//_page[1].toggle_mode();
 	_page[1].toggle_view();
-	_page[1].toggle_mode();
 	//_page[1].switch_buff();
 }
 
@@ -53,16 +53,13 @@ void DiskExplorer::print_commands(void) const {
 	printf("D     : show drive info     \n");
 	printf("ESC   : exit                \n");
 
-	if (_show_drive_info) {
-		printf("\n--- GEOMETRY ---\n");
-		show_geom_info();
-		printf("\n--- FAT32 ---\n");
-		show_fat32_info();
-	} else {
-		printf("\033[0J");
+	switch(_show_drive_info) {
+		case NO_INFO: printf("\033[0J"); break;
+		case DEVINFO: printf("\n--- GEOMETRY ---\n"); show_geom_info(); break;
+		case F32INFO: printf("\n--- FAT32 ---\n"); show_fat32_info(); break;
+		case FSIINFO: printf("\n--- FSINFO ---\n"); show_fsi_info(); break;
+		default: clear_column(15); break;
 	}
-
-
 }
 
 static const DialogOptions quit_dialog_options = {
@@ -91,7 +88,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_0          : goto_sector(0)                                  ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_sector(fds_offset())                       ; read_setpages(); break;
 		case TERMUI_KEY_d          :
-		case TERMUI_KEY_D          : _show_drive_info = !_show_drive_info            ;                  break;
+		case TERMUI_KEY_D          : toggle_info_mode()                              ;                  break;
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
 		case TERMUI_KEY_g          :
@@ -190,6 +187,7 @@ void DiskExplorer::show_geom_info(void) const {
 	wprintf(L"Total capacity    %lld B\n", _device.capacity());
 	wprintf(L"      %s\n"    , size_to_wstring(_device.capacity(), true));
 	//fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
+	clear_column(5);
 }
 
 void DiskExplorer::show_fat32_info(void) const {
@@ -200,14 +198,56 @@ void DiskExplorer::show_fat32_info(void) const {
 	printf("Bytes/sector   : %u\n", _sector0.BPB_BytsPerSec());
 	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
 	printf("BPB_RootClus   : %d\n", _sector0.BPB_RootClus());
+	printf("BPB_FSInfo     : %u\n", _sector0.BPB_FSInfo());
 	printf("\n");
 	printf("Cluster size   : %lu\n" , cluster_size());
 	printf("FirstDataSector: %lu\n" , first_data_sector());
 	printf("FDS offset     : %llu\n", fds_offset());
-	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
-	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
-	// SEEK
-	//FDS_offset
+	clear_column(1);
+}
+void DiskExplorer::show_fsi_info(void) const {
+	clear_column(1);
+}
+
+void DiskExplorer::clear_column(int n) const {
+	for(int i = 0; i < n; ++i) {
+		printf("%*s\n", 32, "");
+	}
+}
+void DiskExplorer::show_fat32_info_ext(void) const {
+	//printf("BS_jmpBoot    : %u", _sector0.BS_jmpBoot    ()); //                    &sector[0]   
+	//printf("BS_OEMName    : %u", _sector0.BS_OEMName    ()); //                    &sector[3]   
+	///**/printf("BPB_BytsPerSec: %u", _sector0.BPB_BytsPerSec()); // *((unsigned short*)&sector[11]) 
+	///**/printf("BPB_SecPerClus: %u", _sector0.BPB_SecPerClus()); //                     sector[13]  
+	///**/printf("BPB_RsvdSecCnt: %u", _sector0.BPB_RsvdSecCnt()); // *((unsigned short*)&sector[14]) 
+	///**/printf("BPB_NumFATs   : %u", _sector0.BPB_NumFATs   ()); //                     sector[16]  
+	//printf("BPB_RootEntCnt: %u", _sector0.BPB_RootEntCnt()); // *((unsigned short*)&sector[17]) 
+	//printf("BPB_TotSec16  : %u", _sector0.BPB_TotSec16  ()); // *((unsigned short*)&sector[19]) 
+	//printf("BPB_Media     : %u", _sector0.BPB_Media     ()); //                     sector[21]  
+	///**/printf("BPB_FATSz16   : %u", _sector0.BPB_FATSz16   ()); // *((unsigned short*)&sector[22]) 
+	//printf("BPB_SecPerTrk : %u", _sector0.BPB_SecPerTrk ()); // *((unsigned short*)&sector[24]) 
+	//printf("BPB_NumHeads  : %u", _sector0.BPB_NumHeads  ()); // *((unsigned short*)&sector[26]) 
+	//printf("BPB_HiddSec   : %u", _sector0.BPB_HiddSec   ()); // *((unsigned int*)  &sector[28]) 
+	//printf("BPB_TotSec32  : %u", _sector0.BPB_TotSec32  ()); // *((unsigned int*)  &sector[32]) 
+	///**/printf("BPB_FATSz32   : %u", _sector0.BPB_FATSz32   ()); // *((unsigned int*)  &sector[36]) 
+	//printf("BPB_ExtFlags  : %u", _sector0.BPB_ExtFlags  ()); // *((unsigned short*)&sector[40]) 
+	//printf("BPB_FSVer     : %u", _sector0.BPB_FSVer     ()); // *((unsigned short*)&sector[42]) 
+	///**/printf("BPB_RootClus  : %u", _sector0.BPB_RootClus  ()); // *((unsigned int*)  &sector[44]) 
+	///**/printf("BPB_FSInfo    : %u", _sector0.BPB_FSInfo    ()); // *((unsigned short*)&sector[48]) 
+	//printf("BPB_BkBootSec : %u", _sector0.BPB_BkBootSec ()); // *((unsigned short*)&sector[50]) 
+	//printf("BPB_Reserved  : %u", _sector0.BPB_Reserved  ()); //                    &sector[52]  
+	//printf("BS_DrvNum     : %u", _sector0.BS_DrvNum     ()); //                     sector[64]  
+	//printf("BS_Reserved1  : %u", _sector0.BS_Reserved1  ()); //                     sector[65]  
+	//printf("BS_BootSig    : %u", _sector0.BS_BootSig    ()); //                     sector[66]  
+	//printf("BS_VolID      : %u", _sector0.BS_VolID      ()); // *((unsigned int*)  &sector[67]) 
+	//printf("BS_VolLab     : %u", _sector0.BS_VolLab     ()); //                    &sector[71]  
+	//printf("BS_FilSysType : %u", _sector0.BS_FilSysType ()); //                    &sector[82]  
+	//printf("SigByte1      : %u", _sector0.SigByte1      ()); //                     sector[510] 
+	//printf("SigByte2      : %u", _sector0.SigByte2      ()); //                     sector[511] 
+	///**/printf("\n");
+	///**/printf("Cluster size   : %lu\n" , cluster_size());
+	///**/printf("FirstDataSector: %lu\n" , first_data_sector());
+	///**/printf("FDS offset     : %llu\n", fds_offset());
 }
 
 
