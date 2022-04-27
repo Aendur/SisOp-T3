@@ -59,6 +59,8 @@ private:
 	LONG first_data_sector(void) const;
 	LONGLONG fds_offset(void) const;
 	LONGLONG first_sector_of_cluster(LONGLONG N) const;
+	LONGLONG fat_sec_num(LONGLONG N) const;
+	LONGLONG fat_ent_off(LONGLONG N) const;
 
 public:
 	DiskExplorer(WCHAR drive);

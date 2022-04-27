@@ -188,6 +188,11 @@ void DiskExplorer::input_and_goto_cluster_data(void) {
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
 		goto_offset(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
 		read_setpages();
+
+		printf(LAYOUT_FREE "          fat_sec_num: %-10lld fat_ent_off %-10lld"
+			, fat_sec_num(target_cluster)
+			, fat_ent_off(target_cluster)
+		);
 	}
 }
 
@@ -205,7 +210,11 @@ void DiskExplorer::show_geom_info(void) const {
 	clear_column(5);
 }
 
+
 void DiskExplorer::show_fat32_info(void) const {
+	static char buf[12];
+	snprintf(buf, 12, "%s", _sector0.BS_VolLab());
+
 	printf("BPB_FATSz16    : %u\n", _sector0.BPB_FATSz16());
 	printf("BPB_FATSz32    : %u\n", _sector0.BPB_FATSz32());
 	printf("BPB_NumFATs    : %u\n", _sector0.BPB_NumFATs());
@@ -214,6 +223,7 @@ void DiskExplorer::show_fat32_info(void) const {
 	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
 	printf("BPB_RootClus   : %d\n", _sector0.BPB_RootClus());
 	printf("BPB_FSInfo     : %u\n", _sector0.BPB_FSInfo());
+	printf("BS_VolLab      : %s\n", buf);
 	printf("\n");
 	printf("Cluster size   : %lu\n" , cluster_size());
 	printf("FirstDataSector: %lu\n" , first_data_sector());
@@ -292,3 +302,26 @@ LONGLONG DiskExplorer::fds_offset(void) const {
 LONGLONG DiskExplorer::first_sector_of_cluster(LONGLONG N) const {
 	return ((N - 2) * _sector0.BPB_SecPerClus()) + first_data_sector();
 }
+
+LONGLONG DiskExplorer::fat_sec_num(LONGLONG N) const {
+	// If(BPB_FATSz16 != 0)
+	// FATSz = BPB_FATSz16;
+	// Else
+	// FATSz = BPB_FATSz32;
+	// If(FATType == FAT16)
+	// FATOffset = N * 2;
+	// Else if (FATType == FAT32)
+	// FATOffset = N * 4;
+	// ThisFATSecNum = BPB_ResvdSecCnt + (FATOffset / BPB_BytsPerSec);
+	// ThisFATEntOffset = REM(FATOffset / BPB_BytsPerSec);
+	// REM(…) is the remainder operator. That means the remainder a
+	unsigned int fatsz = _sector0.BPB_FATSz32();
+	LONGLONG fat_offset = N * 4;
+	return _sector0.BPB_RsvdSecCnt() + fat_offset / _sector0.BPB_BytsPerSec();
+}
+LONGLONG DiskExplorer::fat_ent_off(LONGLONG N) const {
+	unsigned int fatsz = _sector0.BPB_FATSz32();
+	LONGLONG fat_offset = N * 4;
+	return fat_offset % _sector0.BPB_BytsPerSec();
+}
+
