@@ -69,6 +69,7 @@ bool Editor::edit(Device & dev) {
 }
 
 void Editor::write_changes(Device & dev) {
+	dev.seek(_device_offset, false);
 	dev.write(_buffer);
 	dev.seek(_device_offset, false);
 }
