@@ -10,10 +10,8 @@
 DiskExplorer::DiskExplorer(WCHAR drive) {
 	_ui.init();
 	_device.open_drive(drive);
-	_input.init(&_ui, 38, 24, "\033[1mGOTO SECTOR:\033[0m ");
+	_input.init(&_ui, 38, 24, "\033[1mGOTO:\033[0m ");
 	Dialog::init(&_ui);
-	//_input.set_maxlen(5);
-	//_input.set_endkey(TERMUI_KEY_z);
 	
 	if (_device.geometry().BytesPerSector != 512) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
@@ -104,11 +102,11 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
 		case TERMUI_KEY_g          :
-		case TERMUI_KEY_G          : input_and_goto_sector()                         ; read_setpages(); break;
+		case TERMUI_KEY_G          : input_and_goto_sector()                         ; /* reads/sets */ break;
 		case TERMUI_KEY_h          :
-		case TERMUI_KEY_H          : input_and_goto_cluster_raw()                    ; read_setpages(); break;
+		case TERMUI_KEY_H          : input_and_goto_cluster_raw()                    ; /* reads/sets */ break;
 		case TERMUI_KEY_n          :
-		case TERMUI_KEY_N          : input_and_goto_cluster_data()                   ; read_setpages(); break;
+		case TERMUI_KEY_N          : input_and_goto_cluster_data()                   ; /* reads/sets */ break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
@@ -169,21 +167,27 @@ void DiskExplorer::goto_offset(LONGLONG offset) {
 }
 
 void DiskExplorer::input_and_goto_sector(void) {
+	_input.set_msg("\033[1mGOTO SECTOR:\033[0m ");
 	LONGLONG target_sector;
 	if (_input.get(&target_sector, TERMUI_KEY_UNDEFINED, true)) {
 		goto_offset(target_sector * _device.geometry().BytesPerSector);
+		read_setpages();
 	}
 }
 void DiskExplorer::input_and_goto_cluster_raw(void) {
+	_input.set_msg("\033[1mGOTO RAW CLUSTER:\033[0m ");
 	LONGLONG target_cluster;
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
 		goto_offset(target_cluster * cluster_size());
+		read_setpages();
 	}
 }
 void DiskExplorer::input_and_goto_cluster_data(void) {
+	_input.set_msg("\033[1mGOTO DATA CLUSTER:\033[0m ");
 	LONGLONG target_cluster;
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
 		goto_offset(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
+		read_setpages();
 	}
 }
 

@@ -10,6 +10,10 @@ void InputField::init(TermUI * t, int x0, int y0, const char * msg) {
 	_term = t;
 	_X0 = x0;
 	_Y0 = y0;
+	set_msg(msg);
+}
+
+void InputField::set_msg(const char * msg) {
 	snprintf(_message, MESSAGE_SIZE, "%s", msg);
 }
 

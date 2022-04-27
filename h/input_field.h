@@ -25,8 +25,9 @@ private:
 	void print_error(const char * msg);
 public:
 	void init(TermUI * t, int x0, int y0, const char * msg);
-	void set_endkey(KeyCode key) { _endkey = key; }
-	void set_maxlen(int len) { _maxlen = len; }
+	void set_msg(const char * msg);
+	inline void set_endkey(KeyCode key) { _endkey = key; }
+	inline void set_maxlen(int len) { _maxlen = len; }
 
 	bool get(int * out, KeyCode feed, bool keep_trying);
 	bool get(char * out, KeyCode feed, bool keep_trying);
