@@ -33,8 +33,9 @@ void DiskExplorer::print_commands(void) const {
 	printf("0     : goto sector 0     \n");
 	printf("1     : goto FirstDataSec \n");
 	//printf("F   : NOT IMPLEMENTED   \n");
-	printf("G     : goto sector %-7lld\n", _sector_bookmark);
-	printf("H     : goto sector (sel.)\n");
+	printf("G     : goto sector       \n");
+	printf("H     : goto cluster (raw)\n");
+	printf("N     : goto cluster (data)\n");
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
@@ -87,9 +88,12 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
 		case TERMUI_KEY_g          :
-		case TERMUI_KEY_G          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
+		case TERMUI_KEY_G          : input_and_goto_sector()                         ; read_setpages(); break;
+		//case TERMUI_KEY_G          : goto_sector(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
 		case TERMUI_KEY_h          :
-		case TERMUI_KEY_H          : input_and_go()                                  ;                  break;
+		case TERMUI_KEY_H          : input_and_goto_cluster_raw()                    ; read_setpages(); break;
+		case TERMUI_KEY_n          :
+		case TERMUI_KEY_N          : input_and_goto_cluster_data()                   ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
@@ -149,10 +153,22 @@ void DiskExplorer::goto_sector(LONGLONG offset) {
 	_device.seek(offset, false);
 }
 
-void DiskExplorer::input_and_go(void) {
-	if (_input.get(&_sector_bookmark, TERMUI_KEY_UNDEFINED, true)) {
-		goto_sector(_sector_bookmark * _device.geometry().BytesPerSector);
-		read_setpages();
+void DiskExplorer::input_and_goto_sector(void) {
+	LONGLONG target_sector;
+	if (_input.get(&target_sector, TERMUI_KEY_UNDEFINED, true)) {
+		goto_sector(target_sector * _device.geometry().BytesPerSector);
+	}
+}
+void DiskExplorer::input_and_goto_cluster_raw(void) {
+	LONGLONG target_cluster;
+	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
+		goto_sector(target_cluster * cluster_size());
+	}
+}
+void DiskExplorer::input_and_goto_cluster_data(void) {
+	LONGLONG target_cluster;
+	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
+		goto_sector(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
 	}
 }
 
@@ -178,7 +194,7 @@ void DiskExplorer::show_fat32_info(void) const {
 	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
 	printf("BPB_RootClus   : %d\n", _sector0.BPB_RootClus());
 	printf("\n");
-	printf("Cluster size   : %lu\n", cluster_size());
+	printf("Cluster size   : %lu\n" , cluster_size());
 	printf("FirstDataSector: %lu\n" , first_data_sector());
 	printf("FDS offset     : %llu\n", fds_offset());
 	// size_t FirstSectorofCluster = ((N - 2) * _sector0.BPB_SecPerClus()) + FirstDataSector
@@ -196,4 +212,7 @@ LONG DiskExplorer::first_data_sector(void) const {
 }
 LONGLONG DiskExplorer::fds_offset(void) const {
 	return first_data_sector() * _sector0.BPB_BytsPerSec();
+}
+LONGLONG DiskExplorer::first_sector_of_cluster(LONGLONG N) const {
+	return ((N - 2) * _sector0.BPB_SecPerClus()) + first_data_sector();
 }

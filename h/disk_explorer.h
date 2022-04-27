@@ -23,7 +23,7 @@ private:
 	Editor _editor;
 
 	long _adv_N = 1;
-	LONGLONG _sector_bookmark = 0;
+	//LONGLONG _sector_bookmark = 0;
 	bool _show_drive_info = true;
 
 	fat32 _sector0;
@@ -33,7 +33,9 @@ private:
 
 	void advance_sectors(LONGLONG offset);
 	void goto_sector(LONGLONG offset);
-	void input_and_go(void);
+	void input_and_goto_sector(void);
+	void input_and_goto_cluster_raw(void);
+	void input_and_goto_cluster_data(void);
 	void show_geom_info(void) const;
 	void show_fat32_info(void) const;
 	void show_entry_info(void) const;
@@ -42,6 +44,7 @@ private:
 	ULONG cluster_size(void) const;
 	LONG first_data_sector(void) const;
 	LONGLONG fds_offset(void) const;
+	LONGLONG first_sector_of_cluster(LONGLONG N) const;
 
 public:
 	DiskExplorer(WCHAR drive);
