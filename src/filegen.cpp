@@ -18,33 +18,46 @@ int get_len(int x) {
 
 char * find_dot(char * str) {
 	printf("search dot @ %p\n", str);
-	++str;
-	while(*str != '\0') {
-		if (*str == '.') {
-			printf("found dot @ %p\n", str);
-			return str;
+	char * result = str + strlen(str);
+	while(result >= str) {
+		if (*result == '.') {
+			printf("found dot @ %p\n", result);
+			return result;
 		}
-		++str;
+		--result;
 	}
 	return NULL;
 }
 
+
+static char extension_buffer[4];
 const char * get_filename(char * name, int current, int N) {
-	if (N == 1) return name;
-	if (strlen(name) < 2) return name;
+	static const int BUFSIZE = 256;
+	static char base_name_buffer[BUFSIZE];
+
+	if (strlen(name) < 3) {
+		snprintf(extension_buffer, 4, "");
+		return name;
+	} 
 	
-	static const int BUFSIZE = 64;
-	static char file_name_buffer[BUFSIZE];
 	static char * ext = find_dot(name);
 	if (ext != NULL) {
 		*ext = 0;
-		int L = get_len(N);
-		snprintf(file_name_buffer, BUFSIZE, "%s%0*d.%s", name, L, current + 1, ext + 1);
-		return file_name_buffer;
+		snprintf(extension_buffer, 4, "%s", ext + 1);
+		if (N == 1) {
+			snprintf(base_name_buffer, BUFSIZE, "%s", name);
+		} else {
+			snprintf(base_name_buffer, BUFSIZE, "%s%d", name, current + 1);
+		}
+		return base_name_buffer;
 	} else {
-		int L = get_len(N);
-		snprintf(file_name_buffer, BUFSIZE, "%s%0*d", name, L, current + 1);
-		return file_name_buffer;
+		snprintf(extension_buffer, 4, "");
+		if (N == 1) {
+			snprintf(base_name_buffer, BUFSIZE, "%s", name);
+		} else {
+			snprintf(base_name_buffer, BUFSIZE, "%s%d", name, current + 1);
+		}
+		return base_name_buffer;
 	}
 
 }
@@ -63,9 +76,9 @@ int main (int argc, char ** argv) {
 		int max_files = std::stoi(argv[3]);
 		for (int i = 0; i < max_files; ++i) {
 			const char * fname = get_filename(argv[1], i, max_files);
-			std::cout << "Creating file: " << fname << " - " << size_to_string(fsize, true) << "\n";
+			std::cout << "Creating file: " << fname << '.' << extension_buffer << " - " << size_to_string(fsize, true) << "\n";
 			if (!dry_run) {
-				RandomFile rf(fname, fsize);
+				RandomFile rf(fname, extension_buffer, fsize);
 				rf.write();
 			}
 		}

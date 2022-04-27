@@ -3,32 +3,29 @@
 
 #include <string>
 
-static const int RF_LABL_SIZE = 5;
-static const int RF_FILD_SIZE = 33;
-static const int RF_LINE_SIZE = RF_LABL_SIZE + RF_FILD_SIZE + 2;
-static const int RF_HEAD_SIZE = RF_LINE_SIZE * 7;
-static const int RF_TAIL_SIZE = RF_LINE_SIZE;
-static const int RF_MINF_SIZE = (RF_HEAD_SIZE + RF_TAIL_SIZE + RF_LINE_SIZE);
+static const int RF_HEAD_SIZE = 224;
+static const int RF_TAIL_SIZE = 32;
 
-#pragma warning(disable:4820)
 class RandomFile {
 private:
-	char   file_name[RF_FILD_SIZE + 1];
+	std::string base_name;
+	std::string extension;
 	size_t file_size;
-	size_t body_size;
-	char * body = nullptr;
 	char   head[RF_HEAD_SIZE + 1];
-	char   tail[RF_TAIL_SIZE + 1];
-	long   id;
+	char * file_buffer;
 
-	void init_head(void);
-	void init_body(void);
-	void init_tail(void);
+	unsigned long id1;
+	unsigned long id2;
+
+	void init_strings(void);
+	void create_file(void);
+	void create_page(size_t index, size_t max);
+	void split_name(void);
+
 public:
-	RandomFile(const char * name, size_t size);
+	RandomFile(const char * name, const char * ext, size_t size);
 	~RandomFile(void);
 	void write(void) const;
 };
-#pragma warning(default:4820)
 
 #endif
