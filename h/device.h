@@ -14,6 +14,7 @@ private:
 	PBYTE _buffer[2];
 	DWORD _geom_nbytes;
 	DWORD _read_nbytes;
+	DWORD _write_nbytes;
 
 	LONGLONG _offset = -1;
 	LONGLONG _capacity = -1;
@@ -29,6 +30,7 @@ public:
 	
 	void read(void);
 	void seek(LONGLONG offset, bool relative);
+	void write(LONGLONG offset, PBYTE buffers[2]);
 
 	inline const DISK_GEOMETRY & geometry(void) const { return _geometry; }
 	inline LONGLONG offset(void) const { return _offset; }

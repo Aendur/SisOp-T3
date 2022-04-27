@@ -102,8 +102,7 @@ void DiskExplorer::run(void) {
 		_page[0].print();
 		_page[1].print();
 	}
-
-	//_ui.clear_screen();
+	_ui.clear_screen();
 }
 
 void DiskExplorer::setpages(void) {

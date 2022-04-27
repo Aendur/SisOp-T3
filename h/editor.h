@@ -2,7 +2,6 @@
 #define EDITOR_H
 
 #include <Windows.h>
-//#include <stack>
 #include <deque>
 #include "input_field.h"
 
@@ -46,16 +45,14 @@ private:
 	void push_byte(unsigned char byte);
 	void push_str(const char * str);
 	void pop_byte(void);
+	void write_changes(void);
 
-	void edit_start(void);
-	bool edit_run(void);
+	int edit_run(void);
 	int proc_dialog(Dialog & dialog);
 public:
 	~Editor(void);
 	void init(DWORD size, TermUI * t, Page * p1, Page * p2);
 	bool edit(Device& dev);
-
-
 };
 
 

@@ -2,6 +2,7 @@
 #include <Windows.h>
 
 #include <set>
+#include <stdexcept>
 using std::set;
 
 void print_error(const wchar_t *, DWORD);
@@ -102,14 +103,15 @@ void Device::get_geometry(void) {
 }
 
 void Device::read(void) {
-	BOOL status0 = ReadFile(_device, _buffer[0], _geometry.BytesPerSector, &_read_nbytes, NULL);
-	BOOL status1 = ReadFile(_device, _buffer[1], _geometry.BytesPerSector, &_read_nbytes, NULL);
-	if (!status0 || !status1) {
-		fprintf(stderr, "device read error\n");
-	} else {
-		// sets offset;
-		seek(0, true);
+	for (int i = 0; i < 2; ++i) {
+		BOOL status = ReadFile(_device, _buffer[i], _geometry.BytesPerSector, &_read_nbytes, NULL);
+		if (status == FALSE) {
+			print_error(L"\n\n\n\n\n\ndevice::read", GetLastError());
+		}
 	}
+
+	// sets offset;
+	seek(0, true);
 }
 
 void Device::seek(LONGLONG offset, bool relative) {
@@ -127,6 +129,24 @@ void Device::seek(LONGLONG offset, bool relative) {
 		_offset = lin.QuadPart;
 	} else {
 		print_error(L"\n\n\n\n\n\ndevice::seek", error);
+	}
+}
+
+void Device::write(LONGLONG offset, PBYTE buffers[2]) {
+	LONGLONG save_offset = _offset;
+	for (int i = 0; i < 2; ++i) {
+		BOOL status = WriteFile( _device, buffers[i], _geometry.BytesPerSector, &_write_nbytes, NULL);
+		if (status == FALSE) {
+			print_error(L"\n\n\n\n\n\ndevice::write", GetLastError());
+			seek(0, true);
+			return;
+		}
+	}
+	seek(0, true);
+	if (_offset != save_offset + _geometry.BytesPerSector + _geometry.BytesPerSector) {
+		throw std::runtime_error("device write error");
+	} else {
+		seek(save_offset, false);
 	}
 }
 

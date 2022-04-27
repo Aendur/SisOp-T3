@@ -50,6 +50,12 @@ void Editor::switch_edit_mode(void) {
 	}
 }
 
+enum LeaveEditorAction {
+	KEEP_EDITING     = DIALOG_NO_SELECTION,
+	WRITE_CHANGES   = 1,
+	DISCARD_CHANGES = 2,
+};
+
 bool Editor::edit(Device & dev) {
 	memcpy(_buffer[0], dev.buffer(0), _buf_len);
 	memcpy(_buffer[1], dev.buffer(1), _buf_len);
@@ -58,28 +64,26 @@ bool Editor::edit(Device & dev) {
 	const int LEN = dev.geometry().BytesPerSector;
 	_device_offset = dev.offset() - 2 * LEN;
 
-	bool to_write = edit_run();
-	if (to_write) {
-		//dev.write(_buffer[0], _device_offset, LEN);
-		//dev.write(_buffer[1], _device_offset + LEN, LEN);
+	LeaveEditorAction action = (LeaveEditorAction) edit_run();
+	if (action == WRITE_CHANGES) {
+		printf(LAYOUT_FREE "    WOULD WRITE CHANGES");
+	} else {
+		printf(LAYOUT_FREE "    WOULD DISCARD CHANGES");
 	}
 	_history.clear();
-	return to_write;
+	return action == WRITE_CHANGES;
 }
 
-enum EditorAction {
-	KEEP_EDITING      = DIALOG_NO_SELECTION,
-	CHANGES_WRITEN    = 1,
-	CHANGES_DISCARDED = 2,
-};
+void Editor::write_changes(void) {
+	
+}
 
-static const DialogOptions dialog_options = {
-	{ "Keep editing"   , [](void) { return KEEP_EDITING; } },
-	{ "Write & leave"  , [](void) { return CHANGES_WRITEN; } },
-	{ "Discard & leave", [](void) { return CHANGES_DISCARDED; } },
-};
-
-bool Editor::edit_run(void) {
+int Editor::edit_run(void) {
+	static const DialogOptions dialog_options = {
+		{ "Keep editing"   , [](void) { return KEEP_EDITING; } },
+		{ "Write & leave"  , [](void) { return WRITE_CHANGES; } },
+		{ "Discard & leave", [](void) { return DISCARD_CHANGES; } },
+	};
 	static const int show_stack_size = 32;
 
 	if (!_initialized) {
@@ -105,9 +109,10 @@ bool Editor::edit_run(void) {
 	char input_str[64];
 
 	Dialog quit_dialog("Write changes to disk and leave editor?", dialog_options);
-	int dialog_result = -1;
+	int dialog_result = KEEP_EDITING;
 
-	while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
+	//while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
+	while (((key = _term->read()) != TERMUI_KEY_ESC) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
 		if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
 			switch(_edit_mode) {
 				case EditMode::HEX: if(_input.get(&input_byte, key, true)) { push_byte(input_byte); }       ; break;
@@ -148,7 +153,7 @@ bool Editor::edit_run(void) {
 	_page[0]->toggle_edit(false);
 	_page[1]->toggle_edit(false);
 	_term->clear_screen();
-	return (dialog_result == 1);
+	return dialog_result;
 }
 
 void Editor::print_commands(void) const {
@@ -266,7 +271,7 @@ void Editor::print_stack(int max) {
 
 int Editor::proc_dialog(Dialog & dialog) {
 	if (_history.empty()) {
-		return CHANGES_DISCARDED;
+		return DISCARD_CHANGES;
 	}
 
 	int code = dialog.query(80, 20);
