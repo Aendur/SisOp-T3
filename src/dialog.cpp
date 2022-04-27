@@ -8,16 +8,18 @@
 using std::string;
 using std::vector;
 
-Dialog::Dialog(TermUI * term, const string & msg, const vector<string> & opts) : _term(term), _msg(msg), _options(opts) {
-	if (opts.size() < 1) {
+Dialog::Dialog(const string & msg, const DialogOptions & opts) : _msg(msg), _options(opts) {
+	if (!_initialized) {
+		throw std::runtime_error("Dialog not initialized");
+	} else if (opts.size() < 1) {
 		throw std::runtime_error("Dialog needs at least 1 option");
 	}
 	int msg_len = (int) msg.length();
 	int opt_len = 0;
-	for (const auto & opt : opts) { opt_len += (int) opt.length(); }
+	for (const auto & opt : opts) { opt_len += (int) opt.option.length(); }
 
-	int msg_width = 12 + msg_len;
-	int opt_width = 3 * ((int)_options.size() + 1) + opt_len + 6;
+	int msg_width = 14 + msg_len;
+	int opt_width =  8 + 3 * ((int)_options.size() + 1) + opt_len;
 	int extra_pad;
 
 	if (msg_width > opt_width) {
@@ -48,15 +50,17 @@ Dialog::Dialog(TermUI * term, const string & msg, const vector<string> & opts) :
 
 	_lines[0][0] = ' ';
 	_lines[0][1] = ' ';
-	_lines[0][2] = '+';
+	_lines[0][2] = ' ';
+	_lines[0][3] = '+';
 	_lines[0][_line_width] = 0;
 	_lines[0][_line_width - 1] = ' ';
 	_lines[0][_line_width - 2] = ' ';
-	_lines[0][_line_width - 3] = '+';
+	_lines[0][_line_width - 3] = ' ';
+	_lines[0][_line_width - 4] = '+';
 	
-	_lines[1][2] = '|';
+	_lines[1][3] = '|';
 	_lines[1][_line_width] = 0;
-	_lines[1][_line_width - 3] = '|';
+	_lines[1][_line_width - 4] = '|';
 }
 
 Dialog::~Dialog(void) {
@@ -70,8 +74,8 @@ int Dialog::query(int x0, int y0) {
 	select(0);
 	show(x0, y0);
 	
-	int selection_confirmed = -1;
-	while (selection_confirmed == -1 && (key = _term->read()) != TERMUI_KEY_ESC) {
+	int selection_confirmed = DIALOG_NO_SELECTION;
+	while (selection_confirmed == DIALOG_NO_SELECTION && (key = _term->read()) != TERMUI_KEY_ESC) {
 		switch (key) {
 			case TERMUI_KEY_ARROW_UP   : select(_selection - 1); break;
 			case TERMUI_KEY_ARROW_DOWN : select(_selection + 1); break;
@@ -82,7 +86,8 @@ int Dialog::query(int x0, int y0) {
 		show(x0, y0);
 	}
 	clear(x0, y0);
-	return selection_confirmed;
+
+	return selection_confirmed == DIALOG_NO_SELECTION ? DIALOG_NO_SELECTION : _options[selection_confirmed].callback();
 }
 
 void Dialog::select(int opt) {
@@ -93,9 +98,9 @@ void Dialog::select(int opt) {
 
 #define STR_OUTER "\033[%d;%dH%*s"
 #define STR_INNER "\033[%d;%dH%s"
-#define STR_MESSG "\033[%d;%dH  |   %*s%s%*s   |  "
-#define STR_OPTLP "\033[%d;%dH  |%*s"
-#define STR_OPTRP "   %*s|  "
+#define STR_MESSG "\033[%d;%dH   |   %*s%s%*s   |   "
+#define STR_OPTLP "\033[%d;%dH   |%*s"
+#define STR_OPTRP "   %*s|   "
 #define STR_OPTSY "   \033[7m%s\033[27m"
 #define STR_OPTSN "   %s"
 
@@ -109,9 +114,9 @@ void Dialog::show(int x0, int y0) const {
 	printf(STR_OPTLP , y0 + 5, x0, _opt_lpad, "");
 	for (int i = 0; i < _options.size(); ++i) {
 		if (i == _selection) {
-			printf(STR_OPTSY, _options[i].c_str());
+			printf(STR_OPTSY, _options[i].option.c_str());
 		} else {
-			printf(STR_OPTSN, _options[i].c_str());
+			printf(STR_OPTSN, _options[i].option.c_str());
 		}
 	}
 	printf(STR_OPTRP , _opt_rpad, "");

@@ -7,13 +7,13 @@ DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
 
-all: dirs diskexp.exe
+all: dirs diskexp
 
-filegen.exe: src\filegen.cpp $(FGLIBS)
-	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:$@ $?
+filegen: src\filegen.cpp $(FGLIBS)
+	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:filegen.exe $?
 
-diskexp.exe: src\diskexp.cpp $(DXLIBS)
-	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:$@ $?
+diskexp: src\diskexp.cpp $(DXLIBS)
+	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:diskexp.exe $?
 
 
 #{src\}.cpp{obj\}.obj::
@@ -23,13 +23,12 @@ obj\random_file.obj::        src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\utility.obj::            src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+
 obj\disk_explorer.obj::      src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\term_ui.obj::            src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\device.obj::             src\$(@B).cpp h\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\utility.obj::            src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\page.obj::               src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
@@ -41,8 +40,6 @@ obj\dialog.obj::             src\$(@B).cpp h\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 
 
-.PHONY: clean
-
 dirs:
 	(IF NOT EXIST obj (MKDIR obj))
 
@@ -51,6 +48,7 @@ dirs:
 clean:
 	FOR %I IN (obj\*) DO @((echo Removing file %I) & (del %I))
 	IF EXIST obj (rmdir obj)
+.PHONY: clean
 
 #del "obj\*.obj" /q
 

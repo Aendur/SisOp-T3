@@ -3,13 +3,28 @@
 
 #include <vector>
 #include <string>
+#include <functional>
+
+typedef std::function<int(void)> DialogCallback;
+struct DialogOption {
+	const std::string option;
+	const DialogCallback callback;
+};
+
+typedef std::vector<DialogOption> DialogOptions;
+
+enum DialogSelection {
+	DIALOG_NO_SELECTION = -1,
+};
 
 class TermUI;
 class Dialog {
 private:
-	TermUI * _term;
+	inline static TermUI * _term = nullptr;
+	inline static bool _initialized = false;
+
 	const std::string _msg;
-	const std::vector<std::string> _options;
+	const DialogOptions _options;
 
 	static const int _N_extra_lines = 2;
 	char * _lines[_N_extra_lines];
@@ -26,7 +41,9 @@ private:
 	void show(int x0, int y0) const;
 	void clear(int x0, int y0) const;
 public:
-	Dialog(TermUI * term, const std::string & msg, const std::vector<std::string> & opts);
+	inline static void init(TermUI * t) { if(!_initialized) {_term = t; _initialized = true;} }
+
+	Dialog(const std::string & msg, const DialogOptions & opts);
 	~Dialog(void);
 	int query(int x0, int y0);
 };

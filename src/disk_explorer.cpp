@@ -11,6 +11,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_ui.init();
 	_device.open_drive(drive);
 	_input.init(&_ui, 38, 24, "\033[1mGOTO SECTOR:\033[0m ");
+	Dialog::init(&_ui);
 	//_input.set_maxlen(5);
 	//_input.set_endkey(TERMUI_KEY_z);
 	
@@ -56,6 +57,11 @@ void DiskExplorer::print_commands(void) const {
 
 }
 
+static const DialogOptions quit_dialog_options = {
+	{"Cancel", []() { return DIALOG_NO_SELECTION; }},
+	{"OK"    , []() { return 1; }},
+};
+
 void DiskExplorer::run(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
 
@@ -65,8 +71,8 @@ void DiskExplorer::run(void) {
 	_page[1].print();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	Dialog quit_dialog(&_ui, "Confirm exit?", {"Cancel", "OK"});
-	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == 0) {
+	Dialog quit_dialog("Confirm exit?", quit_dialog_options);
+	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F2         : _page[0].toggle_view()                          ;                  break;
@@ -88,9 +94,9 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
 		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
-		case TERMUI_KEY_INSERT     : _editor.edit(_device)                ;                 break;
-		case TERMUI_KEY_SPACE      : setpages()                           ;                 break;
-		default                    : setpages()                           ;                 break;
+		case TERMUI_KEY_INSERT     : _editor.edit(_device)                           ; setpages();      break;
+		case TERMUI_KEY_SPACE      : setpages()                                      ;                  break;
+		default                    : setpages()                                      ;                  break;
 		}
 		print_commands();
 		_page[0].print();

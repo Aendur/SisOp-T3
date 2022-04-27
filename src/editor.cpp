@@ -67,6 +67,18 @@ bool Editor::edit(Device & dev) {
 	return to_write;
 }
 
+enum EditorAction {
+	KEEP_EDITING      = DIALOG_NO_SELECTION,
+	CHANGES_WRITEN    = 1,
+	CHANGES_DISCARDED = 2,
+};
+
+static const DialogOptions dialog_options = {
+	{ "Keep editing"   , [](void) { return KEEP_EDITING; } },
+	{ "Write & leave"  , [](void) { return CHANGES_WRITEN; } },
+	{ "Discard & leave", [](void) { return CHANGES_DISCARDED; } },
+};
+
 bool Editor::edit_run(void) {
 	static const int show_stack_size = 32;
 
@@ -92,10 +104,10 @@ bool Editor::edit_run(void) {
 	unsigned char input_byte;
 	char input_str[64];
 
-	Dialog quit_dialog(_term, "Write changes to disk and leave editor?", {"Keep editing", "Write & leave", "Discard & leave"});
+	Dialog quit_dialog("Write changes to disk and leave editor?", dialog_options);
 	int dialog_result = -1;
 
-	while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == 0) {
+	while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
 		if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
 			switch(_edit_mode) {
 				case EditMode::HEX: if(_input.get(&input_byte, key, true)) { push_byte(input_byte); }       ; break;
@@ -254,7 +266,7 @@ void Editor::print_stack(int max) {
 
 int Editor::proc_dialog(Dialog & dialog) {
 	if (_history.empty()) {
-		return -1;
+		return CHANGES_DISCARDED;
 	}
 
 	int code = dialog.query(80, 20);
