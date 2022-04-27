@@ -98,7 +98,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
 		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
-		case TERMUI_KEY_INSERT     : _editor.edit(_device)                           ; setpages();      break;
+		case TERMUI_KEY_INSERT     : _editor.edit(_device)                           ; read_setpages(); break;
 		case TERMUI_KEY_SPACE      : setpages()                                      ;                  break;
 		default                    : setpages()                                      ;                  break;
 		}

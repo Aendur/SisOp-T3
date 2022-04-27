@@ -21,8 +21,6 @@ void Editor::init(DWORD nbytes, TermUI * t, Page * p1, Page * p2) {
 		_page[0] = p1;
 		_page[1] = p2;
 		_input.init(t, 38, 24, "EDITING: ");
-		switch_edit_mode();
-
 
 		_buf_len = nbytes;
 		_buffer[0] = new BYTE[_buf_len];
@@ -34,17 +32,15 @@ void Editor::init(DWORD nbytes, TermUI * t, Page * p1, Page * p2) {
 
 void Editor::switch_edit_mode(void) {
 	switch(_edit_mode) {
-		case EditMode::HEX: _edit_mode = EditMode::CHR; break;
-		case EditMode::CHR: _edit_mode = EditMode::STR; break;
-		case EditMode::STR: _edit_mode = EditMode::HEX; break;
-		case EditMode::UNK:
-		default: _edit_mode = EditMode::HEX;
+		case EditMode::CHR: _edit_mode = EditMode::HEX; break;
+		case EditMode::HEX: _edit_mode = EditMode::FIL; break;
+		case EditMode::FIL: _edit_mode = EditMode::CHR; break;
+		default: _edit_mode = EditMode::CHR;
 	}
 	switch(_edit_mode) {
 		case EditMode::HEX: _input.set_maxlen(2) ; /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
 		case EditMode::CHR: _input.set_maxlen(1) ; /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
-		case EditMode::STR: _input.set_maxlen(64); /*_input.set_endkey(TERMUI_KEY_RETURN);*/ break;
-		case EditMode::UNK:
+		case EditMode::FIL: _input.set_maxlen(1) ; /*_input.set_endkey(TERMUI_KEY_RETURN);*/ break;
 		default: break;
 	}
 }
@@ -59,19 +55,13 @@ bool Editor::edit(Device & dev) {
 
 	EditorAction action = edit_run();
 	if (action == WRITE_CHANGES) {
-		printf(LAYOUT_FREE "    CHANGES WRITTEN");
-		write_changes(dev);
-	} else {
-		printf(LAYOUT_FREE "    CHANGES DISCARDED");
+		dev.seek(_device_offset, false);
+		dev.write(_buffer);
+		//write_changes(dev);
 	}
+	dev.seek(_device_offset, false);
 	_history.clear();
 	return action == WRITE_CHANGES;
-}
-
-void Editor::write_changes(Device & dev) {
-	dev.seek(_device_offset, false);
-	dev.write(_buffer);
-	dev.seek(_device_offset, false);
 }
 
 Editor::EditorAction Editor::edit_run(void) {
@@ -80,7 +70,7 @@ Editor::EditorAction Editor::edit_run(void) {
 		{ "Write & leave"  , [](void) { return WRITE_CHANGES; } },
 		{ "Discard & leave", [](void) { return DISCARD_CHANGES; } },
 	};
-	static const int show_stack_size = 32;
+	static const int show_stack_size = 20;
 
 	if (!_initialized) {
 		printf(LAYOUT_FREE "input field not initialized");
@@ -101,22 +91,21 @@ Editor::EditorAction Editor::edit_run(void) {
 	_page[0]->print();
 	_page[1]->print();
 
-	unsigned char input_byte;
-	char input_str[64];
-
 	Dialog quit_dialog("Write changes to disk and leave editor?", dialog_options);
 	EditorAction dialog_result = KEEP_EDITING;
 
-	//while (((key = _term->read()) != TERMUI_KEY_ESC && key != TERMUI_KEY_INSERT) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
+	unsigned char input_byte;
+	char input_char;
 	while (((key = _term->read()) != TERMUI_KEY_ESC) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
 		if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
 			switch(_edit_mode) {
 				case EditMode::HEX: if(_input.get(&input_byte, key, true)) { push_byte(input_byte); }       ; break;
 				case EditMode::CHR:                                          push_byte((unsigned char) key) ; break;
-				case EditMode::STR: if(_input.get(input_str, 32, key, true)) { push_str(input_str); }      ; break;
-				case EditMode::UNK: printf("UNK"); break;
+				case EditMode::FIL: if(_input.get(&input_char, key, true)) { push_fill(input_char); }       ; break;
 				default:            printf("UNK"); break;
 			}
+		} else if (key == TERMUI_KEY_RETURN && _edit_mode == EditMode::CHR) {
+			push_byte((unsigned char) key);
 		} else {
 			switch (key) {
 				case TERMUI_KEY_F1              : _page[0]->toggle_mode()  ; break;
@@ -160,17 +149,15 @@ void Editor::print_commands(void) const {
 	printf("HOME  : move to BOL           \n");
 	printf("END   : move to EOL           \n");
 	printf("\n--- DISP ---                \n");
-	printf("INS   : stop editing\n");
 	printf("TAB   : toggle edit mode    \n");
 	printf("F1~3  : toggle disp 1 modes \n");
 	printf("F5~7  : toggle disp 2 modes \n");
 	printf("ESC   : stop editing        \n");
 	printf("\nEDIT MODE: \033[1m");
 	switch (_edit_mode) {
-		case EditMode::HEX: printf("HEX"); break;
-		case EditMode::CHR: printf("CHR"); break;
-		case EditMode::STR: printf("STR"); break;
-		case EditMode::UNK:
+		case EditMode::HEX: printf("HEX "); break;
+		case EditMode::CHR: printf("CHR "); break;
+		case EditMode::FIL: printf("FILL"); break;
 		default: printf("UNK"); break;
 	}
 	printf("\033[m");
@@ -214,20 +201,23 @@ void Editor::push_byte(unsigned char byte) {
 	move_cursor(1, CursorMoveMode::STAY);
 }
 
-void Editor::push_str(const char * str) {
-	int len = (int) strlen(str);
-	int maxpos = _position + len;
-	int maxoff = 2 * (int) _buf_len;
-	int i, buf_ind, buf_pos;
-	for (int newpos = _position; newpos < maxpos && newpos < maxoff; ++newpos) {
-		i = newpos - _position;
-		buf_ind = newpos / _buf_len;
-		buf_pos = newpos % _buf_len;
-		BYTE prev = _buffer[buf_ind][buf_pos];
-		_history.emplace_front(_device_offset + newpos, prev);
-		_buffer[buf_ind][buf_pos] = str[i];
+void Editor::push_fill(unsigned char byte) {
+	int len;
+	_input.set_maxlen(12);
+	if (_input.get(&len, TERMUI_KEY_UNDEFINED, true)) {
+		int maxpos = _position + len;
+		int maxoff = 2 * (int) _buf_len;
+		int buf_ind, buf_pos;
+		for (int newpos = _position; newpos < maxpos && newpos < maxoff; ++newpos) {
+			buf_ind = newpos / _buf_len;
+			buf_pos = newpos % _buf_len;
+			BYTE prev = _buffer[buf_ind][buf_pos];
+			_history.emplace_front(_device_offset + newpos, prev);
+			_buffer[buf_ind][buf_pos] = byte;
+		}
+		move_cursor(len, CursorMoveMode::HALT);
 	}
-	move_cursor(len, CursorMoveMode::HALT);
+	_input.set_maxlen(1);
 }
 
 void Editor::pop_byte(void) {
@@ -259,8 +249,9 @@ void Editor::print_stack(int max) {
 		printf("%3d. POS %08llx, BYTE %s (0x%02X)\n", ++i, pos, colorize_byte(opts), chr);
 		if (i >= max) { break; }
 	}
-	if (_history.size() > max) {
-		printf("%16s%16s\n", "...", "");
+	int remaining = (int)_history.size() - max;
+	if (remaining > 0) {
+		printf("%12s%-3d%17s\n", "+", remaining, "");
 	}
 	printf("%32s\n", "");
 }

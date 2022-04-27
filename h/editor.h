@@ -13,10 +13,9 @@ class Dialog;
 class Editor {
 private:
 	enum class EditMode {
-		UNK,
 		HEX,
 		CHR,
-		STR,
+		FIL,
 	};
 	enum class CursorMoveMode {
 		STAY,
@@ -37,7 +36,7 @@ private:
 	int    _position = 0;
 	DWORD _buf_len;
 
-	EditMode _edit_mode = EditMode::UNK;
+	EditMode _edit_mode = EditMode::CHR;
 	std::deque<std::pair<LONGLONG, BYTE>> _history;
 
 	InputField _input;
@@ -50,7 +49,7 @@ private:
 	bool set_cursor(LONGLONG newpos);
 
 	void push_byte(unsigned char byte);
-	void push_str(const char * str);
+	void push_fill(unsigned char byte);
 	void pop_byte(void);
 	void write_changes(Device & dev);
 

@@ -44,12 +44,7 @@ bool InputField::capture_input(KeyCode feed, bool reset) {
 			}
 		}
 	}
-	//printf("test");
-	//printf("\033[%d;%dH", _Y0, _X0);
-	//printf("%*s", _position + (int) strlen(_message), "");
-	
-	// ERASE SEQ "\033[1K"
-	//printf("\033[%d;%dH\033[1K", _Y0, _X0);
+
 	printf("\033[1K");
 	return (key == _endkey || _position >= _maxlen);
 }
@@ -65,6 +60,27 @@ void InputField::print_error(const char * msg) {
 	printf("     \033[31;1mError:\033[0m %s\033[0K", msg);
 }
 
+bool InputField::get(int * out, KeyCode feed, bool keep_trying) {
+	bool reset = true;
+	do {
+		bool captured = capture_input(feed);
+		if (captured) {
+			try {
+				*out = std::stoi(_buffer.chr);
+				return true;
+			} catch (std::exception &) {
+				feed = TERMUI_KEY_UNDEFINED;
+				reset = false;
+				print_error("invalid decimal value");
+			}
+		} else {
+			return false;
+		}
+	} while (keep_trying);
+	return false;
+}
+
+
 bool InputField::get(long long * out, KeyCode feed, bool keep_trying) {
 	bool reset = true;
 	do {
@@ -76,7 +92,6 @@ bool InputField::get(long long * out, KeyCode feed, bool keep_trying) {
 			} catch (std::exception &) {
 				feed = TERMUI_KEY_UNDEFINED;
 				reset = false;
-				//print_error(e.what());
 				print_error("invalid decimal value");
 			}
 		} else {
@@ -85,8 +100,6 @@ bool InputField::get(long long * out, KeyCode feed, bool keep_trying) {
 	} while (keep_trying);
 	return false;
 }
-
-
 
 #include <map>
 static const std::map<char, int> hexmap = {
@@ -117,21 +130,17 @@ bool InputField::get(unsigned char * out, KeyCode feed, bool keep_trying) {
 	return false;
 }
 
-bool InputField::get(char * out, size_t max_len, KeyCode feed, bool keep_trying) {
-	bool reset = true;
+bool InputField::get(char * out, KeyCode feed, bool keep_trying) {
 	do {
-		bool captured = capture_input(feed, reset);
+		bool captured = capture_input(feed);
 		if (captured) {
 			try {
-				size_t len = strlen(_buffer.chr);
-				if (len > max_len) throw std::range_error("string too large: " + std::to_string(len) + " bytes (max " + std::to_string(max_len) + ")");
-				memcpy(out, _buffer.chr, len);
-				out[len] = 0;
+				*out = _buffer.chr[0];
 				return true;
-			} catch (std::exception & e) {
+			} catch (std::exception &) {
 				feed = TERMUI_KEY_UNDEFINED;
-				reset = false;
-				print_error(e.what());
+				//print_error(e.what());
+				print_error("invalid character");
 			}
 		} else {
 			return false;
@@ -139,3 +148,26 @@ bool InputField::get(char * out, size_t max_len, KeyCode feed, bool keep_trying)
 	} while (keep_trying);
 	return false;
 }
+
+// bool InputField::get(char * out, size_t max_len, KeyCode feed, bool keep_trying) {
+// 	bool reset = true;
+// 	do {
+// 		bool captured = capture_input(feed, reset);
+// 		if (captured) {
+// 			try {
+// 				size_t len = strlen(_buffer.chr);
+// 				if (len > max_len) throw std::range_error("string too large: " + std::to_string(len) + " bytes (max " + std::to_string(max_len) + ")");
+// 				memcpy(out, _buffer.chr, len);
+// 				out[len] = 0;
+// 				return true;
+// 			} catch (std::exception & e) {
+// 				feed = TERMUI_KEY_UNDEFINED;
+// 				reset = false;
+// 				print_error(e.what());
+// 			}
+// 		} else {
+// 			return false;
+// 		}
+// 	} while (keep_trying);
+// 	return false;
+// }
