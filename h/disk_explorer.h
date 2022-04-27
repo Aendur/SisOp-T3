@@ -21,9 +21,9 @@ private:
 
 
 	TermUI _ui;
-	unsigned long long _offset_start = 0;
-	unsigned long long _offset_current = 0;
-	unsigned long long _buffer_length = 0;
+	// unsigned long long _offset_start = 0;
+	// unsigned long long _offset_current = 0;
+	// unsigned long long _buffer_length = 0;
 
 	Device _device;
 	Page _page[2];
@@ -31,7 +31,7 @@ private:
 	Editor _editor;
 
 	long _adv_N = 1;
-	//LONGLONG _sector_bookmark = 0;
+	LONGLONG _sector_bookmark = 0;
 	DriveInfoMode _show_drive_info = F32INFO;
 
 	fat32 _sector0;

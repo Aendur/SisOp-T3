@@ -45,6 +45,8 @@ void DiskExplorer::print_commands(void) const {
 	printf("1     : goto FirstDataSec \n");
 	printf("2     : goto FSI          \n");
 	//printf("F   : NOT IMPLEMENTED   \n");
+	printf("B     : bookmark sector   \n");
+	printf("V     : -------> %-10lld  \n", _sector_bookmark);
 	printf("G     : goto sector       \n");
 	printf("H     : goto cluster (raw)\n");
 	printf("N     : goto cluster (data)\n");
@@ -93,13 +95,16 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_0          : goto_offset(0)                                  ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_offset(fds_offset())                       ; read_setpages(); break;
 		case TERMUI_KEY_2          : goto_offset(_sector0.BPB_FSInfo() * LEN)        ; read_setpages(); break;
+		case TERMUI_KEY_b          :
+		case TERMUI_KEY_B          : _sector_bookmark = (_device.offset()-2*LEN)/LEN ;                  break;
+		case TERMUI_KEY_v          :
+		case TERMUI_KEY_V          : goto_offset(_sector_bookmark * LEN)             ; read_setpages(); break;
 		case TERMUI_KEY_d          :
 		case TERMUI_KEY_D          : toggle_info_mode()                              ;                  break;
 		case TERMUI_KEY_f          :
 		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
 		case TERMUI_KEY_g          :
 		case TERMUI_KEY_G          : input_and_goto_sector()                         ; read_setpages(); break;
-		//case TERMUI_KEY_G          : goto_offset(_sector_bookmark * (long) LEN)      ; read_setpages(); break;
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_raw()                    ; read_setpages(); break;
 		case TERMUI_KEY_n          :
