@@ -7,7 +7,7 @@ DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
 
-all: dirs filegen
+all: dirs diskexp
 
 filegen: src\filegen.cpp $(FGLIBS)
 	cl $(CFLAGS) /DFILEGEN /Fo:obj\ /Fe:filegen.exe $?

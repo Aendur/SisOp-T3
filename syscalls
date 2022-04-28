@@ -1,0 +1,74 @@
+// ABRIR o dispositivo
+WCHAR path[] = L"\\\\.\\X:";
+HANDLE handle = CreateFileW(
+	path,
+	GENERIC_READ | GENERIC_WRITE,
+	FILE_SHARE_READ | FILE_SHARE_WRITE,
+	NULL,
+	OPEN_EXISTING,
+	0,
+	NULL
+);
+if (handle == INVALID_HANDLE_VALUE) { /* erro */ }
+
+// FECHAR o dispositivo (quando terminar)
+CloseHandle(handle);
+
+// Se necessário, tem como checar os dados físicos do dispositivo
+// DISK_GEOMETRY tem BytesPerSector, por exemplo
+DISK_GEOMETRY geom;
+DWORD nbytes;
+BOOL status = DeviceIoControl(
+	handle, IOCTL_DISK_GET_DRIVE_GEOMETRY,
+	NULL, 0,
+	&geom, sizeof(geom),
+	&nbytes, (LPOVERLAPPED) NULL
+);
+if (status == FALSE) { /* erro */ }
+
+
+//////// READ ////////
+BOOL status = ReadFile(handle, &input_buffer, geom.BytesPerSector, &nbytes, NULL);
+if (status == FALSE) { /* erro */ }
+
+//////// WRITE ////////
+BOOL status = WriteFile(handle, output_buffer, geom.BytesPerSector, &nbytes, NULL);
+if (status == FALSE) { /* erro */ }
+
+//////// SEEK 32 bits ////////
+LONG seek_offset;
+DWORD seek_status = SetFilePointer(handle, seek_offset, NULL, MODE); // FILE_BEGIN, FILE_END, FILE_CURRENT
+if (seek_status == INVALID_SET_FILE_POINTER) { /* erro */ }
+
+//////// SEEK 64 bits ////////
+LARGE_INTEGER largeint;
+LONGLONG seek_offset;
+largeint.QuadPart = seek_offset;
+largeint.LowPart = SetFilePointer(handle, largeint.LowPart, &largeint.HighPart, MODE); // FILE_BEGIN, FILE_END, FILE_CURRENT
+if (lin.LowPart == INVALID_SET_FILE_POINTER && GetLastError() != NO_ERROR) { /* erro */ }
+
+
+// Se o WRITE falhar com acesso negado, o drive precisa ser desmontado e travado:
+// desmontar o dispositivo
+DWORD nbytes;
+BOOL status = DeviceIoControl (
+	handle, FSCTL_DISMOUNT_VOLUME,
+	NULL, 0,
+	NULL, 0,
+	&nbytes,
+	(LPOVERLAPPED) NULL
+);
+if (status == FALSE) { /* erro */ }
+
+// Se o WRITE falhar com acesso negado, o drive precisa ser desmontado e travado
+// travar o dispositivo
+DWORD nbytes;
+BOOL status = DeviceIoControl (
+	_device, FSCTL_LOCK_VOLUME,
+	NULL, 0,
+	NULL, 0,
+	&nbytes,
+	(LPOVERLAPPED) NULL
+);
+if (status == FALSE) { /* erro */ }
+

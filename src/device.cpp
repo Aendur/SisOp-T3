@@ -44,14 +44,9 @@ void Device::open_drive(wchar_t drive) {
 	} else {
 		WCHAR drive_path[] = L"\\\\.\\X:";
 		drive_path[4] = drive;
-		/*for(int i = 0; i < 7; ++i) {
-			fwprintf(_log, L"%c\n", drive_path[i]);
-		}*/
-
 		this->_device = CreateFileW(
 			drive_path,
-			GENERIC_READ | GENERIC_WRITE, // | STANDARD_RIGHTS_ALL,
-			//GENERIC_ALL | STANDARD_RIGHTS_ALL,
+			GENERIC_READ | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
 			NULL,
 			OPEN_EXISTING,
@@ -62,8 +57,8 @@ void Device::open_drive(wchar_t drive) {
 			fprintf(_log, "device open error\n");
 		} else {
 			get_geometry();
-			dismount_drive();
-			lock_drive();
+			//dismount_drive();
+			//lock_drive();
 		}
 	}
 }
@@ -97,6 +92,22 @@ void Device::lock_drive(void)  {
 		throw std::runtime_error("device error");
 	}
 }
+
+void Device::unlock_drive(void)  {
+	DWORD nbytes;
+	BOOL status = DeviceIoControl (
+		_device, FSCTL_UNLOCK_VOLUME,
+		NULL, 0,
+		NULL, 0,
+		&nbytes,
+		(LPOVERLAPPED) NULL
+	);
+	if (status == FALSE) {
+		print_error(L"\n\n\ndevice lock error", GetLastError());
+		throw std::runtime_error("device error");
+	}
+}
+
 
 void Device::close_drive(void) {
 	if (this->_device == INVALID_HANDLE_VALUE) {
@@ -166,15 +177,18 @@ void Device::seek(LONGLONG offset, bool relative) {
 }
 
 void Device::write(PBYTE buffers[2]) {
+	lock_drive();
 	for (int i = 0; i < 2; ++i) {
 		BOOL status = WriteFile(_device, buffers[i], _geometry.BytesPerSector, &_write_nbytes, NULL);
 		if (status == FALSE) {
 			print_error(L"\n\n\n\n\n\ndevice::write", GetLastError());
 			seek(0, true);
+			unlock_drive();
 			return;
 		}
 	}
 	seek(0, true);
+	unlock_drive();
 }
 
 void print_error(const wchar_t * msg, DWORD error) {

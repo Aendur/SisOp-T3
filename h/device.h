@@ -28,6 +28,7 @@ public:
 	void open_drive(WCHAR drive);
 	void dismount_drive(void);
 	void lock_drive(void);
+	void unlock_drive(void);
 	void close_drive(void);
 	
 	void read(void);
