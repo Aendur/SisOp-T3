@@ -82,6 +82,7 @@
 		"xmemory": "cpp",
 		"xstddef": "cpp",
 		"xtr1common": "cpp",
-		"syscalls": "cpp"
+		"syscalls": "cpp",
+		"filesystem": "cpp"
 	}
 }

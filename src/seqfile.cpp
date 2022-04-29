@@ -1,4 +1,4 @@
-#include "random_file.h"
+#include "seqfile.h"
 
 #include <ctime>
 #include <cstdio>
@@ -30,7 +30,7 @@ unsigned long gen_uuid(void) {
 	return r1 | (r2 << 8) | (r3 << 16) | (r4 << 24);
 }
 
-RandomFile::RandomFile(const char * name, const char * ext, size_t size) : base_name(name), extension(ext), file_size(size) {
+SeqFile::SeqFile(const char * name, const char * ext, size_t size) : base_name(name), extension(ext), file_size(size) {
 	if (base_name.length() > RF_NAME_SIZE) {
 		throw std::runtime_error("File name must be at most " + std::to_string(RF_NAME_SIZE) + " characters");
 	}
@@ -59,7 +59,7 @@ static const char template7[] = "---------+-- BEGIN ------------\n";
 static const char template8[] = "%-9u|.........:.........:.\n";
 static const char template9[] = "---------+--- END -------------\n";
 
-void RandomFile::init_strings(void) {
+void SeqFile::init_strings(void) {
 	time_t now = time(NULL);
 	struct tm utc;
 	gmtime_s(&utc, &now);
@@ -81,7 +81,7 @@ void RandomFile::init_strings(void) {
 	snprintf(pos + 0xC0, RF_LINE_SIZE + 1, template7);
 }
 
-void RandomFile::create_file(void) {
+void SeqFile::create_file(void) {
 	size_t position = 0;
 	size_t index = 0;
 	while (position < file_size) {
@@ -102,7 +102,7 @@ void RandomFile::create_file(void) {
 	//file_buffer[file_size] = 0;
 }
 
-void RandomFile::create_page(size_t index, size_t max) {
+void SeqFile::create_page(size_t index, size_t max) {
 	// fprintf(LOG_FILE, "creating page %llu (max %llu)\n", index, max);
 	static int nlines = (512 - (RF_HEAD_SIZE + RF_TAIL_SIZE)) / RF_LINE_SIZE;
 	static char page[512];
@@ -132,12 +132,12 @@ void RandomFile::create_page(size_t index, size_t max) {
 }
 
 
-RandomFile::~RandomFile(void) {
+SeqFile::~SeqFile(void) {
 	delete[] this->file_buffer;
 }
 
 
-void RandomFile::write(void) const {
+void SeqFile::write(void) const {
 	std::ofstream stream(base_name + '.' + extension, std::ios_base::binary);
 	if (stream.good()) {
 		stream.write(file_buffer, file_size);

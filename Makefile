@@ -1,7 +1,7 @@
-#CFLAGS=/Wall /W4 /EHsc /std:c++17 /Ih /utf-8 /wd5045 /nologo
-CFLAGS=/W4 /EHsc /std:c++17 /Ih /utf-8 /nologo
+#CFLAGS=/Wall /W4 /EHsc /std:c++17 /Iheader /utf-8 /wd5045 /nologo
+CFLAGS=/W4 /EHsc /std:c++17 /Iheader /utf-8 /nologo
 
-FGLIBN=random_file utility
+FGLIBN=seqfile rndfile utility
 DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
@@ -19,24 +19,26 @@ diskexp: src\diskexp.cpp $(DXLIBS)
 #{src\}.cpp{obj\}.obj::
 #	cl $(CFLAGS) /c /Fo:obj\ $<
 
-obj\random_file.obj::        src\$(@B).cpp h\$(@B).h
+obj\seqfile.obj::            src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\utility.obj::            src\$(@B).cpp h\$(@B).h
+obj\rndfile.obj::            src\$(@B).cpp header\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\utility.obj::            src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 
-obj\disk_explorer.obj::      src\$(@B).cpp h\$(@B).h
+obj\disk_explorer.obj::      src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\term_ui.obj::            src\$(@B).cpp h\$(@B).h
+obj\term_ui.obj::            src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\device.obj::             src\$(@B).cpp h\$(@B).h
+obj\device.obj::             src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\page.obj::               src\$(@B).cpp h\$(@B).h
+obj\page.obj::               src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\input_field.obj::        src\$(@B).cpp h\$(@B).h
+obj\input_field.obj::        src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\editor.obj::             src\$(@B).cpp h\$(@B).h
+obj\editor.obj::             src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\dialog.obj::             src\$(@B).cpp h\$(@B).h
+obj\dialog.obj::             src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 
 

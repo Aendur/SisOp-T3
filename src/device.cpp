@@ -38,8 +38,6 @@ Device::~Device(void) {
 	this->close_drive();
 }
 
-#include <fstream>
-
 void Device::open_drive(wchar_t drive) {
 	if (this->_device != INVALID_HANDLE_VALUE) {
 		fprintf(_log, "device already open\n");
