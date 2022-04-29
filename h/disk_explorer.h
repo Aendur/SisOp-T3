@@ -44,12 +44,12 @@ private:
 	void goto_offset(LONGLONG offset);
 	void toggle_lock(void);
 	void input_and_goto_sector(void);
-	void input_and_goto_cluster_raw(void);
 	void input_and_goto_cluster_data(void);
+	void input_and_goto_fat(void);
 	
-	void select_fat_entry(int fatnum);
-	void fwd_directory(void);
-	void rew_directory(void);
+	// void select_fat_entry(int fatnum);
+	// void fwd_directory(void);
+	// void rew_directory(void);
 		
 	void show_geom_info(void) const;
 	void show_fat32_info(void) const;
@@ -63,7 +63,7 @@ private:
 	LONG first_data_sector(void) const;
 	LONGLONG fds_offset(void) const;
 	LONGLONG first_sector_of_cluster(LONGLONG N) const;
-	LONGLONG fat_sec_num(LONGLONG N) const;
+	LONGLONG fat_sec_num(LONGLONG N, int nfat) const;
 	LONGLONG fat_ent_off(LONGLONG N) const;
 
 public:

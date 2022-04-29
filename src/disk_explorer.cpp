@@ -143,6 +143,8 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_G          : input_and_goto_sector()                          ; /* reads/sets */ break;
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_data()                    ; /* reads/sets */ break;
+		case TERMUI_KEY_t          :
+		case TERMUI_KEY_T          : input_and_goto_fat()                             ; /* reads/sets */ break;
 		case TERMUI_KEY_ARROW_UP   : if (_select_mode){ _editor.move(-32); } else {advance_sectors(-(_adv_N+2) * (long) LEN)        ; read_setpages();} break;
 		case TERMUI_KEY_ARROW_DOWN : if (_select_mode){ _editor.move( 32); } else {advance_sectors( (_adv_N-2) * (long) LEN)        ; read_setpages();} break;
 		case TERMUI_KEY_ARROW_LEFT : if (_select_mode){ _editor.move( -1); } else {_adv_N = _adv_N > 10     ? _adv_N / 10 : 1       ;                 } break;
@@ -237,11 +239,12 @@ void DiskExplorer::input_and_goto_sector(void) {
 		read_setpages();
 	}
 }
-void DiskExplorer::input_and_goto_cluster_raw(void) {
-	_input.set_msg("\033[1mGOTO RAW CLUSTER:\033[0m ");
-	LONGLONG target_cluster;
-	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
-		goto_offset(target_cluster * cluster_size());
+void DiskExplorer::input_and_goto_fat(void) {
+	_input.set_msg("\033[1mGOTO FAT ENTRY N:\033[0m ");
+	LONGLONG N;
+	if (_input.get(&N, TERMUI_KEY_UNDEFINED, true)) {
+		goto_offset(fat_sec_num(N, 0) * _device.geometry().BytesPerSector);
+		_editor.select(fat_ent_off(N));
 		read_setpages();
 	}
 }
@@ -251,11 +254,6 @@ void DiskExplorer::input_and_goto_cluster_data(void) {
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
 		goto_offset(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
 		read_setpages();
-
-		printf(LAYOUT_FREE "          fat_sec_num: %-10lld fat_ent_off %-10lld"
-			, fat_sec_num(target_cluster)
-			, fat_ent_off(target_cluster)
-		);
 	}
 }
 
@@ -358,24 +356,13 @@ LONGLONG DiskExplorer::fds_offset(void) const {
 LONGLONG DiskExplorer::first_sector_of_cluster(LONGLONG N) const {
 	return ((N - 2) * _sector0.BPB_SecPerClus()) + first_data_sector();
 }
-
-LONGLONG DiskExplorer::fat_sec_num(LONGLONG N) const {
-	// If(BPB_FATSz16 != 0)
-	// FATSz = BPB_FATSz16;
-	// Else
-	// FATSz = BPB_FATSz32;
-	// If(FATType == FAT16)
-	// FATOffset = N * 2;
-	// Else if (FATType == FAT32)
-	// FATOffset = N * 4;
-	// ThisFATSecNum = BPB_ResvdSecCnt + (FATOffset / BPB_BytsPerSec);
-	// ThisFATEntOffset = REM(FATOffset / BPB_BytsPerSec);
+LONGLONG DiskExplorer::fat_sec_num(LONGLONG N, int nfat) const {
 	unsigned int fatsz = _sector0.BPB_FATSz32();
 	LONGLONG fat_offset = N * 4;
-	return _sector0.BPB_RsvdSecCnt() + fat_offset / _sector0.BPB_BytsPerSec();
+	return _sector0.BPB_RsvdSecCnt() + nfat * fatsz + fat_offset / _sector0.BPB_BytsPerSec();
 }
 LONGLONG DiskExplorer::fat_ent_off(LONGLONG N) const {
-	unsigned int fatsz = _sector0.BPB_FATSz32();
+	//unsigned int fatsz = _sector0.BPB_FATSz32();
 	LONGLONG fat_offset = N * 4;
 	return fat_offset % _sector0.BPB_BytsPerSec();
 }
