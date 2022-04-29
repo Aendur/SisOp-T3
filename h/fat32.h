@@ -43,6 +43,4 @@ public:
 	inline const unsigned char  SigByte2      (void) const { return                     sector[511] ; } // Offset=511 Size=2
 };
 
-//char .* Size=(([2-9])|(1[1-9]+))
-
 #endif

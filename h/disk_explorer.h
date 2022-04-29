@@ -37,6 +37,8 @@ private:
 	fat32 _sector0;
 	fsinfo _fsi_sector;
 
+	bool _locked = false;
+
 	void setpages(void);
 	void read_setpages(void);
 
@@ -44,6 +46,7 @@ private:
 
 	void advance_sectors(LONGLONG offset);
 	void goto_offset(LONGLONG offset);
+	void toggle_lock(void);
 	void input_and_goto_sector(void);
 	void input_and_goto_cluster_raw(void);
 	void input_and_goto_cluster_data(void);

@@ -38,6 +38,8 @@ Device::~Device(void) {
 	this->close_drive();
 }
 
+#include <fstream>
+
 void Device::open_drive(wchar_t drive) {
 	if (this->_device != INVALID_HANDLE_VALUE) {
 		fprintf(_log, "device already open\n");
@@ -57,8 +59,8 @@ void Device::open_drive(wchar_t drive) {
 			fprintf(_log, "device open error\n");
 		} else {
 			get_geometry();
-			//dismount_drive();
-			//lock_drive();
+			// dismount_drive();
+			// lock_drive();
 		}
 	}
 }
@@ -80,17 +82,19 @@ void Device::dismount_drive(void)  {
 
 void Device::lock_drive(void)  {
 	DWORD nbytes;
-	BOOL status = DeviceIoControl (
-		_device, FSCTL_LOCK_VOLUME,
-		NULL, 0,
-		NULL, 0,
-		&nbytes,
-		(LPOVERLAPPED) NULL
-	);
-	if (status == FALSE) {
-		print_error(L"\n\n\ndevice lock error", GetLastError());
-		throw std::runtime_error("device error");
-	}
+	BOOL locked = FALSE;
+	//while (!locked) {
+		locked = DeviceIoControl (
+			_device, FSCTL_LOCK_VOLUME,
+			NULL, 0, NULL, 0, &nbytes,
+			(LPOVERLAPPED) NULL
+		);
+		if (locked == FALSE) {
+			print_error(L"\n\n\ndevice lock error", GetLastError());
+			throw std::runtime_error("device error");
+		}
+
+	//}
 }
 
 void Device::unlock_drive(void)  {

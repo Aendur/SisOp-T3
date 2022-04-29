@@ -56,8 +56,11 @@ bool Editor::edit(Device & dev) {
 	EditorAction action = edit_run();
 	if (action == WRITE_CHANGES) {
 		dev.seek(_device_offset, false);
-		dev.write(_buffer);
-		//write_changes(dev);
+		try {
+			dev.write(_buffer);
+		} catch (std::exception & e) {
+			printf(LAYOUT_FREE "     ERROR WRITING TO DISK\033[0K");
+		}
 	}
 	dev.seek(_device_offset, false);
 	_history.clear();

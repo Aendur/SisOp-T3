@@ -173,6 +173,7 @@ KeyCode TermUI::handle_input(void) {
 	case L'\r': return TERMUI_KEY_RETURN;
 	case L'\t': return TERMUI_KEY_TAB;
 	case 0x7F: return TERMUI_KEY_BACKSPACE;
+	case 0x1A: return TERMUI_KEY_PAUSE;
 	default:
 		wprintf(L"\033[48;1HKey pressed: %ls (0x%02X 0x%02X 0x%02X 0x%02X)\033[0K\n", _input_string, v0 & 0x00FF, v1 & 0x00FF, v2 & 0x00FF, v3 & 0x00FF);
 		return TERMUI_KEY_UNDEFINED;

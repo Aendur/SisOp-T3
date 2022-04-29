@@ -46,8 +46,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("B     : bookmark sector   \n");
 	printf("V     : -------> %-10lld  \n", _sector_bookmark);
 	printf("G     : goto sector       \n");
-	printf("H     : goto cluster (raw)\n");
-	printf("N     : goto cluster (data)\n");
+	printf("H     : goto cluster (data)\n");
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
@@ -56,6 +55,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("F1~3  : toggle disp 1 modes \n");
 	printf("F5~7  : toggle disp 2 modes \n");
 	printf("D     : show drive info     \n");
+	printf("PAUSE : %-15s\n", _locked ? "UNLOCK" : "DISMOUNT & LOCK");
 	printf("ESC   : exit                \n");
 
 	switch(_show_drive_info) {
@@ -84,6 +84,7 @@ void DiskExplorer::run(void) {
 	Dialog quit_dialog("Confirm exit?", quit_dialog_options);
 	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
+		case TERMUI_KEY_PAUSE      : toggle_lock()                                   ;                  break;
 		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
 		case TERMUI_KEY_F2         : _page[0].toggle_view()                          ;                  break;
 		case TERMUI_KEY_F3         : _page[0].switch_buff()                          ;                  break;
@@ -104,9 +105,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_g          :
 		case TERMUI_KEY_G          : input_and_goto_sector()                         ; /* reads/sets */ break;
 		case TERMUI_KEY_h          :
-		case TERMUI_KEY_H          : input_and_goto_cluster_raw()                    ; /* reads/sets */ break;
-		case TERMUI_KEY_n          :
-		case TERMUI_KEY_N          : input_and_goto_cluster_data()                   ; /* reads/sets */ break;
+		case TERMUI_KEY_H          : input_and_goto_cluster_data()                   ; /* reads/sets */ break;
 		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
 		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
@@ -120,6 +119,31 @@ void DiskExplorer::run(void) {
 		_page[1].print();
 	}
 	_ui.clear_screen();
+}
+
+void DiskExplorer::toggle_lock(void) {
+	if (_locked) {
+		_locked = false;
+		try { _device.unlock_drive(); }
+		catch (std::exception & e) {
+			printf("Error: %s\n", e.what());
+			_locked = true;
+		}
+	} else {
+		_locked = true;
+		try {
+			_device.dismount_drive();
+			try {
+				_device.lock_drive();
+			} catch (std::exception & e) {
+				printf("Error: %s\n", e.what());
+				_locked = false;
+			}
+		} catch (std::exception & e) {
+			printf("Error: %s\n", e.what());
+			_locked = false;
+		}
+	}
 }
 
 void DiskExplorer::setpages(void) {
