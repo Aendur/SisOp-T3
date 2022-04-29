@@ -59,7 +59,7 @@ bool Editor::edit(Device & dev) {
 		try {
 			dev.write(_buffer);
 		} catch (std::exception & e) {
-			printf(LAYOUT_FREE "     ERROR WRITING TO DISK\033[0K");
+			printf(LAYOUT_FREE "     ERROR WRITING TO DISK: %s\033[0K", e.what());
 		}
 	}
 	dev.seek(_device_offset, false);
@@ -111,12 +111,10 @@ Editor::EditorAction Editor::edit_run(void) {
 			push_byte((unsigned char) key);
 		} else {
 			switch (key) {
-				case TERMUI_KEY_F1              : _page[0]->toggle_mode()  ; break;
-				case TERMUI_KEY_F2              : _page[0]->toggle_view()  ; break;
-				case TERMUI_KEY_F3              : _page[0]->switch_buff()  ; break;
-				case TERMUI_KEY_F5              : _page[1]->toggle_mode()  ; break;
-				case TERMUI_KEY_F6              : _page[1]->toggle_view()  ; break;
-				case TERMUI_KEY_F7              : _page[1]->switch_buff()  ; break;
+				case TERMUI_KEY_F1         : _page[0]->toggle_view()                          ;                  break;
+				case TERMUI_KEY_F2         : _page[1]->toggle_view()                          ;                  break;
+				case TERMUI_KEY_SHIFT_F1   : _page[0]->switch_buff()                          ;                  break;
+				case TERMUI_KEY_SHIFT_F2   : _page[1]->switch_buff()                          ;                  break;
 				case TERMUI_KEY_TAB             : switch_edit_mode()       ; break;
 				case TERMUI_KEY_ARROW_UP        : move_cursor( -32, CursorMoveMode::WRAP)   ; break;
 				case TERMUI_KEY_ARROW_DOWN      : move_cursor(  32, CursorMoveMode::WRAP)   ; break;
@@ -153,8 +151,8 @@ void Editor::print_commands(void) const {
 	printf("END   : move to EOL           \n");
 	printf("\n--- DISP ---                \n");
 	printf("TAB   : toggle edit mode    \n");
-	printf("F1~3  : toggle disp 1 modes \n");
-	printf("F5~7  : toggle disp 2 modes \n");
+	printf("F1    : toggle disp 1 modes \n");
+	printf("F2    : toggle disp 2 modes \n");
 	printf("ESC   : stop editing        \n");
 	printf("\nEDIT MODE: \033[1m");
 	switch (_edit_mode) {

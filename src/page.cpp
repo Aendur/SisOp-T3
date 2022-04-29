@@ -21,8 +21,8 @@ void Page::init(DWORD sl, DWORD cl, int x, int y) {
 		_clustr_length = cl;
 		_X0 = x;
 		_Y0 = y;
-		_mode[View::SECTOR] = 0;
-		_mode[View::ENTRIES] = 0;
+		//_mode[View::SECTOR] = 0;
+		//_mode[View::ENTRIES] = 0;
 		_initialized = true;
 	}
 }
@@ -40,16 +40,17 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	opts.negative = false;
 	opts.width = 2;
 	opts.margin_right = 1;
-	switch(_mode.at(_view) % 3) {
-	case 2:
-		opts.chr_hex = false;
-		opts.ctl_str = "..";
-		break;
-	case 1:
+	//switch(_mode.at(_view) % 3) {
+	switch(_view) {
+	//case 2:
+	//	opts.chr_hex = false;
+	//	opts.ctl_str = "..";
+	//	break;
+	case View::SECTORS_ASC:
 		opts.chr_hex = false;
 		opts.ctl_str = NULL;
 		break;
-	case 0:
+	case View::SECTORS_HEX:
 	default:
 		opts.chr_hex = true;
 		opts.ctl_str = NULL;
@@ -117,9 +118,9 @@ void Page::print_sector(void) const {
 //// Data line END
 
 void Page::print(void) const {
-	if (_view == View::SECTOR) {
+	if (_view == View::SECTORS_ASC || _view == View::SECTORS_HEX) {
 		print_sector();
-	} else if (_view == View::ENTRIES) {
+	} else if (_view == View::ENTRIES_SHO || _view == View::ENTRIES_LON) {
 		print_entry();
 	}
 }
@@ -157,7 +158,8 @@ bool Page::actual_selected_entry(int i) const {
 void Page::print_entry(void) const {
 	entry * entries = (entry*) _buffer;
 	int i = 0;
-	bool extended = (_mode.at(_view) % 2) == 0;
+	//bool extended = (_mode.at(_view) % 2) == 0;
+	bool extended = _view == View::ENTRIES_LON;
 	if (extended) {
 		printf(ENTRY_ASH_EBAR, _Y0 + 0, _X0);
 		printf(ENTRY_ASH_ELAS, _Y0 + 1, _X0);

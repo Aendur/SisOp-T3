@@ -116,18 +116,21 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 #define RPAD "%*s"
 #define CLRSTR "\033[37;0m\033[27m"
 //#define CLRSTR "\033[0m"
-#define RED_0 "\033[31m"
-#define RED_1 "\033[31;1m"
-#define RED_2 "\033[31;2m"
-#define WHITE_0 "\033[37;0m"
-#define WHITE_1 "\033[37;1m"
-#define WHITE_2 "\033[37;2m"
+#define RED_H "\033[31;1m"
+//#define RED_M "\033[0;31m"
+//#define RED_L "\033[31;2m"
+#define RED_M "\033[38;2;170;0;0m"
+#define RED_L "\033[38;2;85;0;0m"
+#define WHITE_H "\033[37;1m"
+#define WHITE_M "\033[0;37m"
+#define WHITE_L "\033[37;2m"
+
 
 const char * colorize_byte(const ColorizeOptions & opts) {
 	static char color_char_buffer[FORMAT_SIZE];
 	const char * attr_negative = opts.negative ? (opts.underline ? NEGATIVE UNDERLINE : NEGATIVE) : (opts.underline ? UNDERLINE : EMPTYSTR);
-	const char * attr_color_ctl = opts.chr_hex ? WHITE_0 : (opts.byte == 0 ? RED_2 : RED_0);
-	const char * attr_color_chr = WHITE_1; // : WHITE_0;
+	const char * attr_color_ctl = opts.chr_hex ? WHITE_M : (opts.byte == 0 ? RED_L : RED_M);
+	const char * attr_color_chr = WHITE_H; // : WHITE_M;
 
 	if (0x20 <= opts.byte && opts.byte <= 0x7E) {
 		if (opts.chr_hex) {

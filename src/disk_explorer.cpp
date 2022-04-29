@@ -17,6 +17,8 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
 	}
 
+	for (int i = 0; i < 10; ++i) { _sector_bookmark[i] = 0; }
+
 	// save fat32 sector0 data
 	_device.read();
 	memcpy(&_sector0, _device.buffer(0), _device.geometry().BytesPerSector);
@@ -32,28 +34,36 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
-	_page[0].toggle_mode();
+	_page[0].toggle_view();
+	_page[1].toggle_view();
+	_page[1].toggle_view();
 	_page[1].toggle_view();
 }
 
 void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H");
 	printf("\n--- NAV ---               \n");
-	printf("0     : goto sector 0     \n");
-	printf("1     : goto FirstDataSec \n");
-	printf("2     : goto FSI          \n");
-	//printf("F   : NOT IMPLEMENTED   \n");
-	printf("B     : bookmark sector   \n");
-	printf("V     : -------> %-10lld  \n", _sector_bookmark);
-	printf("G     : goto sector       \n");
+	printf("0     : goto sector 0      \n");
+//	printf("1     : goto FSI           \n");
+	printf("1     : goto FAT1          \n");
+	printf("2     : goto FAT2          \n");
+	printf("3     : goto FirstDataSec  \n");
+	printf("4     : goto sector %-5lld \n", _sector_bookmark[4]);
+	printf("5     : goto sector %-5lld \n", _sector_bookmark[5]);
+	printf("6     : goto sector %-5lld \n", _sector_bookmark[6]);
+	printf("7     : goto sector %-5lld \n", _sector_bookmark[7]);
+	printf("8     : goto sector %-5lld \n", _sector_bookmark[8]);
+	printf("9     : goto sector %-5lld \n", _sector_bookmark[9]);
+	printf("S4~S9 : bookmark sector    \n");
+	printf("G     : goto sector        \n");
 	printf("H     : goto cluster (data)\n");
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
 	printf("\n--- DISP ---                \n");
 	printf("INS   : edit current sector \n");
-	printf("F1~3  : toggle disp 1 modes \n");
-	printf("F5~7  : toggle disp 2 modes \n");
+	printf("[S] F1: toggle disp 1 modes \n");
+	printf("[S] F2: toggle disp 2 modes \n");
 	printf("D     : show drive info     \n");
 	printf("PAUSE : %-15s\n", _locked ? "UNLOCK" : "DISMOUNT & LOCK");
 	printf("ESC   : exit                \n");
@@ -75,6 +85,9 @@ static const DialogOptions quit_dialog_options = {
 void DiskExplorer::run(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
 
+	LONGLONG fat1_offset =  _sector0.BPB_RsvdSecCnt() * LEN;
+	LONGLONG fat2_offset = (_sector0.BPB_RsvdSecCnt() + _sector0.BPB_FATSz32()) * LEN ;
+
 	_ui.clear_screen();
 	print_commands();
 	_page[0].print();
@@ -84,35 +97,43 @@ void DiskExplorer::run(void) {
 	Dialog quit_dialog("Confirm exit?", quit_dialog_options);
 	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
-		case TERMUI_KEY_PAUSE      : toggle_lock()                                   ;                  break;
-		case TERMUI_KEY_F1         : _page[0].toggle_mode()                          ;                  break;
-		case TERMUI_KEY_F2         : _page[0].toggle_view()                          ;                  break;
-		case TERMUI_KEY_F3         : _page[0].switch_buff()                          ;                  break;
-		case TERMUI_KEY_F5         : _page[1].toggle_mode()                          ;                  break;
-		case TERMUI_KEY_F6         : _page[1].toggle_view()                          ;                  break;
-		case TERMUI_KEY_F7         : _page[1].switch_buff()                          ;                  break;
-		case TERMUI_KEY_0          : goto_offset(0)                                  ; read_setpages(); break;
-		case TERMUI_KEY_1          : goto_offset(fds_offset())                       ; read_setpages(); break;
-		case TERMUI_KEY_2          : goto_offset(_sector0.BPB_FSInfo() * LEN)        ; read_setpages(); break;
-		case TERMUI_KEY_b          :
-		case TERMUI_KEY_B          : _sector_bookmark = (_device.offset()-2*LEN)/LEN ;                  break;
-		case TERMUI_KEY_v          :
-		case TERMUI_KEY_V          : goto_offset(_sector_bookmark * LEN)             ; read_setpages(); break;
+		case TERMUI_KEY_PAUSE      : toggle_lock()                                    ;                  break;
+		case TERMUI_KEY_F1         : _page[0].toggle_view()                           ;                  break;
+		case TERMUI_KEY_F2         : _page[1].toggle_view()                           ;                  break;
+		case TERMUI_KEY_SHIFT_F1   : _page[0].switch_buff()                           ;                  break;
+		case TERMUI_KEY_SHIFT_F2   : _page[1].switch_buff()                           ;                  break;
+		case TERMUI_KEY_0          : goto_offset(0)                                   ; read_setpages(); break;
+//		case TERMUI_KEY_1          : goto_offset(_sector0.BPB_FSInfo() * LEN)         ; read_setpages(); break;
+		case TERMUI_KEY_1          : goto_offset(fat1_offset)                         ; read_setpages(); break;
+		case TERMUI_KEY_2          : goto_offset(fat2_offset)                         ; read_setpages(); break;
+		case TERMUI_KEY_3          : goto_offset(fds_offset())                        ; read_setpages(); break;
+		case TERMUI_KEY_4          : goto_offset(_sector_bookmark[4] * LEN)           ; read_setpages(); break;
+		case TERMUI_KEY_5          : goto_offset(_sector_bookmark[5] * LEN)           ; read_setpages(); break;
+		case TERMUI_KEY_6          : goto_offset(_sector_bookmark[6] * LEN)           ; read_setpages(); break;
+		case TERMUI_KEY_7          : goto_offset(_sector_bookmark[7] * LEN)           ; read_setpages(); break;
+		case TERMUI_KEY_8          : goto_offset(_sector_bookmark[8] * LEN)           ; read_setpages(); break;
+		case TERMUI_KEY_9          : goto_offset(_sector_bookmark[9] * LEN)           ; read_setpages(); break;
+		case TERMUI_KEY_DOLL       : _sector_bookmark[4]=(_device.offset()-2*LEN)/LEN ;                  break;
+		case TERMUI_KEY_PERC       : _sector_bookmark[5]=(_device.offset()-2*LEN)/LEN ;                  break;
+		case TERMUI_KEY_CFLEX      : _sector_bookmark[6]=(_device.offset()-2*LEN)/LEN ;                  break;
+		case TERMUI_KEY_AMP        : _sector_bookmark[7]=(_device.offset()-2*LEN)/LEN ;                  break;
+		case TERMUI_KEY_STAR       : _sector_bookmark[8]=(_device.offset()-2*LEN)/LEN ;                  break;
+		case TERMUI_KEY_OPAR       : _sector_bookmark[9]=(_device.offset()-2*LEN)/LEN ;                  break;
 		case TERMUI_KEY_d          :
-		case TERMUI_KEY_D          : toggle_info_mode()                              ;                  break;
+		case TERMUI_KEY_D          : toggle_info_mode()                               ;                  break;
 		case TERMUI_KEY_f          :
-		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")              ;                  break;
+		case TERMUI_KEY_F          : printf(LAYOUT_FREE "  WIP search")               ;                  break;
 		case TERMUI_KEY_g          :
-		case TERMUI_KEY_G          : input_and_goto_sector()                         ; /* reads/sets */ break;
+		case TERMUI_KEY_G          : input_and_goto_sector()                          ; /* reads/sets */ break;
 		case TERMUI_KEY_h          :
-		case TERMUI_KEY_H          : input_and_goto_cluster_data()                   ; /* reads/sets */ break;
-		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)       ; read_setpages(); break;
-		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)       ; read_setpages(); break;
-		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000;                  break;
-		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1      ;                  break;
-		case TERMUI_KEY_INSERT     : _editor.edit(_device)                           ; read_setpages(); break;
-		case TERMUI_KEY_SPACE      : setpages()                                      ;                  break;
-		default                    : setpages()                                      ;                  break;
+		case TERMUI_KEY_H          : input_and_goto_cluster_data()                    ; /* reads/sets */ break;
+		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)        ; read_setpages(); break;
+		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)        ; read_setpages(); break;
+		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000 ;                  break;
+		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1       ;                  break;
+		case TERMUI_KEY_INSERT     : _editor.edit(_device)                            ; read_setpages(); break;
+		case TERMUI_KEY_SPACE      : setpages()                                       ;                  break;
+		default                    : setpages()                                       ;                  break;
 		}
 		print_commands();
 		_page[0].print();

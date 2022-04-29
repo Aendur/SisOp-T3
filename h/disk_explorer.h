@@ -31,7 +31,7 @@ private:
 	Editor _editor;
 
 	long _adv_N = 1;
-	LONGLONG _sector_bookmark = 0;
+	LONGLONG _sector_bookmark[10];
 	DriveInfoMode _show_drive_info = F32INFO;
 
 	fat32 _sector0;

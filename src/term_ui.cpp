@@ -115,10 +115,14 @@ KeyCode TermUI::handle_esc(void) {
 		{ L"\033\\[Z", TERMUI_KEY_SHIFT_TAB },
 		{ L"\033\\[5~", TERMUI_KEY_PGUP },
 		{ L"\033\\[6~", TERMUI_KEY_PGDOWN },
-		{ L"\033" L"OP", TERMUI_KEY_F1 }, { L"\033\\[15~", TERMUI_KEY_F5 }, { L"\033\\[20~", TERMUI_KEY_F9 },
-		{ L"\033" L"OQ", TERMUI_KEY_F2 }, { L"\033\\[17~", TERMUI_KEY_F6 }, { L"\033\\[21~", TERMUI_KEY_F10 },
-		{ L"\033" L"OR", TERMUI_KEY_F3 }, { L"\033\\[18~", TERMUI_KEY_F7 }, { L"\033\\[23~", TERMUI_KEY_F11 },
-		{ L"\033" L"OS", TERMUI_KEY_F4 }, { L"\033\\[19~", TERMUI_KEY_F8 }, { L"\033\\[24~", TERMUI_KEY_F12 },
+		{ L"\033"  L"OP", TERMUI_KEY_F1 }, { L"\033\\[15~", TERMUI_KEY_F5 }, { L"\033\\[20~", TERMUI_KEY_F9 },
+		{ L"\033"  L"OQ", TERMUI_KEY_F2 }, { L"\033\\[17~", TERMUI_KEY_F6 }, { L"\033\\[21~", TERMUI_KEY_F10 },
+		{ L"\033"  L"OR", TERMUI_KEY_F3 }, { L"\033\\[18~", TERMUI_KEY_F7 }, { L"\033\\[23~", TERMUI_KEY_F11 },
+		{ L"\033"  L"OS", TERMUI_KEY_F4 }, { L"\033\\[19~", TERMUI_KEY_F8 }, { L"\033\\[24~", TERMUI_KEY_F12 },
+		{ L"\033\\[1;2P", TERMUI_KEY_SHIFT_F1 }, { L"\033\\[15;2~", TERMUI_KEY_SHIFT_F5 }, { L"\033\\[20;2~", TERMUI_KEY_SHIFT_F9 },
+		{ L"\033\\[1;2Q", TERMUI_KEY_SHIFT_F2 }, { L"\033\\[17;2~", TERMUI_KEY_SHIFT_F6 }, { L"\033\\[21;2~", TERMUI_KEY_SHIFT_F10 },
+		{ L"\033\\[1;2R", TERMUI_KEY_SHIFT_F3 }, { L"\033\\[18;2~", TERMUI_KEY_SHIFT_F7 }, { L"\033\\[23;2~", TERMUI_KEY_SHIFT_F11 },
+		{ L"\033\\[1;2S", TERMUI_KEY_SHIFT_F4 }, { L"\033\\[19;2~", TERMUI_KEY_SHIFT_F8 }, { L"\033\\[24;2~", TERMUI_KEY_SHIFT_F12 },
 	};
 
 	for(const auto & [pat,ret] : patterns) {

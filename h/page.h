@@ -11,8 +11,11 @@ class entry;
 class Page {
 private:
 	enum class View : int {
-		SECTOR,
-		ENTRIES,
+		SECTORS_HEX,
+		SECTORS_ASC,
+		ENTRIES_LON,
+		ENTRIES_SHO,
+		MOD,
 	};
 
 	PBYTE _buffer;
@@ -30,8 +33,8 @@ private:
 	int _selected = -1;
 	bool _editing = false;
 
-	std::map<View, BYTE> _mode;
-	View _view = View::SECTOR;
+	//std::map<View, BYTE> _mode;
+	View _view = View::SECTORS_HEX;
 
 	void print_sector(void) const;
 	void print_adr(int nline, ULONGLONG offset) const;
@@ -51,8 +54,8 @@ public:
 	void init(DWORD sl, DWORD cl, int x, int y);
 	//inline void set(PBYTE * buffers, ULONGLONG offset) { _buffers[0] = buffers[0]; _buffers[1] = buffers[1]; _buffer = _buffers[_selected]; _offset = offset; }
 	void set(const PBYTE buffers[2], ULONGLONG offset);
-	inline void toggle_mode(void) { ++_mode[_view]; }
-	inline void toggle_view(void) { _view = _view == View::SECTOR ? View::ENTRIES : View::SECTOR; }
+	//inline void toggle_mode(void) { ++_mode[_view]; }
+	inline void toggle_view(void) { _view = (View)((1 + (int)_view) % (int)View::MOD);  }
 	inline void toggle_edit(bool val) { _editing = val; }
 	inline void switch_buff(void) { _selected_buffer = (_selected_buffer + 1) % 2; _buffer = _buffers[_selected_buffer]; }
 	inline void select(int p) { _selected = p; }
