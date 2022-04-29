@@ -11,10 +11,10 @@ class entry;
 class Page {
 private:
 	enum class View : int {
-		SECTORS_HEX,
 		SECTORS_ASC,
-		ENTRIES_LON,
+		SECTORS_HEX,
 		ENTRIES_SHO,
+		ENTRIES_LON,
 		MOD,
 	};
 
@@ -34,7 +34,7 @@ private:
 	bool _editing = false;
 
 	//std::map<View, BYTE> _mode;
-	View _view = View::SECTORS_HEX;
+	View _view = View::SECTORS_ASC;
 
 	void print_sector(void) const;
 	void print_adr(int nline, ULONGLONG offset) const;

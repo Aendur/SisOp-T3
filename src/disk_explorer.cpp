@@ -34,8 +34,6 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
-	_page[0].toggle_view();
-	_page[1].toggle_view();
 	_page[1].toggle_view();
 	_page[1].toggle_view();
 }

@@ -97,22 +97,21 @@ void Page::print_sector(void) const {
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
 	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
-	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 3, _X0,
-		offset_start() , size_to_string(offset_start(), true),
-		offset_start() / _clustr_length,
-		offset_start() / _sector_length,
-		(_editing == true) ? EDITSTR : VIEWSTR
-	);
-	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 4, _X0);
-	
 	int nline = 0;
 	while(pos < end) {
-		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 5 + nline, _X0, nline, offset_start() + pos - _buffer);
+		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset_start() + pos - _buffer);
 		print_hex(pos, LINE_WIDTH);
 		print_sector_str(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;
 		++nline;
 	}
+	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + nline, _X0);
+	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + nline, _X0,
+		offset_start() , size_to_string(offset_start(), true),
+		offset_start() / _clustr_length,
+		offset_start() / _sector_length,
+		(_editing == true) ? EDITSTR : VIEWSTR
+	);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
 }
 //// Data line END
@@ -162,33 +161,29 @@ void Page::print_entry(void) const {
 	bool extended = _view == View::ENTRIES_LON;
 	if (extended) {
 		printf(ENTRY_ASH_EBAR, _Y0 + 0, _X0);
-		printf(ENTRY_ASH_ELAS, _Y0 + 1, _X0);
+		printf(ENTRY_ASH_ELAL, _Y0 + 1, _X0);
 		printf(ENTRY_ASH_EBAR, _Y0 + 2, _X0);
-		printf(ENTRY_ASH_ELAL, _Y0 + 3, _X0);
-		printf(ENTRY_ASH_STAT, _Y0 + 3, _X0 + 123, _editing ? EDITSTR : VIEWSTR);
-		//printf(ENTRY_ASH_STAT, _Y0 + 3, _X0, _editing ? EDITSTR : VIEWSTR);
-		printf(ENTRY_ASH_EBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
 			bool selected = actual_selected_entry(i);
-			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
+			printf(ENTRY_ASH_LEAD, i + _Y0 + 3, _X0, i);
 			if (entries[i].is_long()) print_long(entries[i], extended, selected);
 			else                      print_short(entries[i], extended, selected);
 		}
+		printf(ENTRY_ASH_EBAR, i + _Y0 + 3, _X0);
+		printf(ENTRY_ASH_ELAS, i + _Y0 + 4, _X0);
 		printf(ENTRY_ASH_EBAR, i + _Y0 + 5, _X0);
 	} else {
 		printf(ENTRY_ASH_CBAR, _Y0 + 0, _X0);
-		printf(ENTRY_ASH_CLAS, _Y0 + 1, _X0);
+		printf(ENTRY_ASH_CLAL, _Y0 + 1, _X0);
 		printf(ENTRY_ASH_CBAR, _Y0 + 2, _X0);
-		printf(ENTRY_ASH_CLAL, _Y0 + 3, _X0);
-		printf(ENTRY_ASH_STAT, _Y0 + 3, _X0 + 123, _editing ? EDITSTR : VIEWSTR);
-		//printf(ENTRY_ASH_STAT, _Y0 + 3, _X0, _editing ? EDITSTR : VIEWSTR);
-		printf(ENTRY_ASH_CBAR, _Y0 + 4, _X0);
 		for (i = 0; i < 16; ++i) {
 			bool selected = actual_selected_entry(i);
-			printf(ENTRY_ASH_LEAD, i + _Y0 + 5, _X0, i);
+			printf(ENTRY_ASH_LEAD, i + _Y0 + 3, _X0, i);
 			if (entries[i].is_long()) print_long(entries[i], extended, selected);
 			else                      print_short(entries[i], extended, selected);
 		}
+		printf(ENTRY_ASH_CBAR, i + _Y0 + 3, _X0);
+		printf(ENTRY_ASH_CLAS, i + _Y0 + 4, _X0);
 		printf(ENTRY_ASH_CBAR, i + _Y0 + 5, _X0);
 	}
 }
