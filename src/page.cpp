@@ -224,20 +224,29 @@ void Page::print_short(const entry& ref, bool extended, bool selected) const {
 		opts.padding_left = 2;
 		opts.padding_right = 2;
 		print_colorized_str(ref.dir.ds.DIR_Name, 11, &opts, 0, 1);
-		printf( " %02X "         ENTRY_ASH_VBAR // DIR_Attr
-				" %02X "         ENTRY_ASH_VBAR // DIR_NTRes
-				" %02X "         ENTRY_ASH_VBAR // DIR_CrtTimeTenth
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_CrtTime
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_CrtDate
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_LstAccDate
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_FstClusHI
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_WrtTime
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_WrtDate
-				"  %-5u  "       ENTRY_ASH_VBAR // DIR_FstClusLO
-				"  %-11lu      " ENTRY_ASH_VBAR // DIR_FileSize
-				, ref.dir.ds.DIR_Attr, ref.dir.ds.DIR_NTRes, ref.dir.ds.DIR_CrtTimeTenth, ref.dir.ds.DIR_CrtTime
-				, ref.dir.ds.DIR_CrtDate, ref.dir.ds.DIR_LstAccDate, ref.dir.ds.DIR_FstClusHI, ref.dir.ds.DIR_WrtTime
-				, ref.dir.ds.DIR_WrtDate, ref.dir.ds.DIR_FstClusLO, ref.dir.ds.DIR_FileSize
+		printf( " %02X " ENTRY_ASH_VBAR // DIR_Attr
+				" %02X " ENTRY_ASH_VBAR // DIR_NTRes
+				" %02X " ENTRY_ASH_VBAR // DIR_CrtTimeTenth
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_CrtTime
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_CrtDate
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_LstAccDate
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_FstClusHI
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_WrtTime
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_WrtDate
+				" %02X   %02X " ENTRY_ASH_VBAR // DIR_FstClusLO
+				" %02X   %02X   %02X   %02X " ENTRY_ASH_VBAR // DIR_FileSize
+				, ref.dir.ds.DIR_Attr, ref.dir.ds.DIR_NTRes, ref.dir.ds.DIR_CrtTimeTenth
+				, ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[0] , ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[0]
+				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[1]
+				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[2]
+				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[3]
 		);
 	} else {
 		opts.padding_left = 0;
@@ -279,14 +288,14 @@ void Page::print_long(const entry& ref, bool extended, bool selected) const {
 		print_colorized_str(ref.dir.dl.LDIR_Name1, 10, &opts, 0, 1);
 		printf( " %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Attr
 				" %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Type
-				" %02X "           // ref.dir.dl.LDIR_Chksum
+				" %02X "                 // ref.dir.dl.LDIR_Chksum
 				, ref.dir.dl.LDIR_Attr, ref.dir.dl.LDIR_Type, ref.dir.dl.LDIR_Chksum
 		);
 
 		opts.padding_left = 2;
 		opts.padding_right = 2;
 		print_colorized_str(ref.dir.dl.LDIR_Name2, 12, &opts, 0, 1);
-		printf("  %-5u  ", ref.dir.dl.LDIR_FstClusLO);
+		printf(" %02X   %02X ", ((unsigned char*)&ref.dir.dl.LDIR_FstClusLO)[0], ((unsigned char*)&ref.dir.dl.LDIR_FstClusLO)[1]);
 
 		opts.padding_left = 2;
 		opts.padding_right = 2;
@@ -300,7 +309,7 @@ void Page::print_long(const entry& ref, bool extended, bool selected) const {
 		print_colorized_str(ref.dir.dl.LDIR_Name1, 10, &opts, 1, 1);
 		printf( " %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Attr
 				" %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Type
-				" %02X "           // ref.dir.dl.LDIR_Chksum
+				" %02X "                 // ref.dir.dl.LDIR_Chksum
 				, ref.dir.dl.LDIR_Attr, ref.dir.dl.LDIR_Type, ref.dir.dl.LDIR_Chksum
 		);
 		

@@ -297,12 +297,10 @@ void DiskExplorer::show_fat32_info(void) const {
 void DiskExplorer::show_fsi_info(void) const {
 	printf("FSI_LeadSig   : 0x%0lX\n", _fsi_sector.FSI_LeadSig   ());
 	printf("              : 0x41615252\n");
-	//printf("FSI_Reserved1 : %lu\n", _fsi_sector.FSI_Reserved1 ());
 	printf("FSI_StrucSig  : 0x%0lX\n", _fsi_sector.FSI_StrucSig  ());
 	printf("              : 0x61417272\n");
 	printf("FSI_Free_Count: %lu\n", _fsi_sector.FSI_Free_Count());
 	printf("FSI_Nxt_Free  : %lu\n", _fsi_sector.FSI_Nxt_Free  ());
-	//printf("FSI_Reserved2 : %lu\n", _fsi_sector.FSI_Reserved2 ());
 	printf("FSI_TrailSig  : 0x%0lX\n", _fsi_sector.FSI_TrailSig  ());
 	printf("              : 0xAA550000\n");
 	clear_column(5);
