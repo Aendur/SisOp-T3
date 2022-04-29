@@ -19,12 +19,7 @@ private:
 		NO_INFO,
 	};
 
-
 	TermUI _ui;
-	// unsigned long long _offset_start = 0;
-	// unsigned long long _offset_current = 0;
-	// unsigned long long _buffer_length = 0;
-
 	Device _device;
 	Page _page[2];
 	InputField _input;
@@ -51,6 +46,11 @@ private:
 	void input_and_goto_sector(void);
 	void input_and_goto_cluster_raw(void);
 	void input_and_goto_cluster_data(void);
+	
+	void select_fat_entry(int fatnum);
+	void fwd_directory(void);
+	void rew_directory(void);
+		
 	void show_geom_info(void) const;
 	void show_fat32_info(void) const;
 	void show_fsi_info(void) const;

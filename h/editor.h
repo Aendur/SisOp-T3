@@ -58,6 +58,7 @@ public:
 	bool edit(Device& dev);
 	bool select(LONGLONG newpos);
 	void move(int offset, CursorMoveMode mode = CursorMoveMode::WRAP);
+	inline int position(void) const { return _position; }
 };
 
 

@@ -6,7 +6,7 @@
 
 #define PAGE_BAR "\033[2m+---+------------+-------------------------------------------------------------------------------------------------------------+------------------------------------+\033[0m"
 #define PAGE_HDR "\033[2m|   |   Offset   |  00 01 02 03  04 05 06 07   08 09 0A 0B  0C 0D 0E 0F   10 11 12 13  14 15 16 17   18 19 1A 1B  1C 1D 1E 1F  |                Text                |\033[0m"
-#define PAGE_FTR "\033[2m|   | %-10llu |  %-53s Cluster: %-17llu Sector: %-16llu  | %s                            |\033[0m"
+#define PAGE_FTR "\033[2m|   | %-10llu |  %-53s Cluster: %-17lld Sector: %-16llu  | %s                            |\033[0m"
 #define PAGE_ADR "\033[2m| %X |  %08llX  |  \033[0m"
 #define PAGE_SEP0 " "
 #define PAGE_SEP1 "  "
@@ -16,10 +16,11 @@
 #define PAGE_RMARGIN "  \033[2m|\033[0m"
 #define PAGE_LE   "\033[0K"
 
-void Page::init(DWORD sl, DWORD cl, int x, int y) {
+void Page::init(DWORD sl, DWORD cl, LONGLONG fds, int x, int y) {
 	if (!_initialized) {
 		_sector_length = sl;
 		_clustr_length = cl;
+		_fds_offset = fds;
 		_X0 = x;
 		_Y0 = y;
 		//_mode[View::SECTOR] = 0;
@@ -99,6 +100,9 @@ static const char * VIEWSTR = "\033[0;32;1mVIEWING\033[0;2m";
 void Page::print_sector(void) const {
 	PBYTE end = _buffer + _sector_length;
 	PBYTE pos = _buffer;
+	LONGLONG current_sector = (LONGLONG) offset_start() - _fds_offset;
+	current_sector = 1 + (current_sector >= 0) + current_sector / (LONGLONG) _clustr_length;
+
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
 	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
@@ -113,7 +117,7 @@ void Page::print_sector(void) const {
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + nline, _X0);
 	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + nline, _X0,
 		offset_start() , size_to_string(offset_start(), true),
-		offset_start() / _clustr_length,
+		current_sector,
 		offset_start() / _sector_length,
 		(_editing == true) ? EDITSTR : VIEWSTR
 	);
@@ -128,8 +132,6 @@ void Page::print(void) const {
 		print_entry();
 	}
 }
-
-
 
 /////////////////////  ENTRY ////////////////
 #include "entry.h"

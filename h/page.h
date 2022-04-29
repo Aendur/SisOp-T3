@@ -26,6 +26,7 @@ private:
 	
 	DWORD _sector_length;
 	DWORD _clustr_length;
+	LONGLONG _fds_offset;
 
 	int _X0;
 	int _Y0;
@@ -51,7 +52,7 @@ private:
 	bool actual_selected_entry(int i) const;
 
 public:
-	void init(DWORD sl, DWORD cl, int x, int y);
+	void init(DWORD sl, DWORD cl, LONGLONG fds, int x, int y);
 	//inline void set(PBYTE * buffers, ULONGLONG offset) { _buffers[0] = buffers[0]; _buffers[1] = buffers[1]; _buffer = _buffers[_selected]; _offset = offset; }
 	void set(const PBYTE buffers[2], ULONGLONG offset);
 	//inline void toggle_mode(void) { ++_mode[_view]; }

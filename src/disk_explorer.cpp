@@ -30,12 +30,18 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 
 	goto_offset(0);
 	read_setpages();
-	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), 36, 1);
-	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), 36, 26);
+	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), fds_offset(), 36, 1);
+	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), fds_offset(), 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
 	_page[1].toggle_view();
 	_page[1].toggle_view();
+}
+
+void DiskExplorer::clear_column(int n) const {
+	for(int i = 0; i < n; ++i) {
+		printf("%*s\n", 32, "");
+	}
 }
 
 void DiskExplorer::print_commands(void) const {
@@ -57,7 +63,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("S4~S9 : bookmark sector    \n");
 	printf("G     : goto sector        \n");
 	printf("H     : goto cluster (data)\n");
-//	printf("T     : select FAT1 entry  \n");
+	printf("T     : select FAT1 entry  \n");
 
 	if (_select_mode) {
 	printf("\n--- DISP ---                 \n");
@@ -178,6 +184,7 @@ void DiskExplorer::toggle_lock(void) {
 	}
 }
 
+
 void DiskExplorer::setpages(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;
 	_page[0].set(_device.buffers(), _device.offset());
@@ -252,6 +259,10 @@ void DiskExplorer::input_and_goto_cluster_data(void) {
 	}
 }
 
+//void select_fat_entry(int fatnum);
+//void fwd_directory(void);
+//void rew_directory(void);
+
 void DiskExplorer::show_geom_info(void) const {
 	wprintf(L"MediaType        : %d\n",   _device.geometry().MediaType);
 	wprintf(L"Cylinders (Quad) : %lld\n", _device.geometry().Cylinders.QuadPart);
@@ -265,7 +276,6 @@ void DiskExplorer::show_geom_info(void) const {
 	//fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 	clear_column(5);
 }
-
 
 void DiskExplorer::show_fat32_info(void) const {
 	static char buf[12];
@@ -298,16 +308,6 @@ void DiskExplorer::show_fsi_info(void) const {
 	printf("FSI_TrailSig  : 0x%0lX\n", _fsi_sector.FSI_TrailSig  ());
 	printf("              : 0xAA550000\n");
 	clear_column(5);
-}
-
-
-
-
-
-void DiskExplorer::clear_column(int n) const {
-	for(int i = 0; i < n; ++i) {
-		printf("%*s\n", 32, "");
-	}
 }
 void DiskExplorer::show_fat32_info_ext(void) const {
 	//printf("BS_jmpBoot    : %u", _sector0.BS_jmpBoot    ()); //                    &sector[0]   
@@ -370,7 +370,6 @@ LONGLONG DiskExplorer::fat_sec_num(LONGLONG N) const {
 	// FATOffset = N * 4;
 	// ThisFATSecNum = BPB_ResvdSecCnt + (FATOffset / BPB_BytsPerSec);
 	// ThisFATEntOffset = REM(FATOffset / BPB_BytsPerSec);
-	// REM(…) is the remainder operator. That means the remainder a
 	unsigned int fatsz = _sector0.BPB_FATSz32();
 	LONGLONG fat_offset = N * 4;
 	return _sector0.BPB_RsvdSecCnt() + fat_offset / _sector0.BPB_BytsPerSec();
