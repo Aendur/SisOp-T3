@@ -4,13 +4,14 @@
 #include <cstdio>
 #include <cstring>
 
-#define PAGE_BAR "\033[2m+---+------------+-------------------------------------------------------------------------------------------------------+------------------------------------+\033[0m"
-#define PAGE_HDR "\033[2m|   |   Offset   |  00 01 02 03 04 05 06 07  08 09 0A 0B 0C 0D 0E 0F   10 11 12 13 14 15 16 17  18 19 1A 1B 1C 1D 1E 1F  |                Text                |\033[0m"
-#define PAGE_FTR "\033[2m|   | %-10llu |  %-50s Cluster: %-15llu Sector: %-15llu  | %s                            |\033[0m"
+#define PAGE_BAR "\033[2m+---+------------+-------------------------------------------------------------------------------------------------------------+------------------------------------+\033[0m"
+#define PAGE_HDR "\033[2m|   |   Offset   |  00 01 02 03  04 05 06 07   08 09 0A 0B  0C 0D 0E 0F   10 11 12 13  14 15 16 17   18 19 1A 1B  1C 1D 1E 1F  |                Text                |\033[0m"
+#define PAGE_FTR "\033[2m|   | %-10llu |  %-53s Cluster: %-17llu Sector: %-16llu  | %s                            |\033[0m"
 #define PAGE_ADR "\033[2m| %X |  %08llX  |  \033[0m"
 #define PAGE_SEP0 " "
 #define PAGE_SEP1 "  "
-#define PAGE_SEP2 "\033[2m |  \033[0m"
+#define PAGE_SEP2 "   "
+#define PAGE_SEP3 "\033[2m |  \033[0m"
 #define PAGE_LMARGIN "  \033[%d;%dH"
 #define PAGE_RMARGIN "  \033[2m|\033[0m"
 #define PAGE_LE   "\033[0K"
@@ -68,10 +69,14 @@ void Page::print_hex(PBYTE line, int len) const {
 	static const int q1 = 0x08;
 	static const int q2 = 0x10;
 	static const int q3 = 0x18;
-	print_hex_block(line,  0,  q1); printf(PAGE_SEP0);
-	print_hex_block(line, q1,  q2); printf(PAGE_SEP1);
-	print_hex_block(line, q2,  q3); printf(PAGE_SEP0);
-	print_hex_block(line, q3, len); printf(PAGE_SEP2);
+	print_hex_block(line,  0,  4); printf(PAGE_SEP0);
+	print_hex_block(line,  4,  8); printf(PAGE_SEP1);
+	print_hex_block(line,  8, 12); printf(PAGE_SEP0);
+	print_hex_block(line, 12, 16); printf(PAGE_SEP1);
+	print_hex_block(line, 16, 20); printf(PAGE_SEP0);
+	print_hex_block(line, 20, 24); printf(PAGE_SEP1);
+	print_hex_block(line, 24, 28); printf(PAGE_SEP0);
+	print_hex_block(line, 28, 32); printf(PAGE_SEP3);
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
