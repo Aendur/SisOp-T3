@@ -30,6 +30,7 @@ private:
 	InputField _input;
 	Editor _editor;
 
+	bool _select_mode = false;
 	long _adv_N = 1;
 	LONGLONG _sector_bookmark[10];
 	DriveInfoMode _show_drive_info = F32INFO;

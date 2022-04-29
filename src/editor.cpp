@@ -82,7 +82,7 @@ Editor::EditorAction Editor::edit_run(void) {
 	//printf(LAYOUT_FREE "INPUT: ");
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	if (_position < 0) {
-		set_cursor(0);
+		select(0);
 	}
 	
 	_page[0]->toggle_edit(true);
@@ -116,16 +116,16 @@ Editor::EditorAction Editor::edit_run(void) {
 				case TERMUI_KEY_SHIFT_F1   : _page[0]->switch_buff()                          ;                  break;
 				case TERMUI_KEY_SHIFT_F2   : _page[1]->switch_buff()                          ;                  break;
 				case TERMUI_KEY_TAB             : switch_edit_mode()       ; break;
-				case TERMUI_KEY_ARROW_UP        : move_cursor( -32, CursorMoveMode::WRAP)   ; break;
-				case TERMUI_KEY_ARROW_DOWN      : move_cursor(  32, CursorMoveMode::WRAP)   ; break;
-				case TERMUI_KEY_ARROW_LEFT      : move_cursor(  -1, CursorMoveMode::WRAP)   ; break;
-				case TERMUI_KEY_ARROW_RIGHT     : move_cursor(   1, CursorMoveMode::WRAP)   ; break;
-				case TERMUI_KEY_CTRL_ARROW_UP   : move_cursor(-256, CursorMoveMode::WRAP); break;
-				case TERMUI_KEY_CTRL_ARROW_DOWN : move_cursor( 256, CursorMoveMode::WRAP); break;
-				case TERMUI_KEY_CTRL_ARROW_RIGHT: move_cursor(   8, CursorMoveMode::WRAP); break;
-				case TERMUI_KEY_CTRL_ARROW_LEFT : move_cursor(  -8, CursorMoveMode::WRAP); break;
-				case TERMUI_KEY_HOME            : move_cursor(  -(_position % 32), CursorMoveMode::STAY); break;
-				case TERMUI_KEY_END             : move_cursor(31-(_position % 32), CursorMoveMode::STAY); break;
+				case TERMUI_KEY_ARROW_UP        : move( -32, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_ARROW_DOWN      : move(  32, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_ARROW_LEFT      : move(  -1, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_ARROW_RIGHT     : move(   1, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_CTRL_ARROW_UP   : move(-256, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_CTRL_ARROW_DOWN : move( 256, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_CTRL_ARROW_RIGHT: move(   8, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_CTRL_ARROW_LEFT : move(  -8, CursorMoveMode::WRAP); break;
+				case TERMUI_KEY_HOME            : move(  -(_position % 32), CursorMoveMode::STAY); break;
+				case TERMUI_KEY_END             : move(31-(_position % 32), CursorMoveMode::STAY); break;
 				case TERMUI_KEY_BACKSPACE       : pop_byte(); break;
 			}
 		}
@@ -164,7 +164,7 @@ void Editor::print_commands(void) const {
 	printf("\033[m");
 }
 
-void Editor::move_cursor(int offset, CursorMoveMode mode) {
+void Editor::move(int offset, CursorMoveMode mode) {
 	int future = _position + offset;
 	int maxoff = 2 * (int) _buf_len;
 
@@ -176,10 +176,10 @@ void Editor::move_cursor(int offset, CursorMoveMode mode) {
 		else if (future >=  maxoff) future = future % maxoff;
 	}
 	
-	set_cursor(future);
+	select(future);
 }
 
-bool Editor::set_cursor(LONGLONG newpos) {
+bool Editor::select(LONGLONG newpos) {
 	LONGLONG maxoff = 2 * (int) _buf_len;
 	if (0 <= newpos && newpos < maxoff) {
 		_position = (int) newpos;
@@ -199,7 +199,7 @@ void Editor::push_byte(unsigned char byte) {
 	BYTE prev = _buffer[buf_ind][buf_pos];
 	_history.emplace_front(_device_offset + _position, prev);
 	_buffer[buf_ind][buf_pos] = byte;
-	move_cursor(1, CursorMoveMode::STAY);
+	move(1, CursorMoveMode::STAY);
 }
 
 void Editor::push_fill(unsigned char byte) {
@@ -216,7 +216,7 @@ void Editor::push_fill(unsigned char byte) {
 			_history.emplace_front(_device_offset + newpos, prev);
 			_buffer[buf_ind][buf_pos] = byte;
 		}
-		move_cursor(len, CursorMoveMode::HALT);
+		move(len, CursorMoveMode::HALT);
 	}
 	_input.set_maxlen(1);
 }
@@ -225,7 +225,7 @@ void Editor::pop_byte(void) {
 	if (!_history.empty()) {
 		auto [pos, chr]= _history.front();
 		LONGLONG rpos = pos - _device_offset;
-		if (set_cursor(rpos)) {
+		if (select(rpos)) {
 			int buf_ind = _position / _buf_len;
 			int buf_pos = _position % _buf_len;
 			_buffer[buf_ind][buf_pos] = chr;

@@ -40,6 +40,8 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 
 void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H");
+	clear_column(48);
+	printf("\033[1;1H");
 	printf("\n--- NAV ---               \n");
 	printf("0     : goto sector 0      \n");
 //	printf("1     : goto FSI           \n");
@@ -55,14 +57,23 @@ void DiskExplorer::print_commands(void) const {
 	printf("S4~S9 : bookmark sector    \n");
 	printf("G     : goto sector        \n");
 	printf("H     : goto cluster (data)\n");
+//	printf("T     : select FAT1 entry  \n");
+
+	if (_select_mode) {
+	printf("\n--- DISP ---                 \n");
+	printf("ARROWS: move cursor            \n");
+	} else {
 	printf("U_ARR : rewind %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("D_ARR : forwrd %d %-15s\n", _adv_N, _adv_N == 1 ? "sector" : "sectors");
 	printf("LR_ARR: set N=%-10d \n", _adv_N);
-	printf("\n--- DISP ---                \n");
-	printf("INS   : edit current sector \n");
-	printf("[S] F1: toggle disp 1 modes \n");
-	printf("[S] F2: toggle disp 2 modes \n");
-	printf("D     : show drive info     \n");
+	printf("\n--- DISP ---                 \n");
+	}
+
+	printf("TAB   : toggle select mode     \n");
+	printf("INS   : edit current sector    \n");
+	printf("[S] F1: toggle disp 1 modes    \n");
+	printf("[S] F2: toggle disp 2 modes    \n");
+	printf("D     : show drive info        \n");
 	printf("PAUSE : %-15s\n", _locked ? "UNLOCK" : "DISMOUNT & LOCK");
 	printf("ESC   : exit                \n");
 
@@ -85,6 +96,7 @@ void DiskExplorer::run(void) {
 
 	LONGLONG fat1_offset =  _sector0.BPB_RsvdSecCnt() * LEN;
 	LONGLONG fat2_offset = (_sector0.BPB_RsvdSecCnt() + _sector0.BPB_FATSz32()) * LEN ;
+	_editor.select(0);
 
 	_ui.clear_screen();
 	print_commands();
@@ -125,10 +137,11 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_G          : input_and_goto_sector()                          ; /* reads/sets */ break;
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_data()                    ; /* reads/sets */ break;
-		case TERMUI_KEY_ARROW_UP   : advance_sectors(-(_adv_N+2) * (long) LEN)        ; read_setpages(); break;
-		case TERMUI_KEY_ARROW_DOWN : advance_sectors( (_adv_N-2) * (long) LEN)        ; read_setpages(); break;
-		case TERMUI_KEY_ARROW_RIGHT: _adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000 ;                  break;
-		case TERMUI_KEY_ARROW_LEFT : _adv_N = _adv_N > 10     ? _adv_N / 10 : 1       ;                  break;
+		case TERMUI_KEY_ARROW_UP   : if (_select_mode){ _editor.move(-32); } else {advance_sectors(-(_adv_N+2) * (long) LEN)        ; read_setpages();} break;
+		case TERMUI_KEY_ARROW_DOWN : if (_select_mode){ _editor.move( 32); } else {advance_sectors( (_adv_N-2) * (long) LEN)        ; read_setpages();} break;
+		case TERMUI_KEY_ARROW_LEFT : if (_select_mode){ _editor.move( -1); } else {_adv_N = _adv_N > 10     ? _adv_N / 10 : 1       ;                 } break;
+		case TERMUI_KEY_ARROW_RIGHT: if (_select_mode){ _editor.move(  1); } else {_adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000 ;                 } break;
+		case TERMUI_KEY_TAB        : _select_mode = !_select_mode                     ;                  break;
 		case TERMUI_KEY_INSERT     : _editor.edit(_device)                            ; read_setpages(); break;
 		case TERMUI_KEY_SPACE      : setpages()                                       ;                  break;
 		default                    : setpages()                                       ;                  break;

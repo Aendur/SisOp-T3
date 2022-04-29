@@ -12,17 +12,16 @@ class Device;
 class Dialog;
 class Editor {
 private:
-	enum class EditMode {
-		HEX,
-		CHR,
-		FIL,
-	};
 	enum class CursorMoveMode {
 		STAY,
 		HALT,
 		WRAP,
 	};
-
+	enum class EditMode {
+		HEX,
+		CHR,
+		FIL,
+	};
 	enum EditorAction {
 		KEEP_EDITING     = DIALOG_NO_SELECTION,
 		WRITE_CHANGES   = 1,
@@ -45,8 +44,6 @@ private:
 	void switch_edit_mode(void);
 	void print_commands(void) const;
 	void print_stack(int max);
-	void move_cursor(int offset, CursorMoveMode mode);
-	bool set_cursor(LONGLONG newpos);
 
 	void push_byte(unsigned char byte);
 	void push_fill(unsigned char byte);
@@ -59,6 +56,8 @@ public:
 	~Editor(void);
 	void init(DWORD size, TermUI * t, Page * p1, Page * p2);
 	bool edit(Device& dev);
+	bool select(LONGLONG newpos);
+	void move(int offset, CursorMoveMode mode = CursorMoveMode::WRAP);
 };
 
 
