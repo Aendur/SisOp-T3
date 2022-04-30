@@ -1,9 +1,6 @@
 #ifndef FAT32_SPEC_H
 #define FAT32_SPEC_H
 
-//typedef unsigned char byte;
-
-
 class fat32 {
 private:
 	// buffer
@@ -41,6 +38,36 @@ public:
 	inline const unsigned char* BS_FilSysType (void) const { return                    &sector[82]  ; } // Offset=82 Size=8
 	inline const unsigned char  SigByte1      (void) const { return                     sector[510] ; } // Offset=510 Size=1
 	inline const unsigned char  SigByte2      (void) const { return                     sector[511] ; } // Offset=511 Size=2
+	inline ULONG cluster_size(void) const;
+	inline LONG first_data_sector(void) const;
+	inline LONGLONG fds_offset(void) const;
+	inline LONGLONG first_sector_of_cluster(LONGLONG N) const;
+	inline LONGLONG fat_sec_num(LONGLONG N, int nfat) const;
+	inline LONGLONG fat_ent_off(LONGLONG N) const;
 };
+
+ULONG fat32::cluster_size(void) const {
+	return this->BPB_BytsPerSec() * this->BPB_SecPerClus();
+}
+LONG fat32::first_data_sector(void) const {
+	return this->BPB_RsvdSecCnt() + this->BPB_FATSz32() * this->BPB_NumFATs();
+}
+LONGLONG fat32::fds_offset(void) const {
+	return first_data_sector() * this->BPB_BytsPerSec();
+}
+LONGLONG fat32::first_sector_of_cluster(LONGLONG N) const {
+	return ((N - 2) * this->BPB_SecPerClus()) + first_data_sector();
+}
+LONGLONG fat32::fat_sec_num(LONGLONG N, int nfat) const {
+	unsigned int fatsz = this->BPB_FATSz32();
+	LONGLONG fat_offset = N * 4;
+	return this->BPB_RsvdSecCnt() + nfat * fatsz + fat_offset / this->BPB_BytsPerSec();
+}
+LONGLONG fat32::fat_ent_off(LONGLONG N) const {
+	//unsigned int fatsz = this->BPB_FATSz32();
+	LONGLONG fat_offset = N * 4;
+	return fat_offset % this->BPB_BytsPerSec();
+}
+
 
 #endif

@@ -30,8 +30,8 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 
 	goto_offset(0);
 	read_setpages();
-	_page[0].init(_device.geometry().BytesPerSector, cluster_size(), fds_offset(), 36, 1);
-	_page[1].init(_device.geometry().BytesPerSector, cluster_size(), fds_offset(), 36, 26);
+	_page[0].init(&_sector0, 36, 1);
+	_page[1].init(&_sector0, 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
 	_page[1].toggle_view();
@@ -117,7 +117,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_F2         : _page[1].toggle_view()                           ;                  break;
 		case TERMUI_KEY_SHIFT_F1   : _page[0].switch_buff()                           ;                  break;
 		case TERMUI_KEY_SHIFT_F2   : _page[1].switch_buff()                           ;                  break;
-		case TERMUI_KEY_0          : goto_offset(fds_offset())                        ; read_setpages(); break;
+		case TERMUI_KEY_0          : goto_offset(_sector0.fds_offset())               ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_offset(fat1_offset)                         ; read_setpages(); break;
 		case TERMUI_KEY_2          : goto_offset(fat2_offset)                         ; read_setpages(); break;
 		case TERMUI_KEY_3          : goto_offset(_sector_bookmark[3] * LEN)           ; read_setpages(); break;
@@ -247,8 +247,8 @@ void DiskExplorer::input_and_goto_fat(void) {
 	_input.set_msg("\033[1mGOTO FAT ENTRY N:\033[0m ");
 	LONGLONG N;
 	if (_input.get(&N, TERMUI_KEY_UNDEFINED, true)) {
-		goto_offset(fat_sec_num(N, 0) * _device.geometry().BytesPerSector);
-		_editor.select(fat_ent_off(N));
+		goto_offset(_sector0.fat_sec_num(N, 0) * _device.geometry().BytesPerSector);
+		_editor.select(_sector0.fat_ent_off(N));
 		read_setpages();
 	}
 }
@@ -256,7 +256,7 @@ void DiskExplorer::input_and_goto_cluster_data(void) {
 	_input.set_msg("\033[1mGOTO DATA CLUSTER:\033[0m ");
 	LONGLONG target_cluster;
 	if (_input.get(&target_cluster, TERMUI_KEY_UNDEFINED, true)) {
-		goto_offset(first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
+		goto_offset(_sector0.first_sector_of_cluster(target_cluster) * _device.geometry().BytesPerSector);
 		read_setpages();
 	}
 }
@@ -288,9 +288,9 @@ void DiskExplorer::show_fat32_info(void) const {
 	printf("BPB_FSInfo     : %u\n", _sector0.BPB_FSInfo());
 	printf("BS_VolLab      : %s\n", buf);
 	printf("\n");
-	printf("Cluster size   : %lu\n" , cluster_size());
-	printf("FirstDataSector: %lu\n" , first_data_sector());
-	printf("FDS offset     : %llu\n", fds_offset());
+	printf("Cluster size   : %lu\n" , _sector0.cluster_size());
+	printf("FirstDataSector: %lu\n" , _sector0.first_data_sector());
+	printf("FDS offset     : %llu\n", _sector0.fds_offset());
 	clear_column(1);
 }
 void DiskExplorer::show_fsi_info(void) const {
@@ -304,27 +304,3 @@ void DiskExplorer::show_fsi_info(void) const {
 	printf("              : 0xAA550000\n");
 	clear_column(5);
 }
-
-ULONG DiskExplorer::cluster_size(void) const {
-	return _sector0.BPB_BytsPerSec() * _sector0.BPB_SecPerClus();
-}
-LONG DiskExplorer::first_data_sector(void) const {
-	return _sector0.BPB_RsvdSecCnt() + _sector0.BPB_FATSz32() * _sector0.BPB_NumFATs();
-}
-LONGLONG DiskExplorer::fds_offset(void) const {
-	return first_data_sector() * _sector0.BPB_BytsPerSec();
-}
-LONGLONG DiskExplorer::first_sector_of_cluster(LONGLONG N) const {
-	return ((N - 2) * _sector0.BPB_SecPerClus()) + first_data_sector();
-}
-LONGLONG DiskExplorer::fat_sec_num(LONGLONG N, int nfat) const {
-	unsigned int fatsz = _sector0.BPB_FATSz32();
-	LONGLONG fat_offset = N * 4;
-	return _sector0.BPB_RsvdSecCnt() + nfat * fatsz + fat_offset / _sector0.BPB_BytsPerSec();
-}
-LONGLONG DiskExplorer::fat_ent_off(LONGLONG N) const {
-	//unsigned int fatsz = _sector0.BPB_FATSz32();
-	LONGLONG fat_offset = N * 4;
-	return fat_offset % _sector0.BPB_BytsPerSec();
-}
-

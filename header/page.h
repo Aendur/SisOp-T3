@@ -8,6 +8,7 @@
 class TermUI;
 class Device;
 class entry;
+class fat32;
 class Page {
 private:
 	enum class View : int {
@@ -47,6 +48,9 @@ private:
 	void print_int_block(UINT32 value, bool selected) const;
 	void print_sector_str(PBYTE line, int len) const;
 
+	LONGLONG current_cluster(void) const;
+	LONGLONG current_sector(void) const;
+
 	///
 	void print_entry(void) const;
 	void print_short(const entry & ref, bool extended, bool selected) const;
@@ -56,10 +60,8 @@ private:
 	bool actual_selected_entry(int i) const;
 
 public:
-	void init(DWORD sl, DWORD cl, LONGLONG fds, int x, int y);
-	//inline void set(PBYTE * buffers, ULONGLONG offset) { _buffers[0] = buffers[0]; _buffers[1] = buffers[1]; _buffer = _buffers[_selected]; _offset = offset; }
+	void init(fat32 * f32, int x, int y);
 	void set(const PBYTE buffers[2], ULONGLONG offset);
-	//inline void toggle_mode(void) { ++_mode[_view]; }
 	inline void toggle_view(void) { _view = (View)((1 + (int)_view) % (int)View::MOD);  }
 	inline void toggle_edit(bool val) { _editing = val; }
 	inline void switch_buff(void) { _selected_buffer = (_selected_buffer + 1) % 2; _buffer = _buffers[_selected_buffer]; }

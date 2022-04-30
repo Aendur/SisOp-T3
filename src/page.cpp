@@ -1,6 +1,7 @@
 #include "page.h"
 #include "device.h"
 #include "utility.h"
+#include "fat32.h"
 #include <cstdio>
 #include <cstring>
 
@@ -16,11 +17,11 @@
 #define PAGE_RMARGIN "  \033[2m|\033[0m"
 #define PAGE_LE   "\033[0K"
 
-void Page::init(DWORD sl, DWORD cl, LONGLONG fds, int x, int y) {
+void Page::init(fat32 * f32, int x, int y) {
 	if (!_initialized) {
-		_sector_length = sl;
-		_clustr_length = cl;
-		_fds_offset = fds;
+		_sector_length = f32->BPB_BytsPerSec();
+		_clustr_length = f32->cluster_size();
+		_fds_offset = f32->fds_offset();
 		_X0 = x;
 		_Y0 = y;
 		//_mode[View::SECTOR] = 0;
@@ -87,16 +88,18 @@ void Page::print_int_block(UINT32 value, bool selected) const {
 void Page::print_int(PBYTE line) const {
 	int i0 = (int)(line - _buffer) / sizeof(UINT32);
 	int i1 = _selected / sizeof(UINT32) - i0;
+	//int i2 = _selected / sizeof(UINT32) + i0;
+	
 
 	int i = 0;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP3); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP3); ++i; // printf("\x1b[D%lld", _offset_end);
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
@@ -119,8 +122,7 @@ static const char * VIEWSTR = "\033[0;32;1mVIEWING\033[0;2m";
 void Page::print_sector(void) const {
 	PBYTE end = _buffer + _sector_length;
 	PBYTE pos = _buffer;
-	LONGLONG current_sector = (LONGLONG) offset_start() - _fds_offset;
-	current_sector = 1 + (current_sector >= 0) + current_sector / (LONGLONG) _clustr_length;
+	
 
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
 	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
@@ -137,11 +139,21 @@ void Page::print_sector(void) const {
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + nline, _X0);
 	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + nline, _X0,
 		offset_start() , size_to_string(offset_start(), true),
-		current_sector,
-		offset_start() / _sector_length,
+		current_cluster(),
+		current_sector(),
 		(_editing == true) ? EDITSTR : VIEWSTR
 	);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
+}
+
+LONGLONG Page::current_cluster(void) const {
+	LONGLONG cluster = (LONGLONG) offset_start() - _fds_offset;
+	cluster = 1 + (cluster >= 0) + cluster / (LONGLONG) _clustr_length;
+	return cluster;
+}
+
+LONGLONG Page::current_sector(void) const {
+	return offset_start() / _sector_length;
 }
 
 //// Data line END
