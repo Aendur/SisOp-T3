@@ -11,11 +11,12 @@ class entry;
 class Page {
 private:
 	enum class View : int {
-		SECTORS_ASC,
 		SECTORS_HEX,
+		SECTORS_INT,
 		ENTRIES_SHO,
 		ENTRIES_LON,
 		MOD,
+		SECTORS_ASC,
 	};
 
 	PBYTE _buffer;
@@ -35,12 +36,15 @@ private:
 	bool _editing = false;
 
 	//std::map<View, BYTE> _mode;
-	View _view = View::SECTORS_ASC;
+	View _view = View::SECTORS_HEX;
 
 	void print_sector(void) const;
+	void print_sector_int(void) const;
 	void print_adr(int nline, ULONGLONG offset) const;
-	void print_hex(PBYTE line, int len) const;
+	void print_hex(PBYTE line) const;
+	void print_int(PBYTE line) const;
 	void print_hex_block(PBYTE line, int i0, int i1) const;
+	void print_int_block(UINT32 value, bool selected) const;
 	void print_sector_str(PBYTE line, int len) const;
 
 	///

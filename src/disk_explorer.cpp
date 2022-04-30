@@ -118,7 +118,6 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_SHIFT_F1   : _page[0].switch_buff()                           ;                  break;
 		case TERMUI_KEY_SHIFT_F2   : _page[1].switch_buff()                           ;                  break;
 		case TERMUI_KEY_0          : goto_offset(fds_offset())                        ; read_setpages(); break;
-//		case TERMUI_KEY_1          : goto_offset(_sector0.BPB_FSInfo() * LEN)         ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_offset(fat1_offset)                         ; read_setpages(); break;
 		case TERMUI_KEY_2          : goto_offset(fat2_offset)                         ; read_setpages(); break;
 		case TERMUI_KEY_3          : goto_offset(_sector_bookmark[3] * LEN)           ; read_setpages(); break;
@@ -149,6 +148,10 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_ARROW_DOWN : if (_select_mode){ _editor.move( 32); } else {advance_sectors( (_adv_N-2) * (long) LEN)        ; read_setpages();} break;
 		case TERMUI_KEY_ARROW_LEFT : if (_select_mode){ _editor.move( -1); } else {_adv_N = _adv_N > 10     ? _adv_N / 10 : 1       ;                 } break;
 		case TERMUI_KEY_ARROW_RIGHT: if (_select_mode){ _editor.move(  1); } else {_adv_N = _adv_N < 100000 ? _adv_N * 10 : 1000000 ;                 } break;
+		case TERMUI_KEY_CTRL_ARROW_UP   : _editor.move(-128); break;
+		case TERMUI_KEY_CTRL_ARROW_DOWN : _editor.move( 128); break;
+		case TERMUI_KEY_CTRL_ARROW_RIGHT: _editor.move(   4); break;
+		case TERMUI_KEY_CTRL_ARROW_LEFT : _editor.move(  -4); break;
 		case TERMUI_KEY_TAB        : _select_mode = !_select_mode                     ;                  break;
 		case TERMUI_KEY_INSERT     : _editor.edit(_device)                            ; read_setpages(); break;
 		case TERMUI_KEY_SPACE      : setpages()                                       ;                  break;
@@ -258,10 +261,6 @@ void DiskExplorer::input_and_goto_cluster_data(void) {
 	}
 }
 
-//void select_fat_entry(int fatnum);
-//void fwd_directory(void);
-//void rew_directory(void);
-
 void DiskExplorer::show_geom_info(void) const {
 	wprintf(L"MediaType        : %d\n",   _device.geometry().MediaType);
 	wprintf(L"Cylinders (Quad) : %lld\n", _device.geometry().Cylinders.QuadPart);
@@ -272,7 +271,6 @@ void DiskExplorer::show_geom_info(void) const {
 	wprintf(L"BytesPerSector   : %d\n",   _device.geometry().BytesPerSector);
 	wprintf(L"Total capacity   : %lld B\n", _device.capacity());
 	wprintf(L"      %s\n"    , size_to_wstring(_device.capacity(), true));
-	//fwprintf(_out, L"NBytes            %d\n", _geom_nbytes);
 	clear_column(5);
 }
 
@@ -306,42 +304,6 @@ void DiskExplorer::show_fsi_info(void) const {
 	printf("              : 0xAA550000\n");
 	clear_column(5);
 }
-void DiskExplorer::show_fat32_info_ext(void) const {
-	//printf("BS_jmpBoot    : %u", _sector0.BS_jmpBoot    ()); //                    &sector[0]   
-	//printf("BS_OEMName    : %u", _sector0.BS_OEMName    ()); //                    &sector[3]   
-	///**/printf("BPB_BytsPerSec: %u", _sector0.BPB_BytsPerSec()); // *((unsigned short*)&sector[11]) 
-	///**/printf("BPB_SecPerClus: %u", _sector0.BPB_SecPerClus()); //                     sector[13]  
-	///**/printf("BPB_RsvdSecCnt: %u", _sector0.BPB_RsvdSecCnt()); // *((unsigned short*)&sector[14]) 
-	///**/printf("BPB_NumFATs   : %u", _sector0.BPB_NumFATs   ()); //                     sector[16]  
-	//printf("BPB_RootEntCnt: %u", _sector0.BPB_RootEntCnt()); // *((unsigned short*)&sector[17]) 
-	//printf("BPB_TotSec16  : %u", _sector0.BPB_TotSec16  ()); // *((unsigned short*)&sector[19]) 
-	//printf("BPB_Media     : %u", _sector0.BPB_Media     ()); //                     sector[21]  
-	///**/printf("BPB_FATSz16   : %u", _sector0.BPB_FATSz16   ()); // *((unsigned short*)&sector[22]) 
-	//printf("BPB_SecPerTrk : %u", _sector0.BPB_SecPerTrk ()); // *((unsigned short*)&sector[24]) 
-	//printf("BPB_NumHeads  : %u", _sector0.BPB_NumHeads  ()); // *((unsigned short*)&sector[26]) 
-	//printf("BPB_HiddSec   : %u", _sector0.BPB_HiddSec   ()); // *((unsigned int*)  &sector[28]) 
-	//printf("BPB_TotSec32  : %u", _sector0.BPB_TotSec32  ()); // *((unsigned int*)  &sector[32]) 
-	///**/printf("BPB_FATSz32   : %u", _sector0.BPB_FATSz32   ()); // *((unsigned int*)  &sector[36]) 
-	//printf("BPB_ExtFlags  : %u", _sector0.BPB_ExtFlags  ()); // *((unsigned short*)&sector[40]) 
-	//printf("BPB_FSVer     : %u", _sector0.BPB_FSVer     ()); // *((unsigned short*)&sector[42]) 
-	///**/printf("BPB_RootClus  : %u", _sector0.BPB_RootClus  ()); // *((unsigned int*)  &sector[44]) 
-	///**/printf("BPB_FSInfo    : %u", _sector0.BPB_FSInfo    ()); // *((unsigned short*)&sector[48]) 
-	//printf("BPB_BkBootSec : %u", _sector0.BPB_BkBootSec ()); // *((unsigned short*)&sector[50]) 
-	//printf("BPB_Reserved  : %u", _sector0.BPB_Reserved  ()); //                    &sector[52]  
-	//printf("BS_DrvNum     : %u", _sector0.BS_DrvNum     ()); //                     sector[64]  
-	//printf("BS_Reserved1  : %u", _sector0.BS_Reserved1  ()); //                     sector[65]  
-	//printf("BS_BootSig    : %u", _sector0.BS_BootSig    ()); //                     sector[66]  
-	//printf("BS_VolID      : %u", _sector0.BS_VolID      ()); // *((unsigned int*)  &sector[67]) 
-	//printf("BS_VolLab     : %u", _sector0.BS_VolLab     ()); //                    &sector[71]  
-	//printf("BS_FilSysType : %u", _sector0.BS_FilSysType ()); //                    &sector[82]  
-	//printf("SigByte1      : %u", _sector0.SigByte1      ()); //                     sector[510] 
-	//printf("SigByte2      : %u", _sector0.SigByte2      ()); //                     sector[511] 
-	///**/printf("\n");
-	///**/printf("Cluster size   : %lu\n" , cluster_size());
-	///**/printf("FirstDataSector: %lu\n" , first_data_sector());
-	///**/printf("FDS offset     : %llu\n", fds_offset());
-}
-
 
 ULONG DiskExplorer::cluster_size(void) const {
 	return _sector0.BPB_BytsPerSec() * _sector0.BPB_SecPerClus();

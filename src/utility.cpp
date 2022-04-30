@@ -129,7 +129,7 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit) {
 const char * colorize_byte(const ColorizeOptions & opts) {
 	static char color_char_buffer[FORMAT_SIZE];
 	const char * attr_negative = opts.negative ? (opts.underline ? NEGATIVE UNDERLINE : NEGATIVE) : (opts.underline ? UNDERLINE : EMPTYSTR);
-	const char * attr_color_ctl = opts.chr_hex ? WHITE_M : (opts.byte == 0 ? RED_L : RED_M);
+	const char * attr_color_ctl = opts.chr_hex ? (opts.byte == 0 ? WHITE_L : WHITE_M) : (opts.byte == 0 ? RED_L : RED_M);
 	const char * attr_color_chr = WHITE_H; // : WHITE_M;
 
 	if (0x20 <= opts.byte && opts.byte <= 0x7E) {

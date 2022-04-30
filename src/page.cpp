@@ -66,7 +66,7 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	}
 }
 
-void Page::print_hex(PBYTE line, int len) const {
+void Page::print_hex(PBYTE line) const {
 	static const int q1 = 0x08;
 	static const int q2 = 0x10;
 	static const int q3 = 0x18;
@@ -78,6 +78,32 @@ void Page::print_hex(PBYTE line, int len) const {
 	print_hex_block(line, 20, 24); printf(PAGE_SEP1);
 	print_hex_block(line, 24, 28); printf(PAGE_SEP0);
 	print_hex_block(line, 28, 32); printf(PAGE_SEP3);
+}
+
+void Page::print_int_block(UINT32 value, bool selected) const {
+	const char * attr1 = selected ? "\033[7m" : "";
+	const char * attr2 = selected ? "\033[27m" : "";
+	switch(value) {
+		case 0x0FFFFFF8: printf("%s%11s%s", attr1, "Reserved.1", attr2); break;
+		case 0xFFFFFFFF: printf("%s%11s%s", attr1, "Reserved.2", attr2); break;
+		case 0x0FFFFFFF: printf("%s%11s%s", attr1, "EOC", attr2); break;
+		default:         printf("%s%11u%s", attr1, value, attr2); break;
+	}
+	printf(" ");
+}
+void Page::print_int(PBYTE line) const {
+	int i0 = (int)(line - _buffer) / sizeof(UINT32);
+	int i1 = _selected / sizeof(UINT32) - i0;
+	//printf("%d %d---", i0, i1);
+	int i = 0;
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i0 + i++)); printf(PAGE_SEP0);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP1);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP0);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP1);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP0);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP1);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP0);
+	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP3);
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
@@ -109,7 +135,8 @@ void Page::print_sector(void) const {
 	int nline = 0;
 	while(pos < end) {
 		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset_start() + pos - _buffer);
-		print_hex(pos, LINE_WIDTH);
+		if (_view == View::SECTORS_HEX) print_hex(pos);
+		else                            print_int(pos);
 		print_sector_str(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;
 		++nline;
@@ -123,13 +150,44 @@ void Page::print_sector(void) const {
 	);
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
 }
+
+// void Page::print_sector_int(void) const {
+// 	PBYTE end = _buffer + _sector_length;
+// 	PBYTE pos = _buffer;
+// 	LONGLONG current_sector = (LONGLONG) offset_start() - _fds_offset;
+// 	current_sector = 1 + (current_sector >= 0) + current_sector / (LONGLONG) _clustr_length;
+
+// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
+// 	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
+// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
+// 	int nline = 0;
+// 	while(pos < end) {
+// 		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset_start() + pos - _buffer);
+// 		print_hex(pos, LINE_WIDTH);
+// 		print_sector_str(pos, LINE_WIDTH);
+// 		pos += LINE_WIDTH;
+// 		++nline;
+// 	}
+// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + nline, _X0);
+// 	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + nline, _X0,
+// 		offset_start() , size_to_string(offset_start(), true),
+// 		current_sector,
+// 		offset_start() / _sector_length,
+// 		(_editing == true) ? EDITSTR : VIEWSTR
+// 	);
+// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
+// }
+//
 //// Data line END
 
 void Page::print(void) const {
-	if (_view == View::SECTORS_ASC || _view == View::SECTORS_HEX) {
-		print_sector();
-	} else if (_view == View::ENTRIES_SHO || _view == View::ENTRIES_LON) {
-		print_entry();
+	switch (_view) {
+		case View::SECTORS_ASC:
+		case View::SECTORS_HEX:
+		case View::SECTORS_INT: print_sector(); break;
+		case View::ENTRIES_SHO:
+		case View::ENTRIES_LON: print_entry(); break;
+		default: break;
 	}
 }
 
