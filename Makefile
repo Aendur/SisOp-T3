@@ -1,7 +1,7 @@
 #CFLAGS=/Wall /W4 /EHsc /std:c++17 /Iheader /utf-8 /wd5045 /nologo
 CFLAGS=/W4 /EHsc /std:c++17 /Iheader /utf-8 /nologo
 
-FGLIBN=seqfile rndfile utility
+FGLIBN=seqfile utility
 DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
@@ -20,8 +20,6 @@ diskexp: src\diskexp.cpp $(DXLIBS)
 #	cl $(CFLAGS) /c /Fo:obj\ $<
 
 obj\seqfile.obj::            src\$(@B).cpp header\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
-obj\rndfile.obj::            src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\utility.obj::            src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
