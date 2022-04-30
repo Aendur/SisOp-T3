@@ -30,7 +30,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 
 	goto_offset(0);
 	read_setpages();
-	_page[0].init(&_sector0, 36, 1);
+	_page[0].init(&_sector0, 36,  1);
 	_page[1].init(&_sector0, 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
@@ -62,7 +62,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("S3~S9 : bookmark sector    \n");
 	printf("G     : goto sector        \n");
 	printf("H     : goto cluster (data)\n");
-	printf("T     : select FAT1 entry  \n");
+	printf("T/Y   : select FAT1/2 entry\n");
 
 	if (_select_mode) {
 	printf("\n--- DISP ---                 \n");
@@ -143,7 +143,9 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_data()                    ; /* reads/sets */ break;
 		case TERMUI_KEY_t          :
-		case TERMUI_KEY_T          : input_and_goto_fat()                             ; /* reads/sets */ break;
+		case TERMUI_KEY_T          : input_and_goto_fat(0)                            ; /* reads/sets */ break;
+		case TERMUI_KEY_y          :
+		case TERMUI_KEY_Y          : input_and_goto_fat(1)                            ; /* reads/sets */ break;
 		case TERMUI_KEY_ARROW_UP   : if (_select_mode){ _editor.move(-32); } else {advance_sectors(-(_adv_N+2) * (long) LEN)        ; read_setpages();} break;
 		case TERMUI_KEY_ARROW_DOWN : if (_select_mode){ _editor.move( 32); } else {advance_sectors( (_adv_N-2) * (long) LEN)        ; read_setpages();} break;
 		case TERMUI_KEY_ARROW_LEFT : if (_select_mode){ _editor.move( -1); } else {_adv_N = _adv_N > 10     ? _adv_N / 10 : 1       ;                 } break;
@@ -243,11 +245,11 @@ void DiskExplorer::input_and_goto_sector(void) {
 		read_setpages();
 	}
 }
-void DiskExplorer::input_and_goto_fat(void) {
+void DiskExplorer::input_and_goto_fat(int nfat) {
 	_input.set_msg("\033[1mGOTO FAT ENTRY N:\033[0m ");
 	LONGLONG N;
 	if (_input.get(&N, TERMUI_KEY_UNDEFINED, true)) {
-		goto_offset(_sector0.fat_sec_num(N, 0) * _device.geometry().BytesPerSector);
+		goto_offset(_sector0.fat_sec_num(N, nfat) * _device.geometry().BytesPerSector);
 		_editor.select(_sector0.fat_ent_off(N));
 		read_setpages();
 	}

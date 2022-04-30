@@ -24,8 +24,7 @@ void Page::init(fat32 * f32, int x, int y) {
 		_fds_offset = f32->fds_offset();
 		_X0 = x;
 		_Y0 = y;
-		//_mode[View::SECTOR] = 0;
-		//_mode[View::ENTRIES] = 0;
+		_sector0 = f32;
 		_initialized = true;
 	}
 }
@@ -73,33 +72,47 @@ void Page::print_hex(PBYTE line) const {
 	print_hex_block(line, 28, 32); printf(PAGE_SEP3);
 }
 
-void Page::print_int_block(UINT32 value, bool selected) const {
+void Page::print_int_block(UINT32 value, bool selected, int fati) const {
 	const char * attr1 = selected ? "\033[7m" : "";
 	const char * attr2 = selected ? "\033[27m" : "";
+	char sector_field[32];
 	switch(value) {
 		case 0x0FFFFFF8: printf("%s%11s%s", attr1, "Reserved.1", attr2); break;
 		case 0xFFFFFFFF: printf("%s%11s%s", attr1, "Reserved.2", attr2); break;
-		case 0x0FFFFFFF: printf("%s%11s%s", attr1, "EOC", attr2); break;
+		case 0x0FFFFFFF: printf("%s%6d->EOC%s", attr1, fati, attr2); break;
 		case 0x00000000: printf("%s%11s%s", attr1, "---", attr2); break;
-		default:         printf("%s%11u%s", attr1, value, attr2); break;
+		default:
+			if (fati == -1) {
+				printf("%s%11d%s", attr1, value, attr2);
+			} else {
+				snprintf(sector_field, 32, "%d->%d", fati, value);
+				printf("%s%11s%s", attr1, sector_field, attr2);
+			}
+			break;
 	}
 	printf(" ");
 }
+
+int Page::fat_index(int i) const {
+	LONGLONG sector = current_sector();
+	int fat_start = _sector0->BPB_RsvdSecCnt();
+	int fat_end   = fat_start + _sector0->BPB_FATSz32() * 2;
+	bool is_at_fat = fat_start <= sector && sector < fat_end;
+	//return is_at_fat ? ((int)sector - fat_start) * 128 + _selected / sizeof(UINT32) : -1;
+	return is_at_fat ? (((int)sector - fat_start) % _sector0->BPB_FATSz32()) * 128 + i : -1;
+}
+
 void Page::print_int(PBYTE line) const {
 	int i0 = (int)(line - _buffer) / sizeof(UINT32);
-	int i1 = _selected / sizeof(UINT32) - i0;
-	//int i2 = _selected / sizeof(UINT32) + i0;
-	
-
 	int i = 0;
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%lld", _offset_end);
-	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP3); ++i; // printf("\x1b[D%lld", _offset_end);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP3); ++i; // printf("\x1b[D%d", i2);
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
@@ -194,6 +207,13 @@ bool Page::actual_selected_entry(int i) const {
 	int i0 = i * 32 + _sector_length * _selected_buffer;
 	int i1 = i0 + 32;
 	return (i0 <= _selected && _selected < i1);
+}
+
+//0 <= i < 512
+bool Page::actual_selected_int(int i) const {
+	int i0 = i + _sector_length / sizeof(UINT32) * _selected_buffer;
+	int i1 = _selected / sizeof(UINT32);
+	return i0 == i1;
 }
 
 void Page::print_entry(void) const {

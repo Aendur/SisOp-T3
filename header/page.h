@@ -29,6 +29,7 @@ private:
 	DWORD _sector_length;
 	DWORD _clustr_length;
 	LONGLONG _fds_offset;
+	fat32 * _sector0;
 
 	int _X0;
 	int _Y0;
@@ -45,7 +46,7 @@ private:
 	void print_hex(PBYTE line) const;
 	void print_int(PBYTE line) const;
 	void print_hex_block(PBYTE line, int i0, int i1) const;
-	void print_int_block(UINT32 value, bool selected) const;
+	void print_int_block(UINT32 value, bool selected, int fati) const;
 	void print_sector_str(PBYTE line, int len) const;
 
 	LONGLONG current_cluster(void) const;
@@ -58,6 +59,8 @@ private:
 
 	bool actual_selected_byte(int i) const;
 	bool actual_selected_entry(int i) const;
+	bool actual_selected_int(int i) const;
+	int fat_index(int i) const;
 
 public:
 	void init(fat32 * f32, int x, int y);

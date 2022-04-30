@@ -1,14 +1,6 @@
 #ifndef ENTRY_SPEC_H
 #define ENTRY_SPEC_H
 
-// #define ENTRY_ATTR_READ_ONLY 0x01
-// #define ENTRY_ATTR_HIDDEN    0x02
-// #define ENTRY_ATTR_SYSTEM    0x04
-// #define ENTRY_ATTR_VOLUME_ID 0x08
-// #define ENTRY_ATTR_DIRECTORY 0x10
-// #define ENTRY_ATTR_ARCHIVE   0x20
-// #define ENTRY_ATTR_LONG_NAME ENTRY_ATTR_READ_ONLY | ENTRY_ATTR_HIDDEN | ENTRY_ATTR_SYSTEM | ENTRY_ATTR_VOLUME_ID
-
 struct entry_short {
 	unsigned char  DIR_Name[11];
 	unsigned char  DIR_Attr;
@@ -56,5 +48,14 @@ public:
 	inline bool is_long(void) const { return (dir.ds.DIR_Attr & ATTR_LONG_NAME) == ATTR_LONG_NAME; }
 	inline bool is_dir(void) const  { return (dir.ds.DIR_Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
 };
+
+
+// #define ENTRY_ATTR_READ_ONLY 0x01
+// #define ENTRY_ATTR_HIDDEN    0x02
+// #define ENTRY_ATTR_SYSTEM    0x04
+// #define ENTRY_ATTR_VOLUME_ID 0x08
+// #define ENTRY_ATTR_DIRECTORY 0x10
+// #define ENTRY_ATTR_ARCHIVE   0x20
+// #define ENTRY_ATTR_LONG_NAME ENTRY_ATTR_READ_ONLY | ENTRY_ATTR_HIDDEN | ENTRY_ATTR_SYSTEM | ENTRY_ATTR_VOLUME_ID
 
 #endif

@@ -45,7 +45,7 @@ private:
 	void toggle_lock(void);
 	void input_and_goto_sector(void);
 	void input_and_goto_cluster_data(void);
-	void input_and_goto_fat(void);
+	void input_and_goto_fat(int nfat);
 	
 	// void select_fat_entry(int fatnum);
 	// void fwd_directory(void);

@@ -199,15 +199,7 @@ void Device::seek(LONGLONG offset, bool relative) {
 }
 
 void Device::write(PBYTE buffers[2]) {
-	//lock_drive();
-	LARGE_INTEGER lin;
-	lin.QuadPart = _offset;
-	//printf(LAYOUT_FREE                                                        "%lld %ld %ld\n", lin.QuadPart, lin.LowPart, lin.HighPart);
-	//getchar();
-	//LockFile(_device, lin.LowPart, lin.HighPart, _geometry.BytesPerSector * 2, 0);
-	////LockFileEx(_device, LOCKFILE_EXCLUSIVE_LOCK, 0, _geometry.BytesPerSector * 2, 0, (LPOVERLAPPED) NULL);
-//
-//
+	lock_drive();
 	BOOL status = WriteFile(_device, buffers[0], _geometry.BytesPerSector, &_write_nbytes, NULL);
 	if (status == FALSE) { print_error(LAYOUT_WFREE L"device::write(1)", GetLastError()); }
 	else {
@@ -216,10 +208,7 @@ void Device::write(PBYTE buffers[2]) {
 	}
 	seek(0, true);
 	//if (status == FALSE) { throw std::runtime_error("unable to write on device"); }
-	//
-	////UnlockFileEx(_device, 0, _geometry.BytesPerSector * 2, 0, (LPOVERLAPPED) NULL);
-	//UnlockFile(_device, lin.LowPart, lin.HighPart, _geometry.BytesPerSector * 2, 0);
-	//unlock_drive();
+	unlock_drive();
 }
 
 void print_error(const wchar_t * msg, DWORD error) {

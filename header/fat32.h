@@ -38,6 +38,7 @@ public:
 	inline const unsigned char* BS_FilSysType (void) const { return                    &sector[82]  ; } // Offset=82 Size=8
 	inline const unsigned char  SigByte1      (void) const { return                     sector[510] ; } // Offset=510 Size=1
 	inline const unsigned char  SigByte2      (void) const { return                     sector[511] ; } // Offset=511 Size=2
+	
 	inline ULONG cluster_size(void) const;
 	inline LONG first_data_sector(void) const;
 	inline LONGLONG fds_offset(void) const;
