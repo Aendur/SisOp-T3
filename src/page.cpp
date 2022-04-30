@@ -42,12 +42,7 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	opts.negative = false;
 	opts.width = 2;
 	opts.margin_right = 1;
-	//switch(_mode.at(_view) % 3) {
 	switch(_view) {
-	//case 2:
-	//	opts.chr_hex = false;
-	//	opts.ctl_str = "..";
-	//	break;
 	case View::SECTORS_ASC:
 		opts.chr_hex = false;
 		opts.ctl_str = NULL;
@@ -67,9 +62,6 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 }
 
 void Page::print_hex(PBYTE line) const {
-	static const int q1 = 0x08;
-	static const int q2 = 0x10;
-	static const int q3 = 0x18;
 	print_hex_block(line,  0,  4); printf(PAGE_SEP0);
 	print_hex_block(line,  4,  8); printf(PAGE_SEP1);
 	print_hex_block(line,  8, 12); printf(PAGE_SEP0);
@@ -87,6 +79,7 @@ void Page::print_int_block(UINT32 value, bool selected) const {
 		case 0x0FFFFFF8: printf("%s%11s%s", attr1, "Reserved.1", attr2); break;
 		case 0xFFFFFFFF: printf("%s%11s%s", attr1, "Reserved.2", attr2); break;
 		case 0x0FFFFFFF: printf("%s%11s%s", attr1, "EOC", attr2); break;
+		case 0x00000000: printf("%s%11s%s", attr1, "---", attr2); break;
 		default:         printf("%s%11u%s", attr1, value, attr2); break;
 	}
 	printf(" ");
@@ -94,16 +87,16 @@ void Page::print_int_block(UINT32 value, bool selected) const {
 void Page::print_int(PBYTE line) const {
 	int i0 = (int)(line - _buffer) / sizeof(UINT32);
 	int i1 = _selected / sizeof(UINT32) - i0;
-	//printf("%d %d---", i0, i1);
+
 	int i = 0;
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i0 + i++)); printf(PAGE_SEP0);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP1);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP0);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP1);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP0);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP1);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP0);
-	print_int_block(*((UINT32*)(&line[i * sizeof(UINT32)])), (i1 == i++)); printf(PAGE_SEP3);
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP1); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], i1 == i ); printf(PAGE_SEP3); ++i;
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
@@ -151,33 +144,6 @@ void Page::print_sector(void) const {
 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
 }
 
-// void Page::print_sector_int(void) const {
-// 	PBYTE end = _buffer + _sector_length;
-// 	PBYTE pos = _buffer;
-// 	LONGLONG current_sector = (LONGLONG) offset_start() - _fds_offset;
-// 	current_sector = 1 + (current_sector >= 0) + current_sector / (LONGLONG) _clustr_length;
-
-// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 0, _X0);
-// 	printf(PAGE_LMARGIN PAGE_HDR PAGE_LE, _Y0 + 1, _X0);
-// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 2, _X0);
-// 	int nline = 0;
-// 	while(pos < end) {
-// 		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset_start() + pos - _buffer);
-// 		print_hex(pos, LINE_WIDTH);
-// 		print_sector_str(pos, LINE_WIDTH);
-// 		pos += LINE_WIDTH;
-// 		++nline;
-// 	}
-// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 3 + nline, _X0);
-// 	printf(PAGE_LMARGIN PAGE_FTR PAGE_LE, _Y0 + 4 + nline, _X0,
-// 		offset_start() , size_to_string(offset_start(), true),
-// 		current_sector,
-// 		offset_start() / _sector_length,
-// 		(_editing == true) ? EDITSTR : VIEWSTR
-// 	);
-// 	printf(PAGE_LMARGIN PAGE_BAR PAGE_LE, _Y0 + 5 + nline, _X0);
-// }
-//
 //// Data line END
 
 void Page::print(void) const {
@@ -204,7 +170,6 @@ void Page::print(void) const {
 #define ENTRY_ASH_EHEX "\033[%d;%dH\033[2m| h | 00 | 01 | 02 | 03 | 04 | 05 | 06 | 07 | 08 | 09 | 0A | 0B | 0C | 0D | 0E | 0F | 10 | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 1A | 1B | 1C | 1D | 1E | 1F |\033[0m\033[0K\033[25;1H"
 #define ENTRY_ASH_ELAS "\033[%d;%dH\033[2m| S |                         name                         |attr|NTRs|mili|  Ctime  |  Cdate  |  Adate  |  clusH  |  Wtime  |  Wdate  |  clusL  |       size        |\033[0m\033[0K"
 #define ENTRY_ASH_ELAL "\033[%d;%dH\033[2m| L |ordn|                      name1                      |attr|type|cksm|                           name2                           |  clusL  |       name3       |\033[0m\033[0K"
-//#define ENTRY_ASH_STAT "\033[%d;%dH\033[2m|                                                                                                                          %s                                  |\033[0m\033[0K"
 #define ENTRY_ASH_STAT "\033[%d;%dH%s"
 
 // 0 <= i < 512
@@ -277,54 +242,44 @@ void Page::print_short(const entry& ref, bool extended, bool selected) const {
 	opts.margin_left = 0;
 	opts.margin_right = 0;
 	opts.underline = selected;
+	const char * attr1 = selected ? "\033[4m" : "";
+	const char * attr2 = selected ? "\033[24m" : "";
 
 	if (extended) {
 		opts.padding_left = 2;
 		opts.padding_right = 2;
 		print_colorized_str(ref.dir.ds.DIR_Name, 11, &opts, 0, 1);
-		printf( " %02X " ENTRY_ASH_VBAR // DIR_Attr
-				" %02X " ENTRY_ASH_VBAR // DIR_NTRes
-				" %02X " ENTRY_ASH_VBAR // DIR_CrtTimeTenth
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_CrtTime
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_CrtDate
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_LstAccDate
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_FstClusHI
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_WrtTime
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_WrtDate
-				" %02X   %02X " ENTRY_ASH_VBAR // DIR_FstClusLO
-				" %02X   %02X   %02X   %02X " ENTRY_ASH_VBAR // DIR_FileSize
-				, ref.dir.ds.DIR_Attr, ref.dir.ds.DIR_NTRes, ref.dir.ds.DIR_CrtTimeTenth
-				, ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[1]
-				, ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[1]
-				, ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[0] , ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[1]
-				, ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[1]
-				, ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[1]
-				, ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[1]
-				, ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[1]
+		printf(" %s%02X%s "        ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_Attr, attr2);
+		printf(" %s%02X%s "        ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_NTRes, attr2);
+		printf(" %s%02X%s "        ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTimeTenth, attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[0] , ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[1], attr2);
+		printf(" %s%02X   %02X   %02X   %02X%s " ENTRY_ASH_VBAR, attr1
 				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[0]
 				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[1]
 				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[2]
-				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[3]
+				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[3], attr2
 		);
 	} else {
 		opts.padding_left = 0;
 		opts.padding_right = 0;
 		print_colorized_str(ref.dir.ds.DIR_Name, 11, &opts, 3, 3);
-		printf( " %02X "   ENTRY_ASH_VBAR // DIR_Attr
-				" %02X "   ENTRY_ASH_VBAR // DIR_NTRes
-				" %02X "   ENTRY_ASH_VBAR // DIR_CrtTimeTenth
-				" %-5u "   ENTRY_ASH_VBAR // DIR_CrtTime
-				" %-5u "   ENTRY_ASH_VBAR // DIR_CrtDate
-				" %-5u "   ENTRY_ASH_VBAR // DIR_LstAccDate
-				" %-5u "   ENTRY_ASH_VBAR // DIR_FstClusHI
-				" %-5u "   ENTRY_ASH_VBAR // DIR_WrtTime
-				" %-5u "   ENTRY_ASH_VBAR // DIR_WrtDate
-				" %-5u "   ENTRY_ASH_VBAR // DIR_FstClusLO
-				" %-10lu " ENTRY_ASH_VBAR // DIR_FileSize
-				, ref.dir.ds.DIR_Attr, ref.dir.ds.DIR_NTRes, ref.dir.ds.DIR_CrtTimeTenth, ref.dir.ds.DIR_CrtTime
-				, ref.dir.ds.DIR_CrtDate, ref.dir.ds.DIR_LstAccDate, ref.dir.ds.DIR_FstClusHI, ref.dir.ds.DIR_WrtTime
-				, ref.dir.ds.DIR_WrtDate, ref.dir.ds.DIR_FstClusLO, ref.dir.ds.DIR_FileSize
-		);
+		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_Attr, attr2); // DIR_Attr
+		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_NTRes, attr2); // DIR_NTRes
+		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTimeTenth, attr2); // DIR_CrtTimeTenth
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTime, attr2); // DIR_CrtTime
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtDate, attr2); // DIR_CrtDate
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_LstAccDate, attr2); // DIR_LstAccDate
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FstClusHI, attr2); // DIR_FstClusHI
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_WrtTime, attr2); // DIR_WrtTime
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_WrtDate, attr2); // DIR_WrtDate
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FstClusLO, attr2); // DIR_FstClusLO
+		printf(" %s%-10lu%s " ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FileSize, attr2); // DIR_FileSize
 	}
 	printf("\033[0K");
 }
@@ -339,43 +294,42 @@ void Page::print_long(const entry& ref, bool extended, bool selected) const {
 	opts.margin_right = 0;
 	opts.underline = selected;
 
+	const char * attr1 = selected ? "\033[4m" : "";
+	const char * attr2 = selected ? "\033[24m" : "";
+
 	if (extended) {
 		opts.padding_left = 2;
 		opts.padding_right = 2;
 		printf(ENTRY_ASH_VBAR " %02X ", ref.dir.dl.LDIR_Ord);
 		print_colorized_str(ref.dir.dl.LDIR_Name1, 10, &opts, 0, 1);
-		printf( " %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Attr
-				" %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Type
-				" %02X "                 // ref.dir.dl.LDIR_Chksum
-				, ref.dir.dl.LDIR_Attr, ref.dir.dl.LDIR_Type, ref.dir.dl.LDIR_Chksum
-		);
+		printf(" %s%02X%s "  ENTRY_ASH_VBAR, attr1, ref.dir.dl.LDIR_Attr, attr2);
+		printf(" %s%02X%s "  ENTRY_ASH_VBAR, attr1, ref.dir.dl.LDIR_Type, attr2);
+		printf(" %s%02X%s "                , attr1, ref.dir.dl.LDIR_Chksum, attr2);
 
 		opts.padding_left = 2;
 		opts.padding_right = 2;
 		print_colorized_str(ref.dir.dl.LDIR_Name2, 12, &opts, 0, 1);
-		printf(" %02X   %02X ", ((unsigned char*)&ref.dir.dl.LDIR_FstClusLO)[0], ((unsigned char*)&ref.dir.dl.LDIR_FstClusLO)[1]);
+		printf(" %s%02X   %02X%s ", attr1, ((unsigned char*)&ref.dir.dl.LDIR_FstClusLO)[0], ((unsigned char*)&ref.dir.dl.LDIR_FstClusLO)[1], attr2);
 
 		opts.padding_left = 2;
 		opts.padding_right = 2;
 		print_colorized_str(ref.dir.dl.LDIR_Name3, 4, &opts, 0, 1);
 	} else {
-		printf(ENTRY_ASH_VBAR " %02X ", ref.dir.dl.LDIR_Ord);
+		printf(ENTRY_ASH_VBAR " %s%02X%s ", attr1, ref.dir.dl.LDIR_Ord, attr2);
 		
 		//|    name1   |
 		opts.padding_left = 0;
 		opts.padding_right = 0;
 		print_colorized_str(ref.dir.dl.LDIR_Name1, 10, &opts, 1, 1);
-		printf( " %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Attr
-				" %02X "  ENTRY_ASH_VBAR // ref.dir.dl.LDIR_Type
-				" %02X "                 // ref.dir.dl.LDIR_Chksum
-				, ref.dir.dl.LDIR_Attr, ref.dir.dl.LDIR_Type, ref.dir.dl.LDIR_Chksum
-		);
+		printf(" %s%02X%s "  ENTRY_ASH_VBAR, attr1, ref.dir.dl.LDIR_Attr, attr2);
+		printf(" %s%02X%s "  ENTRY_ASH_VBAR, attr1, ref.dir.dl.LDIR_Type, attr2);
+		printf(" %s%02X%s "                , attr1, ref.dir.dl.LDIR_Chksum, attr2);
 		
 		//|                     name2                     |
 		opts.padding_left = 1;
 		opts.padding_right = 2;
 		print_colorized_str(ref.dir.dl.LDIR_Name2, 12, &opts, 0, 1);
-		printf(" %-5u ", ref.dir.dl.LDIR_FstClusLO);
+		printf(" %s%-5u%s ", attr1, ref.dir.dl.LDIR_FstClusLO, attr2);
 
 		//|    name3   |
 		opts.padding_left = 1;
