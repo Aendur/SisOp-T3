@@ -58,8 +58,8 @@ bool Editor::edit(Device & dev) {
 		dev.seek(_device_offset, false);
 		try {
 			dev.write(_buffer);
-		} catch (std::exception & e) {
-			printf(LAYOUT_FREE "     ERROR WRITING TO DISK: %s\033[0K", e.what());
+		} catch (std::exception &) {
+			//printf(LAYOUT_FREE "     ERROR WRITING TO DISK: %s\033[0K", e.what());
 		}
 	}
 	dev.seek(_device_offset, false);

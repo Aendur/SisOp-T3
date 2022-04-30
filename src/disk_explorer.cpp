@@ -46,7 +46,7 @@ void DiskExplorer::clear_column(int n) const {
 
 void DiskExplorer::print_commands(void) const {
 	printf("\033[1;1H");
-	clear_column(48);
+	clear_column(47);
 	printf("\033[1;1H");
 	printf("\n--- NAV ---               \n");
 	printf("0     : goto FirstDataSec  \n");
@@ -79,7 +79,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("[S] F1: toggle disp 1 modes    \n");
 	printf("[S] F2: toggle disp 2 modes    \n");
 	printf("D     : show drive info        \n");
-	printf("PAUSE : %-15s\n", _locked ? "UNLOCK" : "DISMOUNT & LOCK");
+	printf("PAUSE : %-20s\n", _locked ? "\033[32;1mUNLOCK\033[0m" : "\033[31;1mDISMOUNT & LOCK\033[0m");
 	printf("ESC   : exit                \n");
 
 	switch(_show_drive_info) {
@@ -164,8 +164,10 @@ void DiskExplorer::run(void) {
 void DiskExplorer::toggle_lock(void) {
 	if (_locked) {
 		_locked = false;
-		try { _device.unlock_drive(); }
-		catch (std::exception & e) {
+		try {
+			_device.unlock_drive();
+			_device.reopen_drive();
+		} catch (std::exception & e) {
 			printf("Error: %s\n", e.what());
 			_locked = true;
 		}
@@ -185,7 +187,6 @@ void DiskExplorer::toggle_lock(void) {
 		}
 	}
 }
-
 
 void DiskExplorer::setpages(void) {
 	static const DWORD LEN = _device.geometry().BytesPerSector;

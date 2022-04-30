@@ -9,6 +9,7 @@ class Device {
 private:
 	FILE * _out = stdout;
 	FILE * _log = stderr;
+	WCHAR _last_open_drive = 0;
 	HANDLE _device = INVALID_HANDLE_VALUE;
 	DISK_GEOMETRY _geometry;
 	PBYTE _buffer[2];
@@ -26,6 +27,7 @@ public:
 
 	static bool check_drive(WCHAR drive);
 	void open_drive(WCHAR drive);
+	void reopen_drive(void);
 	void dismount_drive(void);
 	void lock_drive(void);
 	void unlock_drive(void);

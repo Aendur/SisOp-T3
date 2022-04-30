@@ -1,4 +1,5 @@
 #include "device.h"
+#include "layout.h"
 #include <Windows.h>
 
 #include <set>
@@ -39,12 +40,14 @@ Device::~Device(void) {
 }
 
 void Device::open_drive(wchar_t drive) {
-	if (this->_device != INVALID_HANDLE_VALUE) {
+	if (_device != INVALID_HANDLE_VALUE) {
 		fprintf(_log, "device already open\n");
 	} else {
+		_last_open_drive = drive;
+
 		WCHAR drive_path[] = L"\\\\.\\X:";
 		drive_path[4] = drive;
-		this->_device = CreateFileW(
+		_device = CreateFileW(
 			drive_path,
 			GENERIC_READ | GENERIC_WRITE,
 			FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -53,7 +56,7 @@ void Device::open_drive(wchar_t drive) {
 			0, //FILE_ATTRIBUTE_NORMAL,
 			NULL
 		);
-		if (this->_device == INVALID_HANDLE_VALUE) {
+		if (_device == INVALID_HANDLE_VALUE) {
 			fprintf(_log, "device open error\n");
 		} else {
 			get_geometry();
@@ -61,6 +64,23 @@ void Device::open_drive(wchar_t drive) {
 			// lock_drive();
 		}
 	}
+}
+
+void Device::reopen_drive(void) {
+	CloseHandle(_device);
+	WCHAR drive_path[] = L"\\\\.\\X:";
+	drive_path[4] = _last_open_drive;
+	_device = CreateFileW(
+		drive_path,
+		GENERIC_READ | GENERIC_WRITE,
+		FILE_SHARE_READ | FILE_SHARE_WRITE,
+		NULL,
+		OPEN_EXISTING,
+		0, //FILE_ATTRIBUTE_NORMAL,
+		NULL
+	);
+	if (_device == INVALID_HANDLE_VALUE) { fprintf(_log, "device reopen error\n"); }
+	seek(_offset, false);
 }
 
 void Device::dismount_drive(void)  {
@@ -179,18 +199,27 @@ void Device::seek(LONGLONG offset, bool relative) {
 }
 
 void Device::write(PBYTE buffers[2]) {
-	lock_drive();
-	for (int i = 0; i < 2; ++i) {
-		BOOL status = WriteFile(_device, buffers[i], _geometry.BytesPerSector, &_write_nbytes, NULL);
-		if (status == FALSE) {
-			print_error(L"\n\n\n\n\n\ndevice::write", GetLastError());
-			seek(0, true);
-			unlock_drive();
-			return;
-		}
+	//lock_drive();
+	LARGE_INTEGER lin;
+	lin.QuadPart = _offset;
+	//printf(LAYOUT_FREE                                                        "%lld %ld %ld\n", lin.QuadPart, lin.LowPart, lin.HighPart);
+	//getchar();
+	//LockFile(_device, lin.LowPart, lin.HighPart, _geometry.BytesPerSector * 2, 0);
+	////LockFileEx(_device, LOCKFILE_EXCLUSIVE_LOCK, 0, _geometry.BytesPerSector * 2, 0, (LPOVERLAPPED) NULL);
+//
+//
+	BOOL status = WriteFile(_device, buffers[0], _geometry.BytesPerSector, &_write_nbytes, NULL);
+	if (status == FALSE) { print_error(LAYOUT_WFREE L"device::write(1)", GetLastError()); }
+	else {
+		status = WriteFile(_device, buffers[1], _geometry.BytesPerSector, &_write_nbytes, NULL);
+		if (status == FALSE) { print_error(LAYOUT_WFREE L"device::write(2)", GetLastError()); }
 	}
 	seek(0, true);
-	unlock_drive();
+	//if (status == FALSE) { throw std::runtime_error("unable to write on device"); }
+	//
+	////UnlockFileEx(_device, 0, _geometry.BytesPerSector * 2, 0, (LPOVERLAPPED) NULL);
+	//UnlockFile(_device, lin.LowPart, lin.HighPart, _geometry.BytesPerSector * 2, 0);
+	//unlock_drive();
 }
 
 void print_error(const wchar_t * msg, DWORD error) {
