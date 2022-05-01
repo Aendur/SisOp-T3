@@ -90,15 +90,17 @@ void DiskExplorer::print_commands(void) const {
 	printf("F12   : \033[33;1mREOPEN HANDLE\033[0m\n");
 	printf("ESC   : exit                \n");
 
+
+	ColorizeOptions opts;
+	opts.chr_hex = false;
+	opts.ctl_str = "~";
+	opts.byte = (unsigned char)Editor::converted_value;
+
 	printf("\nS+TAB: convert value\n");
-	if (Editor::converted_value != 0) {
 	printf("  HEX: \033[1m%X\033[0m  \n", (unsigned) Editor::converted_value);
 	printf("  DEC: \033[1m%lld\033[0m  \n", Editor::converted_value);
 	printf("  OCT: \033[1m%o\033[0m  \n", (unsigned) Editor::converted_value);
-	printf("  CHR: ");
-	if(' ' <= Editor::converted_value && Editor::converted_value <= '~') printf("'\033[1m%c\033[0m'", (char) Editor::converted_value);
-	printf("     \n");
-	}
+	printf("  CHR: %s     \n", colorize_byte(opts));
 
 	_ui.clear_column(205, 1, 32, 47);
 	switch(_show_drive_info) {

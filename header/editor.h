@@ -42,6 +42,7 @@ private:
 	bool _initialized = false;
 
 	void switch_edit_mode(void);
+	void setup_edit_mode(void);
 	void print_commands(void) const;
 	void print_stack(int max);
 

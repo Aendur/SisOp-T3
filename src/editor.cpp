@@ -37,10 +37,14 @@ void Editor::switch_edit_mode(void) {
 		case EditMode::FIL: _edit_mode = EditMode::CHR; break;
 		default: _edit_mode = EditMode::CHR;
 	}
+	setup_edit_mode();
+}
+
+void Editor::setup_edit_mode(void) {
 	switch(_edit_mode) {
-		case EditMode::HEX: _input.set_maxlen(2) ; /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
-		case EditMode::CHR: _input.set_maxlen(1) ; /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
-		case EditMode::FIL: _input.set_maxlen(1) ; /*_input.set_endkey(TERMUI_KEY_RETURN);*/ break;
+		case EditMode::HEX: _input.set_maxlen(2) ; _input.set_msg("INPUT BYTE: "); /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
+		case EditMode::CHR: _input.set_maxlen(1) ; _input.set_msg("INPUT CHAR: "); /*_input.set_endkey(TERMUI_KEY_SPACE) ;*/ break;
+		case EditMode::FIL: _input.set_maxlen(2) ; _input.set_msg("INPUT BYTE: "); /*_input.set_endkey(TERMUI_KEY_RETURN);*/ break;
 		default: break;
 	}
 }
@@ -98,13 +102,13 @@ Editor::EditorAction Editor::edit_run(void) {
 	EditorAction dialog_result = KEEP_EDITING;
 
 	unsigned char input_byte;
-	char input_char;
+	//char input_char;
 	while (((key = _term->read()) != TERMUI_KEY_ESC) || (dialog_result = proc_dialog(quit_dialog)) == KEEP_EDITING) {
 		if (TERMUI_KEY_SPACE <= key && key <= TERMUI_KEY_TILDE) {
 			switch(_edit_mode) {
 				case EditMode::HEX: if(_input.get(&input_byte, key, true)) { push_byte(input_byte); }       ; break;
 				case EditMode::CHR:                                          push_byte((unsigned char) key) ; break;
-				case EditMode::FIL: if(_input.get(&input_char, key, true)) { push_fill(input_char); }       ; break;
+				case EditMode::FIL: if(_input.get(&input_byte, key, true)) { push_fill(input_byte); }       ; break;
 				default:            printf("UNK"); break;
 			}
 		} else if (key == TERMUI_KEY_RETURN && _edit_mode == EditMode::CHR) {
@@ -160,13 +164,16 @@ void Editor::print_commands(void) const {
 	printf("F2    : toggle disp 2 modes \n");
 	printf("ESC   : stop editing        \n");
 	
+	ColorizeOptions opts;
+	opts.chr_hex = false;
+	opts.ctl_str = "~";
+	opts.byte = (unsigned char)converted_value;
+
 	printf("\nSHIFT+TAB: convert value\n");
 	printf("HEX: \033[1m%X\033[0m  \n", (unsigned) converted_value);
 	printf("DEC: \033[1m%lld\033[0m  \n", converted_value);
 	printf("OCT: \033[1m%o\033[0m  \n", (unsigned) converted_value);
-	printf("  CHR: ");
-	if(' ' <= converted_value && converted_value <= '~') printf("'\033[1m%c\033[0m'", (char) converted_value);
-	printf("     \n");
+	printf("CHR: %s     \n", colorize_byte(opts));
 
 	printf("\nEDIT MODE: \033[1m");
 	switch (_edit_mode) {
@@ -217,8 +224,18 @@ void Editor::push_byte(unsigned char byte) {
 }
 
 void Editor::push_fill(unsigned char byte) {
+	ColorizeOptions opts;
+	opts.chr_hex = false;
+	opts.ctl_str = "~";
+	opts.byte = byte;
+	
 	int len;
+	char msg[64];
+	snprintf(msg, 64, "FILL 0x%02X (%s) - BYTE COUNT: ", byte, colorize_byte(opts));
+	
 	_input.set_maxlen(12);
+	_input.set_msg(msg);
+	
 	if (_input.get(&len, TERMUI_KEY_UNDEFINED, true)) {
 		int maxpos = _position + len;
 		int maxoff = 2 * (int) _buf_len;
@@ -232,7 +249,7 @@ void Editor::push_fill(unsigned char byte) {
 		}
 		move(len, CursorMoveMode::HALT);
 	}
-	_input.set_maxlen(1);
+	setup_edit_mode();
 }
 
 void Editor::pop_byte(void) {
@@ -289,9 +306,5 @@ void Editor::convert_value(void) {
 	_input.set_maxlen(20);
 	_input.set_msg("\033[1mCONVERT VALUE:\033[0m ");
 	_input.get(&converted_value, TERMUI_KEY_UNDEFINED, true);
-	// if (_input.get(&converted_value, TERMUI_KEY_UNDEFINED, true)) {
-	// 	printf("DECIMAL: \033[1m%lld\033[0m     HEX: \033[1m%X\033[0m     OCT: \033[1m%o\033[0m",
-	// 		converted_value, (unsigned) converted_value, (unsigned) converted_value
-	// 	);
-	// }
+	setup_edit_mode();
 }
