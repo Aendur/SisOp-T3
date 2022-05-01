@@ -53,10 +53,12 @@ private:
 	void input_and_goto_sector(void);
 	void input_and_goto_cluster_data(void);
 	void input_and_goto_fat(int nfat);
+
 	void open_bookmark(int i);
 	void bookmark_sector(int i);
 	void load_bookmarks(void);
 	void save_bookmarks(void);
+	
 	
 	// void select_fat_entry(int fatnum);
 	// void fwd_directory(void);
@@ -66,7 +68,6 @@ private:
 	void show_fat32_info(void) const;
 	void show_fsi_info(void) const;
 	void show_fat32_info_ext(void) const;
-	void clear_column(int n) const;
 	void show_entry_info(void) const;
 	void print_commands(void) const;
 	void print_bookmarks(void) const;

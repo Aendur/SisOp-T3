@@ -73,7 +73,7 @@ Editor::EditorAction Editor::edit_run(void) {
 		{ "Write & leave"  , [](void) { return WRITE_CHANGES; } },
 		{ "Discard & leave", [](void) { return DISCARD_CHANGES; } },
 	};
-	static const int show_stack_size = 20;
+	static const int show_stack_size = 42;
 
 	if (!_initialized) {
 		printf(LAYOUT_FREE "input field not initialized");
@@ -89,10 +89,10 @@ Editor::EditorAction Editor::edit_run(void) {
 	_page[1]->toggle_edit(true);
 	
 	_term->clear_screen();
-	print_commands();
-	print_stack(show_stack_size);
 	_page[0]->print();
 	_page[1]->print();
+	print_commands();
+	print_stack(show_stack_size);
 
 	Dialog quit_dialog("Write changes to disk and leave editor?", dialog_options);
 	EditorAction dialog_result = KEEP_EDITING;
@@ -111,15 +111,16 @@ Editor::EditorAction Editor::edit_run(void) {
 			push_byte((unsigned char) key);
 		} else {
 			switch (key) {
-				case TERMUI_KEY_F1         : _page[0]->cycle_sectors_views()                   ;                  break;
-				case TERMUI_KEY_F2         : _page[0]->cycle_entries_views()                   ;                  break;
-				case TERMUI_KEY_F3         : _page[0]->switch_text()                           ;                  break;
-				case TERMUI_KEY_F4         : _page[0]->switch_buff()                           ;                  break;
-				case TERMUI_KEY_F5         : _page[1]->cycle_sectors_views()                   ;                  break;
-				case TERMUI_KEY_F6         : _page[1]->cycle_entries_views()                   ;                  break;
-				case TERMUI_KEY_F7         : _page[1]->switch_text()                           ;                  break;
-				case TERMUI_KEY_F8         : _page[1]->switch_buff()                           ;                  break;
-				case TERMUI_KEY_TAB             : switch_edit_mode()       ; break;
+				case TERMUI_KEY_F1         : _page[0]->cycle_sectors_views()                   ; break;
+				case TERMUI_KEY_F2         : _page[0]->cycle_entries_views()                   ; break;
+				case TERMUI_KEY_F3         : _page[0]->switch_text()                           ; break;
+				case TERMUI_KEY_F4         : _page[0]->switch_buff()                           ; break;
+				case TERMUI_KEY_F5         : _page[1]->cycle_sectors_views()                   ; break;
+				case TERMUI_KEY_F6         : _page[1]->cycle_entries_views()                   ; break;
+				case TERMUI_KEY_F7         : _page[1]->switch_text()                           ; break;
+				case TERMUI_KEY_F8         : _page[1]->switch_buff()                           ; break;
+				case TERMUI_KEY_TAB             : switch_edit_mode()                           ; break;
+				case TERMUI_KEY_SHIFT_TAB       : convert_value()                              ; break;
 				case TERMUI_KEY_ARROW_UP        : move( -32, CursorMoveMode::WRAP); break;
 				case TERMUI_KEY_ARROW_DOWN      : move(  32, CursorMoveMode::WRAP); break;
 				case TERMUI_KEY_ARROW_LEFT      : move(  -1, CursorMoveMode::WRAP); break;
@@ -134,10 +135,10 @@ Editor::EditorAction Editor::edit_run(void) {
 			}
 		}
 
-		print_commands();
-		print_stack(show_stack_size);
 		_page[0]->print();
 		_page[1]->print();
+		print_commands();
+		print_stack(show_stack_size);
 	}
 
 	_page[0]->toggle_edit(false);
@@ -147,7 +148,7 @@ Editor::EditorAction Editor::edit_run(void) {
 }
 
 void Editor::print_commands(void) const {
-	printf("\033[1;1H");
+	_term->clear_column(1,1,32,47);
 	printf("\n--- NAV ---                 \n");
 	printf("ARROWS: move cursor by 1      \n");
 	printf("C+ARR : move cursor by 8      \n");
@@ -158,6 +159,15 @@ void Editor::print_commands(void) const {
 	printf("F1    : toggle disp 1 modes \n");
 	printf("F2    : toggle disp 2 modes \n");
 	printf("ESC   : stop editing        \n");
+	
+	printf("\nSHIFT+TAB: convert value\n");
+	printf("HEX: \033[1m%X\033[0m  \n", (unsigned) converted_value);
+	printf("DEC: \033[1m%lld\033[0m  \n", converted_value);
+	printf("OCT: \033[1m%o\033[0m  \n", (unsigned) converted_value);
+	printf("  CHR: ");
+	if(' ' <= converted_value && converted_value <= '~') printf("'\033[1m%c\033[0m'", (char) converted_value);
+	printf("     \n");
+
 	printf("\nEDIT MODE: \033[1m");
 	switch (_edit_mode) {
 		case EditMode::HEX: printf("HEX "); break;
@@ -243,22 +253,26 @@ void Editor::pop_byte(void) {
 }
 
 void Editor::print_stack(int max) {
+	//_term->clear_column(204,1,32,47);
 	ColorizeOptions opts;
 	opts.chr_hex = false;
 	opts.ctl_str = "~";
-	//printf("\033[0J\n\n--- MOD STACK ---\n");
-	printf("\n--- MOD STACK ---\n");
+
+	printf("\033[2;205H--- MOD STACK ---\n");
 	int i = 0;
 	for(auto [pos, chr] : _history) {
 		opts.byte = chr;
-		printf("%3d. POS %08llx, BYTE %s (0x%02X)\n", ++i, pos, colorize_byte(opts), chr);
-		if (i >= max) { break; }
+		//printf("\033[204C%2d: POS %08llx BYTE %s (%02X)\n", ++i, pos, colorize_byte(opts), chr);
+		//if (i >= max) { break; }
+		
+		printf("\033[204C%d: POS %08llx BYTE %s (%02X) \n", (int)_history.size() - i, pos, colorize_byte(opts), chr);
+		if (++i >= max) { break; }
 	}
 	int remaining = (int)_history.size() - max;
 	if (remaining > 0) {
-		printf("%12s%-3d%17s\n", "+", remaining, "");
+		printf("\033[204C%12s%-3d%17s\n", "+", remaining, "");
 	}
-	printf("%32s\n", "");
+	printf("\033[204C%32s\n", "");
 }
 
 Editor::EditorAction Editor::proc_dialog(Dialog & dialog) {
@@ -269,4 +283,15 @@ Editor::EditorAction Editor::proc_dialog(Dialog & dialog) {
 	int code = dialog.query(80, 20);
 	printf(LAYOUT_FREE "          DIALOG RETURNED %d", code);
 	return (EditorAction)code;
+}
+
+void Editor::convert_value(void) {
+	_input.set_maxlen(20);
+	_input.set_msg("\033[1mCONVERT VALUE:\033[0m ");
+	_input.get(&converted_value, TERMUI_KEY_UNDEFINED, true);
+	// if (_input.get(&converted_value, TERMUI_KEY_UNDEFINED, true)) {
+	// 	printf("DECIMAL: \033[1m%lld\033[0m     HEX: \033[1m%X\033[0m     OCT: \033[1m%o\033[0m",
+	// 		converted_value, (unsigned) converted_value, (unsigned) converted_value
+	// 	);
+	// }
 }

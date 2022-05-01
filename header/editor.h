@@ -53,12 +53,15 @@ private:
 	EditorAction edit_run(void);
 	EditorAction proc_dialog(Dialog & dialog);
 public:
+	inline static long long converted_value = 0;
+
 	~Editor(void);
 	void init(DWORD size, TermUI * t, Page * p1, Page * p2);
 	bool edit(Device& dev);
 	bool select(LONGLONG newpos);
 	void move(int offset, CursorMoveMode mode = CursorMoveMode::WRAP);
 	inline int position(void) const { return _position; }
+	void convert_value(void);
 };
 
 

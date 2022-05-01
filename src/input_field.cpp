@@ -91,12 +91,12 @@ bool InputField::get(long long * out, KeyCode feed, bool keep_trying) {
 		bool captured = capture_input(feed);
 		if (captured) {
 			try {
-				*out = std::stoll(_buffer.chr);
+				*out = std::stoll(_buffer.chr, nullptr, 0);
 				return true;
 			} catch (std::exception &) {
 				feed = TERMUI_KEY_UNDEFINED;
 				reset = false;
-				print_error("invalid decimal value");
+				print_error("invalid numeric value");
 			}
 		} else {
 			return false;

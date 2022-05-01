@@ -37,9 +37,10 @@ public:
 	KeyCode read(void);
 	void write(const wchar_t * msg);
 
-	void save_position(void);
-	void load_position(void);
-	void clear_screen(void);
+	void save_position(void) const;
+	void load_position(void) const;
+	void clear_screen(void) const;
+	void clear_column(int X, int Y, int W, int H) const;
 
 	const wchar_t * str(void) const { return _input_string; }
 	size_t len(void) const { return _input_nreads; }

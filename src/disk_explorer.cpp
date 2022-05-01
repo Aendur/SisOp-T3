@@ -61,16 +61,8 @@ void DiskExplorer::save_bookmarks(void) {
 	stream.close();
 }
 
-void DiskExplorer::clear_column(int n) const {
-	for(int i = 0; i < n; ++i) {
-		printf("%*s\n", 32, "");
-	}
-}
-
 void DiskExplorer::print_commands(void) const {
-	printf("\033[1;1H");
-	clear_column(47);
-	printf("\033[1;1H");
+	_ui.clear_column(1, 1, 32, 47);
 	printf("\n--- BOOKMARKS ---        \n");
 	print_bookmarks();
 	printf("S0~S9: bookmark sector     \n");
@@ -97,12 +89,22 @@ void DiskExplorer::print_commands(void) const {
 	printf("PAUSE : %-20s\n", _locked ? "\033[32;1mUNLOCK\033[0m" : "\033[31;1mDISMOUNT & LOCK\033[0m");
 	printf("ESC   : exit                \n");
 
+	printf("\nS+TAB: convert value\n");
+	if (Editor::converted_value != 0) {
+	printf("  HEX: \033[1m%X\033[0m  \n", (unsigned) Editor::converted_value);
+	printf("  DEC: \033[1m%lld\033[0m  \n", Editor::converted_value);
+	printf("  OCT: \033[1m%o\033[0m  \n", (unsigned) Editor::converted_value);
+	printf("  CHR: ");
+	if(' ' <= Editor::converted_value && Editor::converted_value <= '~') printf("'\033[1m%c\033[0m'", (char) Editor::converted_value);
+	printf("     \n");
+	}
+
+	_ui.clear_column(205, 1, 32, 47);
 	switch(_show_drive_info) {
-		case NO_INFO: printf("\033[0J"); break;
-		case DEVINFO: printf("\n--- GEOMETRY ---\n"); show_geom_info(); break;
-		case F32INFO: printf("\n--- FAT32 ---\n"); show_fat32_info(); break;
-		case FSIINFO: printf("\n--- FSINFO ---\n"); show_fsi_info(); break;
-		default: clear_column(15); break;
+		case NO_INFO: _ui.clear_column(205, 1, 32, 47); break;
+		case DEVINFO: printf("\n\033[205C--- GEOMETRY ---\n"); show_geom_info(); break;
+		case F32INFO: printf("\n\033[205C--- FAT32 ---\n")   ; show_fat32_info(); break;
+		case FSIINFO: printf("\n\033[205C--- FSINFO ---\n")  ; show_fsi_info(); break;
 	}
 }
 
@@ -120,9 +122,9 @@ void DiskExplorer::run(void) {
 	_editor.select(0);
 
 	_ui.clear_screen();
-	print_commands();
 	_page[0].print();
 	_page[1].print();
+	print_commands();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	Dialog quit_dialog("Confirm exit?", quit_dialog_options);
@@ -158,6 +160,7 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_STAR       : bookmark_sector(8);                              ;                  break;
 		case TERMUI_KEY_OPAR       : bookmark_sector(9);                              ;                  break;
 		case TERMUI_KEY_CPAR       : bookmark_sector(0);                              ;                  break;
+		case TERMUI_KEY_SHIFT_TAB  : _editor.convert_value()                          ;                  break;
 		case TERMUI_KEY_b          :
 		case TERMUI_KEY_B          : _show_bm_info = !_show_bm_info                   ;                  break;
 		case TERMUI_KEY_d          :
@@ -185,9 +188,9 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_SPACE      : setpages()                                       ;                  break;
 		default                    : setpages()                                       ;                  break;
 		}
-		print_commands();
 		_page[0].print();
 		_page[1].print();
+		print_commands();
 	}
 	_ui.clear_screen();
 }
@@ -334,45 +337,42 @@ void DiskExplorer::print_bookmarks(void) const {
 }
 
 void DiskExplorer::show_geom_info(void) const {
-	wprintf(L"MediaType        : %d\n",   _device.geometry().MediaType);
-	wprintf(L"Cylinders (Quad) : %lld\n", _device.geometry().Cylinders.QuadPart);
-	wprintf(L"Cylinders (High) : %d\n",   _device.geometry().Cylinders.HighPart);
-	wprintf(L"Cylinders (Low)  : %d\n",   _device.geometry().Cylinders.LowPart);
-	wprintf(L"TracksPerCylinder: %d\n",   _device.geometry().TracksPerCylinder);
-	wprintf(L"SectorsPerTrack  : %d\n",   _device.geometry().SectorsPerTrack);
-	wprintf(L"BytesPerSector   : %d\n",   _device.geometry().BytesPerSector);
-	wprintf(L"Total capacity   : %lld B\n", _device.capacity());
-	wprintf(L"      %s\n"    , size_to_wstring(_device.capacity(), true));
-	clear_column(5);
+	printf("\033[205CMediaType        : %d\n",   _device.geometry().MediaType);
+	printf("\033[205CCylinders (Quad) : %lld\n", _device.geometry().Cylinders.QuadPart);
+	printf("\033[205CCylinders (High) : %d\n",   _device.geometry().Cylinders.HighPart);
+	printf("\033[205CCylinders (Low)  : %d\n",   _device.geometry().Cylinders.LowPart);
+	printf("\033[205CTracksPerCylinder: %d\n",   _device.geometry().TracksPerCylinder);
+	printf("\033[205CSectorsPerTrack  : %d\n",   _device.geometry().SectorsPerTrack);
+	printf("\033[205CBytesPerSector   : %d\n",   _device.geometry().BytesPerSector);
+	printf("\033[205CTotal capacity   : %lld B\n", _device.capacity());
+	printf("\033[205C      %s\n"    , size_to_string(_device.capacity(), true));
 }
 
 void DiskExplorer::show_fat32_info(void) const {
 	static char buf[12];
 	snprintf(buf, 12, "%s", _sector0.BS_VolLab());
 
-	printf("BPB_FATSz16    : %u\n", _sector0.BPB_FATSz16());
-	printf("BPB_FATSz32    : %u\n", _sector0.BPB_FATSz32());
-	printf("BPB_NumFATs    : %u\n", _sector0.BPB_NumFATs());
-	printf("BPB_RsvdSecCnt : %u\n", _sector0.BPB_RsvdSecCnt());
-	printf("Bytes/sector   : %u\n", _sector0.BPB_BytsPerSec());
-	printf("Sectors/cluster: %u\n", _sector0.BPB_SecPerClus());
-	printf("BPB_RootClus   : %d\n", _sector0.BPB_RootClus());
-	printf("BPB_FSInfo     : %u\n", _sector0.BPB_FSInfo());
-	printf("BS_VolLab      : %s\n", buf);
-	printf("\n");
-	printf("Cluster size   : %lu\n" , _sector0.cluster_size());
-	printf("FirstDataSector: %lu\n" , _sector0.first_data_sector());
-	printf("FDS offset     : %llu\n", _sector0.fds_offset());
-	clear_column(1);
+	printf("\033[205CBPB_FATSz16    : %u\n", _sector0.BPB_FATSz16());
+	printf("\033[205CBPB_FATSz32    : %u\n", _sector0.BPB_FATSz32());
+	printf("\033[205CBPB_NumFATs    : %u\n", _sector0.BPB_NumFATs());
+	printf("\033[205CBPB_RsvdSecCnt : %u\n", _sector0.BPB_RsvdSecCnt());
+	printf("\033[205CBytes/sector   : %u\n", _sector0.BPB_BytsPerSec());
+	printf("\033[205CSectors/cluster: %u\n", _sector0.BPB_SecPerClus());
+	printf("\033[205CBPB_RootClus   : %d\n", _sector0.BPB_RootClus());
+	printf("\033[205CBPB_FSInfo     : %u\n", _sector0.BPB_FSInfo());
+	printf("\033[205CBS_VolLab      : %s\n", buf);
+	printf("\033[205C\n");
+	printf("\033[205CCluster size   : %lu\n" , _sector0.cluster_size());
+	printf("\033[205CFirstDataSector: %lu\n" , _sector0.first_data_sector());
+	printf("\033[205CFDS offset     : %llu\n", _sector0.fds_offset());
 }
 void DiskExplorer::show_fsi_info(void) const {
-	printf("FSI_LeadSig   : 0x%0lX\n", _fsi_sector.FSI_LeadSig   ());
-	printf("              : 0x41615252\n");
-	printf("FSI_StrucSig  : 0x%0lX\n", _fsi_sector.FSI_StrucSig  ());
-	printf("              : 0x61417272\n");
-	printf("FSI_Free_Count: %lu\n", _fsi_sector.FSI_Free_Count());
-	printf("FSI_Nxt_Free  : %lu\n", _fsi_sector.FSI_Nxt_Free  ());
-	printf("FSI_TrailSig  : 0x%0lX\n", _fsi_sector.FSI_TrailSig  ());
-	printf("              : 0xAA550000\n");
-	clear_column(5);
+	printf("\033[205CFSI_LeadSig   : 0x%0lX\n", _fsi_sector.FSI_LeadSig   ());
+	printf("\033[205C              : 0x41615252\n");
+	printf("\033[205CFSI_StrucSig  : 0x%0lX\n", _fsi_sector.FSI_StrucSig  ());
+	printf("\033[205C              : 0x61417272\n");
+	printf("\033[205CFSI_Free_Count: %lu\n", _fsi_sector.FSI_Free_Count());
+	printf("\033[205CFSI_Nxt_Free  : %lu\n", _fsi_sector.FSI_Nxt_Free  ());
+	printf("\033[205CFSI_TrailSig  : 0x%0lX\n", _fsi_sector.FSI_TrailSig  ());
+	printf("\033[205C              : 0xAA550000\n");
 }

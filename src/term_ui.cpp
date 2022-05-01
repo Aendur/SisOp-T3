@@ -180,15 +180,25 @@ KeyCode TermUI::handle_input(void) {
 	}
 }
 
-void TermUI::save_position(void) {
+void TermUI::save_position(void) const {
 	// write(L"\033[6n");
 	// read();
 }
 
-void TermUI::load_position(void) {
+void TermUI::load_position(void) const {
 	//write(L"\033[6n");
 }
 
-void TermUI::clear_screen(void) {
-	write(L"\033[1;1H\033[J");
+void TermUI::clear_screen(void) const {
+	//write(L"\033[1;1H\033[J");
+	printf("\033[1;1H\033[J");
 }
+
+
+void TermUI::clear_column(int X, int Y, int W, int H) const {
+	for(int i = 0; i < H; ++i) {
+		printf("\033[%d;%dH%*s", Y+i, X, W, "");
+	}
+	printf("\033[%d;%dH", Y, X);
+}
+

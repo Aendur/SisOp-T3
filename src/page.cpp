@@ -7,7 +7,7 @@
 
 #define PAGE_BAR "\033[2m+---+------------+-------------------------------------------------------------------------------------------------------------+------------------------------------+\033[0m"
 #define PAGE_HDR "\033[2m|   |   Offset   |  00 01 02 03  04 05 06 07   08 09 0A 0B  0C 0D 0E 0F   10 11 12 13  14 15 16 17   18 19 1A 1B  1C 1D 1E 1F  |                Text                |\033[0m"
-#define PAGE_FTR "\033[2m|   | %-10llu |  %-53s Cluster: %-17lld Sector: %-16llu  | %s                            |\033[0m"
+#define PAGE_FTR "\033[2m|   | %-10llu |  %-53s Cluster: %-17lld Sector: %-16llu  |  %s                           |\033[0m"
 #define PAGE_ADR "\033[2m| %X |  %08llX  |  \033[0m"
 #define PAGE_SEP0 " "
 #define PAGE_SEP1 "  "
