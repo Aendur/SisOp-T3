@@ -113,15 +113,14 @@ void DiskExplorer::run(void) {
 	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
 		case TERMUI_KEY_PAUSE      : toggle_lock()                                    ;                  break;
-		//case TERMUI_KEY_F1         : _page[0].toggle_view()                           ;                  break;
-		//case TERMUI_KEY_F2         : _page[1].toggle_view()                           ;                  break;
 		case TERMUI_KEY_F1         : _page[0].cycle_sectors_views()                   ;                  break;
 		case TERMUI_KEY_F2         : _page[0].cycle_entries_views()                   ;                  break;
+		case TERMUI_KEY_F3         : _page[0].switch_text()                           ;                  break;
 		case TERMUI_KEY_F4         : _page[0].switch_buff()                           ;                  break;
 		case TERMUI_KEY_F5         : _page[1].cycle_sectors_views()                   ;                  break;
 		case TERMUI_KEY_F6         : _page[1].cycle_entries_views()                   ;                  break;
+		case TERMUI_KEY_F7         : _page[1].switch_text()                           ;                  break;
 		case TERMUI_KEY_F8         : _page[1].switch_buff()                           ;                  break;
-
 		case TERMUI_KEY_0          : goto_offset(_sector0.fds_offset())               ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_offset(fat1_offset)                         ; read_setpages(); break;
 		case TERMUI_KEY_2          : goto_offset(fat2_offset)                         ; read_setpages(); break;

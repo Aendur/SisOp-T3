@@ -75,20 +75,20 @@ void Page::print_hex(PBYTE line) const {
 	print_hex_block(line, 28, 32); printf(PAGE_SEP3);
 }
 
-void Page::print_int_block(UINT32 value, bool selected, int fati) const {
+void Page::print_int_block(UINT32 value, bool selected, FatStat fati) const {
 	const char * attr1 = selected ? "\033[7m" : "";
 	const char * attr2 = selected ? "\033[27m" : "";
 	char sector_field[32];
 	switch(value) {
 		case 0x0FFFFFF8: printf("%s%11s%s", attr1, "Reserved.1", attr2); break;
 		case 0xFFFFFFFF: printf("%s%11s%s", attr1, "Reserved.2", attr2); break;
-		case 0x0FFFFFFF: printf("%s%6d->EOC%s", attr1, fati, attr2); break;
+		case 0x0FFFFFFF: printf("%s%6d->EOC%s", attr1, fati.index, attr2); break;
 		case 0x00000000: printf("%s%11s%s", attr1, "---", attr2); break;
 		default:
-			if (fati == -1) {
+			if (!fati.is_at_fat) {
 				printf("%s%11d%s", attr1, value, attr2);
 			} else {
-				snprintf(sector_field, 32, "%d->%d", fati, value);
+				snprintf(sector_field, 32, "%d->%d", fati.index, value);
 				printf("%s%11s%s", attr1, sector_field, attr2);
 			}
 			break;
@@ -96,26 +96,31 @@ void Page::print_int_block(UINT32 value, bool selected, int fati) const {
 	printf(" ");
 }
 
-int Page::fat_index(int i) const {
+Page::FatStat Page::fat_stat(int i) const {
 	LONGLONG sector = current_sector();
-	int fat_start = _sector0->BPB_RsvdSecCnt();
-	int fat_end   = fat_start + _sector0->BPB_FATSz32() * 2;
+	int  fat_start = _sector0->BPB_RsvdSecCnt();
+	int  fat_end   = fat_start + _sector0->BPB_FATSz32() * 2;
 	bool is_at_fat = fat_start <= sector && sector < fat_end;
-	//return is_at_fat ? ((int)sector - fat_start) * 128 + _selected / sizeof(UINT32) : -1;
-	return is_at_fat ? (((int)sector - fat_start) % _sector0->BPB_FATSz32()) * 128 + i : -1;
+
+	int  fat_current = (int)sector - fat_start;
+	return {
+		fat_current / (int)_sector0->BPB_FATSz32() + 1,
+		fat_current % (int)_sector0->BPB_FATSz32() * 128 + i,
+		is_at_fat,
+	};
 }
 
 void Page::print_int(PBYTE line) const {
 	int i0 = (int)(line - _buffer) / sizeof(UINT32);
 	int i = 0;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP3); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP0); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP1); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP0); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP1); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP0); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP1); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP0); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0+i), fat_stat(i0+i) ); printf(PAGE_SEP3); ++i; // printf("\033[D %-3d %-3d %-3d ", actual_selected_int(i0+i-1), offset_selection(sizeof(UINT32)*(i0+i-1)), _selected);
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
@@ -129,7 +134,96 @@ void Page::print_sector_str(PBYTE line, int len) const {
 		opts.byte = line[i];
 		printf("%s", colorize_byte(opts));
 	}
+}
+
+const char * Page::int_to_bytestr(UINT32 x) {
+	static char str[16];
+	PBYTE bytes = (PBYTE)&x;
+	snprintf(str, 16, "%02X %02X %02X %02X", bytes[0], bytes[1], bytes[2], bytes[3]);
+	return str;
+}
+
+const char * Page::val_to_remark(const FatStat & fat, UINT32 val, int i) {
+	static char remark_field[3][32] = {
+		"",
+		"",
+		"",
+	};
+	switch(val) {
+		case 0x0FFFFFF8:
+			snprintf(remark_field[0], 29, "Reserved.1");
+			snprintf(remark_field[1], 29, "%*s", 28, "");
+			//snprintf(remark_field[2], 29, "%*s", 28, "");
+			break;
+		case 0xFFFFFFFF:
+			snprintf(remark_field[0], 29, "Reserved.2");
+			snprintf(remark_field[1], 29, "%*s", 28, "");
+			//snprintf(remark_field[2], 29, "%*s", 28, "");
+			break;
+		case 0x00000000:
+			snprintf(remark_field[0], 29, "Empty");
+			snprintf(remark_field[1], 29, "%*s", 28, "");
+			//snprintf(remark_field[2], 29, "%*s", 28, "");
+			break;
+		case 0x0FFFFFFF:
+			snprintf(remark_field[0], 29, "%11d -> EOC", fat.index);
+			snprintf(remark_field[1], 29, "%s -> EOC", int_to_bytestr(fat.index));
+			//snprintf(remark_field[2], 29, "%*s", 28, "");
+			break;
+		default:
+			snprintf(remark_field[0], 29, "%11d -> %d", fat.index, val);
+			snprintf(remark_field[1], 29, "%s -> ", int_to_bytestr(fat.index));
+			strcat_s(remark_field[1], 32, int_to_bytestr(val));
+			//snprintf(remark_field[2], 29, "%*s", 28, "");
+			
+			break;
+	}
+	return remark_field[i];
+}
+
+void Page::print_fat_info(const FatStat & fat, UINT32 val, int nline) const {
+	static void(*actions[16])(const FatStat &, UINT32) = {
+		[](const FatStat &    , UINT32    ) { printf("                                "); },
+		[](const FatStat & fat, UINT32    ) { printf("        FAT%d SECTOR INFO        ", fat.num); },
+		[](const FatStat &    , UINT32    ) { printf("                                "); },
+		[](const FatStat & fat, UINT32    ) { printf("  FAT num: %d                    ", fat.num); },
+		[](const FatStat &    , UINT32    ) { printf("                                "); },
+		[](const FatStat &    , UINT32    ) { printf("  Selected FAT entry index:     "); },
+		[](const FatStat & fat, UINT32    ) { printf("  %s  %-10u       ", int_to_bytestr(fat.index), fat.index); },
+		[](const FatStat &    , UINT32    ) { printf("                                "); },
+		[](const FatStat &    , UINT32    ) { printf("  Selected FAT entry value:     "); },
+		[](const FatStat &    , UINT32 val) { printf("  %s  %-10u       ", int_to_bytestr(val), val); },
+		[](const FatStat &    , UINT32    ) { printf("                                "); },
+		[](const FatStat &    , UINT32    ) { printf("  Remarks:                      "); },
+		[](const FatStat & fat, UINT32 val) { printf("  %-28s  ", val_to_remark(fat,val,0)); },
+		[](const FatStat & fat, UINT32 val) { printf("  %-28s  ", val_to_remark(fat,val,1)); },
+		[](const FatStat & fat, UINT32 val) { printf("  %-28s  ", val_to_remark(fat,val,2)); },
+		[](const FatStat &    , UINT32    ) { printf("                                "); },
+	};
+
+	(*actions[nline])(fat, val);
+}
+
+void Page::print_sector_text(PBYTE line, int len) const {
+	int relative_selection = (int)(_selected - _sector_length * _selected_buffer) / sizeof(UINT32);
+	UINT32 val = ((PUINT32)_buffers[_selected / 512])[(_selected % 512) / sizeof(UINT32)];
+
+	FatStat stat = fat_stat(relative_selection);
+	if (_show_info_text && stat.is_at_fat) {
+		int nline = (int)((line - _buffer) / len);
+		print_fat_info(stat, val, nline);
+	} else {
+		print_sector_str(line, len);
+	}
 	printf(PAGE_RMARGIN PAGE_LE);
+}
+
+void Page::print_sector_bytes(PBYTE line) const {
+	switch(_view.at(View::SECTORS)) {
+		default:
+		case View::SECTORS_HEX: print_hex(line); break;
+		case View::SECTORS_INT: print_int(line); break;
+	}
 }
 
 #define LINE_WIDTH 0x20
@@ -146,14 +240,8 @@ void Page::print_sector(void) const {
 	int nline = 0;
 	while(pos < end) {
 		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset_start() + pos - _buffer);
-		// switch(_view.at(View::SECTORS)) {
-		// 	default:
-		// 	case View::SECTORS_HEX: print_hex(pos); break;
-		// 	case View::SECTORS_INT: print_int(pos); break;
-		// }
-		print_hex(pos);
-		//print_hex(pos);
-		print_sector_str(pos, LINE_WIDTH);
+		print_sector_bytes(pos);
+		print_sector_text(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;
 		++nline;
 	}
@@ -202,23 +290,30 @@ void Page::print(void) const {
 #define ENTRY_ASH_ELAL "\033[%d;%dH\033[2m| L |ordn|                      name1                      |attr|type|cksm|                           name2                           |  clusL  |       name3       |\033[0m\033[0K"
 #define ENTRY_ASH_STAT "\033[%d;%dH%s"
 
+int Page::offset_selection(int i) const {
+	return (int)(i + _sector_length * _selected_buffer);
+}
+
 // 0 <= i < 512
 bool Page::actual_selected_byte(int i) const {
-	return _selected == (int)(i + _sector_length * _selected_buffer);
+	return _selected == offset_selection(i);
 }
 
 //0 <= i < 16
 bool Page::actual_selected_entry(int i) const {
-	int i0 = i * 32 + _sector_length * _selected_buffer;
+	int i0 = offset_selection(i * 32);
 	int i1 = i0 + 32;
 	return (i0 <= _selected && _selected < i1);
 }
 
-//0 <= i < 512
+//0 <= i < 128
 bool Page::actual_selected_int(int i) const {
-	int i0 = i + _sector_length / sizeof(UINT32) * _selected_buffer;
-	int i1 = _selected / sizeof(UINT32);
-	return i0 == i1;
+	int x0 = offset_selection(i * sizeof(UINT32));
+	int x1 = x0 + sizeof(UINT32);
+	return (x0 <= _selected && _selected < x1);
+	// int i0 = i + _sector_length / sizeof(UINT32) * _selected_buffer;
+	// int i1 = _selected / sizeof(UINT32);
+	// return i0 == i1;
 }
 
 void Page::print_entry(void) const {
