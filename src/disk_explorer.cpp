@@ -87,6 +87,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("F5~8  : toggle disp 2 modes    \n");
 	printf("D     : show drive info        \n");
 	printf("PAUSE : %-20s\n", _locked ? "\033[32;1mUNLOCK\033[0m" : "\033[31;1mDISMOUNT & LOCK\033[0m");
+	printf("F12   : \033[33;1mREOPEN HANDLE\033[0m\n");
 	printf("ESC   : exit                \n");
 
 	printf("\nS+TAB: convert value\n");
@@ -130,7 +131,6 @@ void DiskExplorer::run(void) {
 	Dialog quit_dialog("Confirm exit?", quit_dialog_options);
 	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
-		case TERMUI_KEY_PAUSE      : toggle_lock()                                    ;                  break;
 		case TERMUI_KEY_F1         : _page[0].cycle_sectors_views()                   ;                  break;
 		case TERMUI_KEY_F2         : _page[0].cycle_entries_views()                   ;                  break;
 		case TERMUI_KEY_F3         : _page[0].switch_text()                           ;                  break;
@@ -186,6 +186,8 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_TAB        : _select_mode = !_select_mode                     ;                  break;
 		case TERMUI_KEY_INSERT     : _editor.edit(_device)                            ; read_setpages(); break;
 		case TERMUI_KEY_SPACE      : setpages()                                       ;                  break;
+		case TERMUI_KEY_PAUSE      : toggle_lock()                                    ;                  break;
+		case TERMUI_KEY_F12        : _device.reopen_drive()                           ;                  break;
 		default                    : setpages()                                       ;                  break;
 		}
 		_page[0].print();
