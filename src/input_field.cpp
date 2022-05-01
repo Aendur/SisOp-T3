@@ -153,25 +153,28 @@ bool InputField::get(char * out, KeyCode feed, bool keep_trying) {
 	return false;
 }
 
-// bool InputField::get(char * out, size_t max_len, KeyCode feed, bool keep_trying) {
-// 	bool reset = true;
-// 	do {
-// 		bool captured = capture_input(feed, reset);
-// 		if (captured) {
-// 			try {
-// 				size_t len = strlen(_buffer.chr);
-// 				if (len > max_len) throw std::range_error("string too large: " + std::to_string(len) + " bytes (max " + std::to_string(max_len) + ")");
-// 				memcpy(out, _buffer.chr, len);
-// 				out[len] = 0;
-// 				return true;
-// 			} catch (std::exception & e) {
-// 				feed = TERMUI_KEY_UNDEFINED;
-// 				reset = false;
-// 				print_error(e.what());
-// 			}
-// 		} else {
-// 			return false;
-// 		}
-// 	} while (keep_trying);
-// 	return false;
-// }
+bool InputField::get(char * out, size_t max_len, KeyCode feed, bool keep_trying) {
+	bool reset = true;
+	do {
+		bool captured = capture_input(feed, reset);
+		if (captured) {
+			try {
+				size_t len = strlen(_buffer.chr);
+				if (len > max_len) {
+					throw std::range_error("string too large: " + std::to_string(len) + " bytes (max " + std::to_string(max_len) + ")");
+				} else {
+					memcpy(out, _buffer.chr, len);
+					out[len] = 0;
+					return true;
+				}
+			} catch (std::exception & e) {
+				feed = TERMUI_KEY_UNDEFINED;
+				reset = false;
+				print_error(e.what());
+			}
+		} else {
+			return false;
+		}
+	} while (keep_trying);
+	return false;
+}

@@ -29,10 +29,20 @@ public:
 	inline void set_endkey(KeyCode key) { _endkey = key; }
 	inline void set_maxlen(int len) { _maxlen = len; }
 
+	// get int
 	bool get(int * out, KeyCode feed, bool keep_trying);
+
+	// get single char
 	bool get(char * out, KeyCode feed, bool keep_trying);
+	
+	// get long long
 	bool get(long long * out, KeyCode feed, bool keep_trying);
+
+	// get byte
 	bool get(unsigned char * out, KeyCode feed, bool keep_trying);
+
+	// get string
+	bool get(char * out, size_t max_len, KeyCode feed, bool keep_trying);
 };
 
 

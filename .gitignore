@@ -39,3 +39,5 @@ bin/
 test.cpp
 *.log
 devshell.lnk
+
+bookmarks.dat

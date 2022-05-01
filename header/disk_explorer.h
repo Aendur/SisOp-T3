@@ -19,6 +19,12 @@ private:
 		NO_INFO,
 	};
 
+	struct SectorBookmark {
+		char name[32];
+		LONGLONG sector;
+		int selection;
+	};
+
 	TermUI _ui;
 	Device _device;
 	Page _page[2];
@@ -27,7 +33,8 @@ private:
 
 	bool _select_mode = false;
 	long _adv_N = 1;
-	LONGLONG _sector_bookmark[10];
+	SectorBookmark _sector_bookmark[10];
+	bool _show_bm_info = false;
 	DriveInfoMode _show_drive_info = F32INFO;
 
 	fat32 _sector0;
@@ -46,6 +53,10 @@ private:
 	void input_and_goto_sector(void);
 	void input_and_goto_cluster_data(void);
 	void input_and_goto_fat(int nfat);
+	void open_bookmark(int i);
+	void bookmark_sector(int i);
+	void load_bookmarks(void);
+	void save_bookmarks(void);
 	
 	// void select_fat_entry(int fatnum);
 	// void fwd_directory(void);
@@ -58,13 +69,8 @@ private:
 	void clear_column(int n) const;
 	void show_entry_info(void) const;
 	void print_commands(void) const;
-	
-	// ULONG cluster_size(void) const;
-	// LONG first_data_sector(void) const;
-	// LONGLONG fds_offset(void) const;
-	// LONGLONG first_sector_of_cluster(LONGLONG N) const;
-	// LONGLONG fat_sec_num(LONGLONG N, int nfat) const;
-	// LONGLONG fat_ent_off(LONGLONG N) const;
+	void print_bookmarks(void) const;
+
 
 public:
 	DiskExplorer(WCHAR drive);
