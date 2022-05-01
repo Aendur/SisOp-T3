@@ -246,7 +246,12 @@ void DiskExplorer::input_and_goto_sector(void) {
 	}
 }
 void DiskExplorer::input_and_goto_fat(int nfat) {
-	_input.set_msg("\033[1mGOTO FAT ENTRY N:\033[0m ");
+	switch (nfat) {
+		case 1: _input.set_msg("\033[1mGOTO FAT2 ENTRY N:\033[0m "); break;
+		default: nfat = 0;
+		case 0: _input.set_msg("\033[1mGOTO FAT1 ENTRY N:\033[0m "); break;
+	}
+	
 	LONGLONG N;
 	if (_input.get(&N, TERMUI_KEY_UNDEFINED, true)) {
 		goto_offset(_sector0.fat_sec_num(N, nfat) * _device.geometry().BytesPerSector);
