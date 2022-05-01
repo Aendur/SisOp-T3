@@ -34,8 +34,8 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_page[1].init(&_sector0, 36, 26);
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
 
-	_page[1].toggle_view();
-	_page[1].toggle_view();
+	//_page[1].toggle_view();
+	_page[1].cycle_entries_views();
 }
 
 void DiskExplorer::clear_column(int n) const {
@@ -76,8 +76,8 @@ void DiskExplorer::print_commands(void) const {
 
 	printf("TAB   : toggle select mode     \n");
 	printf("INS   : edit current sector    \n");
-	printf("[S] F1: toggle disp 1 modes    \n");
-	printf("[S] F2: toggle disp 2 modes    \n");
+	printf("F1~4  : toggle disp 1 modes    \n");
+	printf("F5~8  : toggle disp 2 modes    \n");
 	printf("D     : show drive info        \n");
 	printf("PAUSE : %-20s\n", _locked ? "\033[32;1mUNLOCK\033[0m" : "\033[31;1mDISMOUNT & LOCK\033[0m");
 	printf("ESC   : exit                \n");
@@ -113,10 +113,15 @@ void DiskExplorer::run(void) {
 	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
 		case TERMUI_KEY_PAUSE      : toggle_lock()                                    ;                  break;
-		case TERMUI_KEY_F1         : _page[0].toggle_view()                           ;                  break;
-		case TERMUI_KEY_F2         : _page[1].toggle_view()                           ;                  break;
-		case TERMUI_KEY_SHIFT_F1   : _page[0].switch_buff()                           ;                  break;
-		case TERMUI_KEY_SHIFT_F2   : _page[1].switch_buff()                           ;                  break;
+		//case TERMUI_KEY_F1         : _page[0].toggle_view()                           ;                  break;
+		//case TERMUI_KEY_F2         : _page[1].toggle_view()                           ;                  break;
+		case TERMUI_KEY_F1         : _page[0].cycle_sectors_views()                   ;                  break;
+		case TERMUI_KEY_F2         : _page[0].cycle_entries_views()                   ;                  break;
+		case TERMUI_KEY_F4         : _page[0].switch_buff()                           ;                  break;
+		case TERMUI_KEY_F5         : _page[1].cycle_sectors_views()                   ;                  break;
+		case TERMUI_KEY_F6         : _page[1].cycle_entries_views()                   ;                  break;
+		case TERMUI_KEY_F8         : _page[1].switch_buff()                           ;                  break;
+
 		case TERMUI_KEY_0          : goto_offset(_sector0.fds_offset())               ; read_setpages(); break;
 		case TERMUI_KEY_1          : goto_offset(fat1_offset)                         ; read_setpages(); break;
 		case TERMUI_KEY_2          : goto_offset(fat2_offset)                         ; read_setpages(); break;

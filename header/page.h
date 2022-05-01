@@ -12,12 +12,24 @@ class fat32;
 class Page {
 private:
 	enum class View : int {
+		SECTORS,
+		ENTRIES,
+
+		SECTORS_BEG = 0x11,
 		SECTORS_HEX,
+		SECTORS_ASC,
+		SECTORS_END,
 		SECTORS_INT,
+		
+		ENTRIES_BEG = 0x21,
 		ENTRIES_SHO,
 		ENTRIES_LON,
-		MOD,
-		SECTORS_ASC,
+		ENTRIES_END,
+
+		SECTORS_LEN = SECTORS_END - SECTORS_BEG - 1,
+		ENTRIES_LEN = ENTRIES_END - ENTRIES_BEG - 1,
+		SECTORS_INI = SECTORS_BEG + 1,
+		ENTRIES_INI = ENTRIES_BEG + 1,
 	};
 
 	PBYTE _buffer;
@@ -37,8 +49,10 @@ private:
 	int _selected = -1;
 	bool _editing = false;
 
-	//std::map<View, BYTE> _mode;
-	View _view = View::SECTORS_HEX;
+	std::map<View, View> _view;
+	View _current_view;
+	//View _view = View::SECTORS_HEX;
+	//View _view = View::SECTORS_HEX;
 
 	void print_sector(void) const;
 	void print_sector_int(void) const;
@@ -65,7 +79,9 @@ private:
 public:
 	void init(fat32 * f32, int x, int y);
 	void set(const PBYTE buffers[2], ULONGLONG offset);
-	inline void toggle_view(void) { _view = (View)((1 + (int)_view) % (int)View::MOD);  }
+	//inline void toggle_view(void) { _view = (View)((1 + (int)_view) % (int)View::MOD);  }
+	inline void cycle_entries_views(void);
+	inline void cycle_sectors_views(void);
 	inline void toggle_edit(bool val) { _editing = val; }
 	inline void switch_buff(void) { _selected_buffer = (_selected_buffer + 1) % 2; _buffer = _buffers[_selected_buffer]; }
 	inline void select(int p) { _selected = p; }
@@ -73,6 +89,15 @@ public:
 	inline ULONGLONG offset_start(void) const { return _offset_end - _sector_length * (2 - _selected_buffer); }
 	void print(void) const;
 };
+
+void Page::cycle_entries_views(void) {
+	if  (_current_view == View::ENTRIES) _view[View::ENTRIES] = (View)((1 + (int)_view[View::ENTRIES]) % (int) View::ENTRIES_LEN + (int) View::ENTRIES_INI);
+	else _current_view  = View::ENTRIES; 
+}
+void Page::cycle_sectors_views(void) {
+	if  (_current_view == View::SECTORS) _view[View::SECTORS] = (View)((1 + (int)_view[View::SECTORS]) % (int) View::SECTORS_LEN + (int) View::SECTORS_INI);
+	else _current_view  = View::SECTORS; 
+}
 
 #endif
 

@@ -111,10 +111,10 @@ Editor::EditorAction Editor::edit_run(void) {
 			push_byte((unsigned char) key);
 		} else {
 			switch (key) {
-				case TERMUI_KEY_F1         : _page[0]->toggle_view()                          ;                  break;
-				case TERMUI_KEY_F2         : _page[1]->toggle_view()                          ;                  break;
-				case TERMUI_KEY_SHIFT_F1   : _page[0]->switch_buff()                          ;                  break;
-				case TERMUI_KEY_SHIFT_F2   : _page[1]->switch_buff()                          ;                  break;
+				// case TERMUI_KEY_F1         : _page[0]->toggle_view()                          ;                  break;
+				// case TERMUI_KEY_F2         : _page[1]->toggle_view()                          ;                  break;
+				// case TERMUI_KEY_SHIFT_F1   : _page[0]->switch_buff()                          ;                  break;
+				// case TERMUI_KEY_SHIFT_F2   : _page[1]->switch_buff()                          ;                  break;
 				case TERMUI_KEY_TAB             : switch_edit_mode()       ; break;
 				case TERMUI_KEY_ARROW_UP        : move( -32, CursorMoveMode::WRAP); break;
 				case TERMUI_KEY_ARROW_DOWN      : move(  32, CursorMoveMode::WRAP); break;

@@ -26,6 +26,9 @@ void Page::init(fat32 * f32, int x, int y) {
 		_Y0 = y;
 		_sector0 = f32;
 		_initialized = true;
+		_current_view = View::SECTORS;
+		_view[View::SECTORS] = View::SECTORS_HEX;
+		_view[View::ENTRIES] = View::ENTRIES_SHO;
 	}
 }
 
@@ -42,13 +45,13 @@ void Page::print_hex_block(PBYTE line, int i0, int i1) const {
 	opts.negative = false;
 	opts.width = 2;
 	opts.margin_right = 1;
-	switch(_view) {
+	switch(_view.at(View::SECTORS)) {
+	default:
 	case View::SECTORS_ASC:
 		opts.chr_hex = false;
 		opts.ctl_str = NULL;
 		break;
 	case View::SECTORS_HEX:
-	default:
 		opts.chr_hex = true;
 		opts.ctl_str = NULL;
 		break;
@@ -105,14 +108,14 @@ int Page::fat_index(int i) const {
 void Page::print_int(PBYTE line) const {
 	int i0 = (int)(line - _buffer) / sizeof(UINT32);
 	int i = 0;
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i; // printf("\x1b[D%d", i2);
-	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP3); ++i; // printf("\x1b[D%d", i2);
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP1); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP0); ++i;
+	print_int_block( ((UINT32*)line)[i], actual_selected_int(i0 + i), fat_index(i0 + i) ); printf(PAGE_SEP3); ++i;
 }
 
 void Page::print_sector_str(PBYTE line, int len) const {
@@ -143,8 +146,13 @@ void Page::print_sector(void) const {
 	int nline = 0;
 	while(pos < end) {
 		printf(PAGE_LMARGIN PAGE_ADR, _Y0 + 3 + nline, _X0, nline, offset_start() + pos - _buffer);
-		if (_view == View::SECTORS_HEX) print_hex(pos);
-		else                            print_int(pos);
+		// switch(_view.at(View::SECTORS)) {
+		// 	default:
+		// 	case View::SECTORS_HEX: print_hex(pos); break;
+		// 	case View::SECTORS_INT: print_int(pos); break;
+		// }
+		print_hex(pos);
+		//print_hex(pos);
 		print_sector_str(pos, LINE_WIDTH);
 		pos += LINE_WIDTH;
 		++nline;
@@ -172,12 +180,9 @@ LONGLONG Page::current_sector(void) const {
 //// Data line END
 
 void Page::print(void) const {
-	switch (_view) {
-		case View::SECTORS_ASC:
-		case View::SECTORS_HEX:
-		case View::SECTORS_INT: print_sector(); break;
-		case View::ENTRIES_SHO:
-		case View::ENTRIES_LON: print_entry(); break;
+	switch (_current_view) {
+		case View::SECTORS: print_sector(); break;
+		case View::ENTRIES: print_entry(); break;
 		default: break;
 	}
 }
@@ -219,8 +224,7 @@ bool Page::actual_selected_int(int i) const {
 void Page::print_entry(void) const {
 	entry * entries = (entry*) _buffer;
 	int i = 0;
-	//bool extended = (_mode.at(_view) % 2) == 0;
-	bool extended = _view == View::ENTRIES_LON;
+	bool extended = _view.at(View::ENTRIES) == View::ENTRIES_LON;
 	if (extended) {
 		printf(ENTRY_ASH_EBAR, _Y0 + 0, _X0);
 		printf(ENTRY_ASH_ELAL, _Y0 + 1, _X0);
@@ -284,12 +288,12 @@ void Page::print_short(const entry& ref, bool extended, bool selected) const {
 		printf(" %s%02X%s "        ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_Attr, attr2);
 		printf(" %s%02X%s "        ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_NTRes, attr2);
 		printf(" %s%02X%s "        ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTimeTenth, attr2);
-		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[1], attr2);
-		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[1], attr2);
-		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[0] , ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtTime)[1],   attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_CrtDate)[1],   attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[0] , ((unsigned char*)&ref.dir.ds.DIR_LstAccDate)[1],attr2);
 		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusHI)[1], attr2);
-		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[1], attr2);
-		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[1], attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtTime)[1],   attr2);
+		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[0]    , ((unsigned char*)&ref.dir.ds.DIR_WrtDate)[1],   attr2);
 		printf(" %s%02X   %02X%s " ENTRY_ASH_VBAR, attr1, ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[0]  , ((unsigned char*)&ref.dir.ds.DIR_FstClusLO)[1], attr2);
 		printf(" %s%02X   %02X   %02X   %02X%s " ENTRY_ASH_VBAR, attr1
 				, ((unsigned char*)&ref.dir.ds.DIR_FileSize)[0]
@@ -301,17 +305,17 @@ void Page::print_short(const entry& ref, bool extended, bool selected) const {
 		opts.padding_left = 0;
 		opts.padding_right = 0;
 		print_colorized_str(ref.dir.ds.DIR_Name, 11, &opts, 3, 3);
-		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_Attr, attr2); // DIR_Attr
-		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_NTRes, attr2); // DIR_NTRes
-		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTimeTenth, attr2); // DIR_CrtTimeTenth
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTime, attr2); // DIR_CrtTime
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtDate, attr2); // DIR_CrtDate
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_LstAccDate, attr2); // DIR_LstAccDate
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FstClusHI, attr2); // DIR_FstClusHI
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_WrtTime, attr2); // DIR_WrtTime
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_WrtDate, attr2); // DIR_WrtDate
-		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FstClusLO, attr2); // DIR_FstClusLO
-		printf(" %s%-10lu%s " ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FileSize, attr2); // DIR_FileSize
+		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_Attr,        attr2);
+		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_NTRes,       attr2);
+		printf(" %s%02X%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTimeTenth,attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtTime,     attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_CrtDate,     attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_LstAccDate,  attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FstClusHI,   attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_WrtTime,     attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_WrtDate,     attr2);
+		printf(" %s%-5u%s "   ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FstClusLO,   attr2);
+		printf(" %s%-10lu%s " ENTRY_ASH_VBAR, attr1, ref.dir.ds.DIR_FileSize,    attr2);
 	}
 	printf("\033[0K");
 }
