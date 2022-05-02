@@ -44,9 +44,10 @@ struct entry {
 		entry_long  LDIR;
 	};
 
-	inline bool is_long(void) const { return (DIR.Attr & ATTR_LONG_NAME) == ATTR_LONG_NAME; }
-	inline bool is_dir (void) const { return (DIR.Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
-	inline bool is_file(void) const { return (DIR.Attr & ATTR_ARCHIVE  ) == ATTR_ARCHIVE  ; }
+	inline bool is_long (void) const { return (DIR.Attr & ATTR_LONG_NAME) == ATTR_LONG_NAME; }
+	inline bool is_dir  (void) const { return (DIR.Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
+	inline bool is_file (void) const { return (DIR.Attr & ATTR_ARCHIVE  ) == ATTR_ARCHIVE  ; }
+	inline bool is_ghost(void) const { return DIR.Name[0] == 0xE5; }
 
 	inline entry() {}
 	inline entry(entry*src);

@@ -206,9 +206,10 @@ int Navigator::print_directory_at(int N) const {
 		const char * attr1 = index == selected ? "\033[7m" : "";
 		const char * attr2 = index == selected ? "\033[27m" : "";
 
-		const char * stats = directory[index].DIR.Name[0] == 0xE5 ? "GHOST" : "";
+		const char * stats = directory[index].is_ghost() ? "GHOST" : "";
 		const char * ltype = directory[index].is_long()  ? "LONG" : "";
 		const char * dtype = directory[index].is_dir()  ? "DIR" : "";
+		const char * useok = directory[index].is_dir() || directory[index].is_ghost() ? "-->" : "";
 
 		
 
@@ -216,7 +217,7 @@ int Navigator::print_directory_at(int N) const {
 			concat_long_name(long_name, (char*)directory[index].LDIR.Name1, (char*)directory[index].LDIR.Name2, (char*)directory[index].LDIR.Name3);
 			unsigned short ord = directory[index].LDIR.Ord;
 			unsigned short cks = directory[index].LDIR.Chksum;
-			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s      %3u  %-3u       %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, cks, attr2);
+			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s      %3u  %-3u            %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, cks, attr2);
 			continue;
 		} else {
 			broken_int32 fc;
@@ -224,7 +225,7 @@ int Navigator::print_directory_at(int N) const {
 			fc.half.lower = directory[index].DIR.FstClusLO;
 			fc.half.upper = directory[index].DIR.FstClusHI;
 			int length = directory[index].DIR.FileSize;
-			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s   %6d  %-10d%s", _Y0+i+1, _X0, attr1, index, short_name, ltype, stats, dtype, fc.full, length, attr2);
+			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s   %6d  %-10d  %3s%s", _Y0+i+1, _X0, attr1, index, short_name, ltype, stats, dtype, fc.full, length, useok, attr2);
 		}
 
 	}
@@ -350,7 +351,11 @@ void Navigator::nav_downstream(void) {
 				_position[addr.full];
 			}
 		} else {
-			// maybe recover?
+			if (entry.is_ghost()) {
+				// ghost file opts
+			} else {
+				// alive file opts
+			}
 		}
 	}
 }
