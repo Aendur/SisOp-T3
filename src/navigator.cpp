@@ -9,6 +9,16 @@
 #include <stdexcept>
 
 using std::vector;
+using std::deque;
+
+
+enum FAT_Code : unsigned int {
+	FAT_RESERVED1 = 0x0FFFFFF8,
+	FAT_RESERVED2 = 0x7FFFFFFF,
+	FAT_EOC       = 0x0FFFFFFF,
+	FAT_EMPTY     = 0x00000000,
+};
+
 
 Navigator::~Navigator(void) {
 	if (_FAT[0] != nullptr) {
@@ -35,12 +45,17 @@ void Navigator::init(TermUI * t, Device * d, fat32 * s0) {
 
 		_X0 = 36;
 		_Y0 = 2;
-		_selected = 0;
+		_max_selection = 1;
+		_view_mode = ViewMode::PAGE;
 
 		read_FAT(0);
 		read_FAT(1);
 
-		read_directory_at(2);
+		retrieve_directory_at(2);
+		_current_directory = 2;
+		_upstream_directory = 2;
+		_position[2] = 0;
+
 
 		_initialized = true;
 	}
@@ -64,13 +79,15 @@ void Navigator::navigate(void) {
 	Dialog quit_dialog("Exit navigator?", quit_dialog_options);
 	while ((key = _term->read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch (key) {
-			case TERMUI_KEY_ARROW_UP   : move_sel(   -1); break;
-			case TERMUI_KEY_ARROW_DOWN : move_sel(    1); break;
-			case TERMUI_KEY_ARROW_LEFT : move_sel(   -1); break;
-			case TERMUI_KEY_ARROW_RIGHT: move_sel(    1); break;
-			case TERMUI_KEY_PGUP       : move_sel(-1000); break;
-			case TERMUI_KEY_PGDOWN     : move_sel( 1000); break;
+			case TERMUI_KEY_ARROW_UP   : move_sel(  -1) ; break;
+			case TERMUI_KEY_ARROW_DOWN : move_sel(   1) ; break;
+			case TERMUI_KEY_ARROW_LEFT : move_sel(  -1) ; break;
+			case TERMUI_KEY_ARROW_RIGHT: move_sel(   1) ; break;
+			case TERMUI_KEY_PGUP       : move_sel(-100) ; break;
+			case TERMUI_KEY_PGDOWN     : move_sel( 100) ; break;
 			case TERMUI_KEY_TAB        : toggle_view()  ; break;
+			case TERMUI_KEY_RETURN     : nav_downstream() ; break;
+			case TERMUI_KEY_BACKSPACE  : nav_upstream() ; break;
 			default: break;
 		}
 		_max_selection = print_main();
@@ -82,9 +99,10 @@ void Navigator::navigate(void) {
 int Navigator::print_main(void) const {
 	int max;
 	switch(_view_mode) {
-		case ViewMode::FAT1:
-		case ViewMode::FAT2: max = print_FAT((int) _view_mode); break;
-		case ViewMode::PAGE: max = print_directory_at(2); break;
+		case ViewMode::FAT1: max = print_FAT(0); break;
+		case ViewMode::FAT2: max = print_FAT(1); break;
+		case ViewMode::PAGE: max = print_directory_at(_current_directory); break;
+		default:             max = _max_selection;
 	}
 	print_commands();
 	return max;
@@ -99,9 +117,17 @@ void Navigator::print_commands(void) const {
 }
 
 void Navigator::move_sel (int off) {
-	_selected = _selected + off;
-	if (_selected < 0) _selected = 0;
-	if (_selected >= _max_selection) _selected = _max_selection - 1;
+	int * selected;
+	switch(_view_mode) {
+		case ViewMode::FAT1: selected = &_position_fat[0]; break;
+		case ViewMode::FAT2: selected = &_position_fat[1]; break;
+		case ViewMode::PAGE: selected = &_position[_current_directory]; break;
+		default: return;
+	}
+
+	*selected = *selected + off;
+	if (*selected < 0) *selected = 0;
+	if (*selected >= _max_selection) *selected = _max_selection - 1;
 }
 
 /// \param max maximum number of entries
@@ -117,38 +143,89 @@ int set_min_max_i(int max, int current, int height) {
 int Navigator::print_FAT(int nfat) const {
 	static const int NL = 45;
 	int max = n_fat_entries();
-	int i0 = set_min_max_i(max, _selected, NL);
+	int selected = _position_fat[nfat];
+	int i0 = set_min_max_i(max, selected, NL);
 
+	static char buffer1[64];
+	static char buffer2[64];
+	
+	printf("\033[%d;%dH\033[0KFAT %d        INDEX -> VALUE", _Y0, _X0,  nfat+1);
 	for (int i = 0; i < NL; ++i) {
 		int index = i + i0;
-		if (index == _selected) {
-			printf("\033[%d;%dH\033[7mFAT %d entry:%-10d %08X\033[27m", _Y0 + i, _X0, nfat+1, index, _FAT[nfat][index]);
-		} else {
-			printf("\033[%d;%dHFAT %d entry:%-10d %08X", _Y0 + i, _X0, nfat+1, index, _FAT[nfat][index]);
+		const char * attr1 = index == selected ? "\033[7m" : "";
+		const char * attr2 = index == selected ? "\033[27m" : "";
+
+		snprintf(buffer1, 64, "%08X (%d)", index, index);
+		unsigned int value = _FAT[nfat][index];
+		switch(value) {
+			case FAT_RESERVED1: snprintf(buffer2, 64, "(reserved.1)"); break;
+			case FAT_RESERVED2: snprintf(buffer2, 64, "(reserved.2)"); break;
+			case FAT_EMPTY: snprintf(buffer2, 64, "(empty)"); break;
+			case FAT_EOC: snprintf(buffer2, 64, "(EOC)"); break;
+			default: snprintf(buffer2, 64, "%08X (%d)", value, value); break;
 		}
+		
+		printf("\033[%d;%dH\033[0K%s%18s -> %-18s%s", _Y0+i+1, _X0, attr1, buffer1, buffer2, attr2);
 	}
 
 	return max;
 }
 
+void concat_name(char * tgt, const char * src) {
+	snprintf(tgt, 9, "%s", src);
+	
+	if (src[8] != ' ') {
+		int pos = 0;
+		while(pos < 8 && tgt[pos] != ' ') { ++pos; }
+		tgt[pos++] = '.';
+		snprintf(tgt + pos, 4, "%s", src + 8);
+	}
+}
+
+void concat_long_name(char * tgt, const char * src1, const char * src2, const char * src3) {
+	int j = 0;
+	for (int i = 0; i < 10; i+= 2) { tgt[j++] = src1[i]; }
+	for (int i = 0; i < 12; i+= 2) { tgt[j++] = src2[i]; }
+	for (int i = 0; i <  4; i+= 2) { tgt[j++] = src3[i]; }
+	tgt[j] = 0;
+}
+
 int Navigator::print_directory_at(int N) const {
 	static const int NL = 45;
 	static char short_name[16];
-	const vector<entry> & directory = _directory_tree.at(N);
+	static char long_name[16];
+	const deque<entry> & directory = _directory_tree.at(N);
 	int max = (int) directory.size();
-	int i0 = set_min_max_i(max, _selected, NL);
-	
-	for (int i = 0; i < NL; ++i) {
-		snprintf(short_name, 9, "%s", directory[i].dir.ds.DIR_Name);
-		short_name[8] = '.';
-		snprintf(short_name + 9, 3, "%s", directory[i].dir.ds.DIR_Name + 8);
+	int selected = _position.at(_current_directory);
+	int i0 = set_min_max_i(max, selected, NL);
 
+
+	printf("\033[%d;%dH\033[0K    N   NAME            ----  -----  ---    START  SIZE", _Y0, _X0);
+	for (int i = 0; i < NL; ++i) {
 		int index = i + i0;
-		if (index == _selected) {
-			printf("\033[%d;%dH\033[7m%d. %s\033[27m", _Y0 + i, _X0, index, short_name);
+		const char * attr1 = index == selected ? "\033[7m" : "";
+		const char * attr2 = index == selected ? "\033[27m" : "";
+
+		const char * stats = directory[index].DIR.Name[0] == 0xE5 ? "GHOST" : "";
+		const char * ltype = directory[index].is_long()  ? "LONG" : "";
+		const char * dtype = directory[index].is_dir()  ? "DIR" : "";
+
+		
+
+		if (directory[index].is_long()) {
+			concat_long_name(long_name, (char*)directory[index].LDIR.Name1, (char*)directory[index].LDIR.Name2, (char*)directory[index].LDIR.Name3);
+			int ord = directory[index].LDIR.Ord;
+			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s            %-3d     %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, attr2);
+			continue;
 		} else {
-			printf("\033[%d;%dH%d. %s", _Y0 + i, _X0, index, short_name);
+			broken_int32 fc;
+			concat_name(short_name, (char*)directory[index].DIR.Name);
+			fc.half.lower = directory[index].DIR.FstClusLO;
+			fc.half.upper = directory[index].DIR.FstClusHI;
+			int length = directory[index].DIR.FileSize;
+			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s   %6d  %-10d%s", _Y0+i+1, _X0, attr1, index, short_name, ltype, stats, dtype, fc.full, length, attr2);
 		}
+
 	}
 
 	return max;
@@ -184,7 +261,7 @@ void Navigator::read_FAT(int fatn) {
 }
 
 // MUST delete[] the returned pointer
-unsigned char* Navigator::read_cluster(long long N) {
+unsigned char* Navigator::read_cluster(unsigned long N) {
 	long long offset = _sector0->first_sector_of_cluster(N) * _sector0->BPB_BytsPerSec();
 	_device->seek(offset, false);
 	return read_cluster();
@@ -212,25 +289,84 @@ unsigned char* Navigator::read_cluster(void) {
 	return cluster_buffer;
 }
 
-vector<entry> & Navigator::read_directory_at(long long N) {
-	//if (_directory_tree.find(N) != _directory_tree.end()) {
-	if (!_directory_tree.contains(N)) {
-		unsigned char * cluster = read_cluster(N);
-		entry* entries = (entry *) cluster;
-		//printf("%zu\n", sizeof(entry));
-		//getchar();
-		//_device->seek(_sector0->fds_offset(), false);
-		//memcpy(&_root_directory.reference_entry, _device->buffer(0), _device->geometry);
-		_directory_tree[N] = vector<entry>();
-		for (int i = 0; i < n_cluster_entries(); ++i) {
-			_directory_tree[N].emplace_back(&entries[i]);
-			//memcpy(&_directory_tree[N][i], &entries[i], sizeof(entry));
-		}		
-		delete[] cluster;
+deque<entry> Navigator::read_directory_at(unsigned long N) {
+	deque<entry> result;
 
+	unsigned char * cluster = read_cluster(N);
+	entry* entries = (entry *) cluster;
+	for (int i = 0; i < n_cluster_entries(); ++i) {
+		result.emplace_back(&entries[i]);
+	}		
+	delete[] cluster;
+	return result;
+}
+
+deque<entry> Navigator::read_full_directory_at(unsigned long N) {
+	switch(_FAT[0][N]) {
+		case FAT_EMPTY:
+		case FAT_RESERVED1:
+		case FAT_RESERVED2:
+			return deque<entry>(0);
+	} 
+
+	deque<entry> result = read_directory_at(N);
+	unsigned int next = _FAT[0][N];
+	while (next != FAT_EOC) {
+		deque<entry> next_entries = read_directory_at(next);
+		result.insert(result.end(), next_entries.begin(), next_entries.end());
+		next = _FAT[0][next];
 	}
+	
+	return result;
+}
 
+deque<entry> & Navigator::retrieve_directory_at(unsigned long N) {
+	if (!_directory_tree.contains(N)) {
+		_directory_tree[N] = read_full_directory_at(N);
+	}
 	return _directory_tree[N];
 }
 
+void Navigator::nav_downstream(void) {
+	switch(_view_mode) {
+		case ViewMode::FAT1: return;
+		case ViewMode::FAT2: return;
+	}
 
+	int selected = _position.at(_current_directory);
+	const entry & entry = _directory_tree.at(_current_directory).at(selected);
+	if (entry.is_long()) {
+		// do nothing
+	} else {
+		if (entry.is_dir()) {
+			broken_int32 addr;
+			addr.half.lower = entry.DIR.FstClusLO;
+			addr.half.upper = entry.DIR.FstClusHI;
+			if (addr.full == 0) { addr.full = 2; }
+			if (retrieve_directory_at(addr.full).size() > 0) {
+				_upstream_directory = _current_directory;
+				_current_directory = addr.full;
+				_position[addr.full];
+			}
+		} else {
+			// maybe recover?
+		}
+	}
+}
+
+void Navigator::nav_upstream(void) {
+	switch(_view_mode) {
+		case ViewMode::FAT1: return;
+		case ViewMode::FAT2: return;
+	}
+	if(_current_directory == _upstream_directory) { return; }
+
+	deque<entry> & updir = _directory_tree.at(_upstream_directory);
+	_current_directory = _upstream_directory;
+
+	broken_int32 addr;
+	addr.half.lower = updir[1].DIR.FstClusLO;
+	addr.half.upper = updir[1].DIR.FstClusHI;
+	_upstream_directory = (updir[0].DIR.Name[0] == '.' && updir[1].DIR.Name[1] == '.') ? addr.full : 2;
+	if (_upstream_directory == 0) _upstream_directory = 2;
+}
