@@ -7,8 +7,8 @@
 
 class TermUI;
 class Device;
-class entry;
-class fat32;
+struct entry;
+struct fat32;
 class Page {
 private:
 	enum class View : int {

@@ -1,7 +1,7 @@
 #ifndef FAT32_FSINFO_SPEC_H
 #define FAT32_FSINFO_SPEC_H
 
-class fsinfo {
+struct fsinfo {
 private:
 	unsigned char sector[512];
 

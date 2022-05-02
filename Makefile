@@ -1,8 +1,9 @@
 #CFLAGS=/Wall /W4 /EHsc /std:c++17 /Iheader /utf-8 /wd5045 /nologo
-CFLAGS=/W4 /EHsc /std:c++17 /Iheader /utf-8 /nologo
+#CFLAGS=/W4 /EHsc /std:c++17 /Iheader /utf-8 /nologo
+CFLAGS=/W4 /EHsc /std:c++20 /Iheader /utf-8 /nologo
 
 FGLIBN=seqfile utility
-DXLIBN=disk_explorer term_ui device utility page input_field editor dialog
+DXLIBN=disk_explorer term_ui device utility page input_field editor navigator dialog
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
@@ -35,6 +36,8 @@ obj\page.obj::               src\$(@B).cpp header\$(@B).h
 obj\input_field.obj::        src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\editor.obj::             src\$(@B).cpp header\$(@B).h
+	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
+obj\navigator.obj::          src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp
 obj\dialog.obj::             src\$(@B).cpp header\$(@B).h
 	cl $(CFLAGS) /c /Fo:obj\ src\$(@B).cpp

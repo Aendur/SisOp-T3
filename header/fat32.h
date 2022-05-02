@@ -1,7 +1,7 @@
 #ifndef FAT32_SPEC_H
 #define FAT32_SPEC_H
 
-class fat32 {
+struct fat32 {
 private:
 	// buffer
 	unsigned char sector[512];

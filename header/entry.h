@@ -28,8 +28,7 @@ struct entry_long {
 };
 
 
-class entry {
-public:
+struct entry {
 	enum attr {
 		ATTR_READ_ONLY  = 0x01,
 		ATTR_HIDDEN     = 0x02,
@@ -46,8 +45,17 @@ public:
 	} dir;
 
 	inline bool is_long(void) const { return (dir.ds.DIR_Attr & ATTR_LONG_NAME) == ATTR_LONG_NAME; }
-	inline bool is_dir(void) const  { return (dir.ds.DIR_Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
+	inline bool is_dir (void) const { return (dir.ds.DIR_Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
+	inline bool is_file(void) const { return (dir.ds.DIR_Attr & ATTR_ARCHIVE  ) == ATTR_ARCHIVE  ; }
+
+	inline entry() {}
+	inline entry(entry*src);
 };
+
+
+entry::entry(entry * src) {
+	memcpy(this, src, sizeof(entry));
+}
 
 
 // #define ENTRY_ATTR_READ_ONLY 0x01

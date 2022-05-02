@@ -9,7 +9,7 @@ const wchar_t* size_to_wstring(size_t size, bool append_unit);
 struct ColorizeOptions {
 	unsigned char byte = 0;
 	bool   chr_hex = true;
-	char * ctl_str = nullptr;
+	const char * ctl_str = nullptr;
 	bool negative = false;
 	bool underline = false;
 	int width = 1;

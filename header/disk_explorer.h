@@ -8,6 +8,7 @@
 #include "fsinfo.h"
 #include "input_field.h"
 #include "editor.h"
+#include "navigator.h"
 #include <Windows.h>
 
 class DiskExplorer {
@@ -30,6 +31,7 @@ private:
 	Page _page[2];
 	InputField _input;
 	Editor _editor;
+	Navigator _navigator;
 
 	bool _select_mode = false;
 	long _adv_N = 1;
@@ -58,11 +60,6 @@ private:
 	void bookmark_sector(int i);
 	void load_bookmarks(void);
 	void save_bookmarks(void);
-	
-	
-	// void select_fat_entry(int fatnum);
-	// void fwd_directory(void);
-	// void rew_directory(void);
 		
 	void show_geom_info(void) const;
 	void show_fat32_info(void) const;

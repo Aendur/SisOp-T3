@@ -36,6 +36,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_page[1].cycle_entries_views();
 
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
+	_navigator.init(&_ui, &_device, &_sector0);
 
 }
 
@@ -68,6 +69,7 @@ void DiskExplorer::print_commands(void) const {
 	printf("S0~S9: bookmark sector     \n");
 	printf("B: switch info             \n");
 	printf("\n--- NAV ---              \n");
+	printf("N     : start Navigator    \n");
 	printf("HOME  : goto FirstDataSec  \n");
 	printf("G     : goto sector        \n");
 	printf("H     : goto cluster (data)\n");
@@ -173,6 +175,8 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_G          : input_and_goto_sector()                          ; /* reads/sets */ break;
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_data()                    ; /* reads/sets */ break;
+		case TERMUI_KEY_n          :
+		case TERMUI_KEY_N          : _navigator.navigate()                            ; read_setpages(); break;
 		case TERMUI_KEY_t          :
 		case TERMUI_KEY_T          : input_and_goto_fat(0)                            ; /* reads/sets */ break;
 		case TERMUI_KEY_y          :
