@@ -214,8 +214,9 @@ int Navigator::print_directory_at(int N) const {
 
 		if (directory[index].is_long()) {
 			concat_long_name(long_name, (char*)directory[index].LDIR.Name1, (char*)directory[index].LDIR.Name2, (char*)directory[index].LDIR.Name3);
-			int ord = directory[index].LDIR.Ord;
-			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s            %-3d     %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, attr2);
+			unsigned short ord = directory[index].LDIR.Ord;
+			unsigned short cks = directory[index].LDIR.Chksum;
+			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s      %3u  %-3u       %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, cks, attr2);
 			continue;
 		} else {
 			broken_int32 fc;
