@@ -48,16 +48,11 @@ struct entry {
 	inline bool is_dir  (void) const { return (DIR.Attr & ATTR_DIRECTORY) == ATTR_DIRECTORY; }
 	inline bool is_file (void) const { return (DIR.Attr & ATTR_ARCHIVE  ) == ATTR_ARCHIVE  ; }
 	inline bool is_ghost(void) const { return DIR.Name[0] == 0xE5; }
+	inline bool is_empty(void) const { return DIR.Name[0] == 0x00 && DIR.Attr == 0x00 && DIR.FstClusLO == 0 && DIR.FileSize == 0; }
 
 	inline entry() {}
 	inline entry(entry*src);
 };
-
-
-entry::entry(entry * src) {
-	memcpy(this, src, sizeof(entry));
-}
-
 
 // #define ENTRY_ATTR_READ_ONLY 0x01
 // #define ENTRY_ATTR_HIDDEN    0x02

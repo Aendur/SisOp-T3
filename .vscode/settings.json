@@ -83,6 +83,11 @@
 		"xstddef": "cpp",
 		"xtr1common": "cpp",
 		"syscalls": "cpp",
-		"filesystem": "cpp"
+		"filesystem": "cpp",
+		"charconv": "cpp",
+		"format": "cpp",
+		"forward_list": "cpp",
+		"iomanip": "cpp",
+		"optional": "cpp"
 	}
 }

@@ -12,6 +12,11 @@ using std::vector;
 using std::deque;
 
 
+EntryMetadata::EntryMetadata(unsigned long clus, unsigned long sec, unsigned long pos, entry* src) : cluster(clus), sector(sec), position(pos) {
+	memcpy(&this->data, src, sizeof(entry));
+}
+
+
 enum FAT_Code : unsigned int {
 	FAT_RESERVED1 = 0x0FFFFFF8,
 	FAT_RESERVED2 = 0x7FFFFFFF,
@@ -194,7 +199,7 @@ int Navigator::print_directory_at(int N) const {
 	static const int NL = 45;
 	static char short_name[16];
 	static char long_name[16];
-	const deque<entry> & directory = _directory_tree.at(N);
+	const deque<EntryMetadata> & directory = _directory_tree.at(N);
 	int max = (int) directory.size();
 	int selected = _position.at(_current_directory);
 	int i0 = set_min_max_i(max, selected, NL);
@@ -205,28 +210,30 @@ int Navigator::print_directory_at(int N) const {
 		int index = i + i0;
 		const char * attr1 = index == selected ? "\033[7m" : "";
 		const char * attr2 = index == selected ? "\033[27m" : "";
-
-		const char * stats = directory[index].is_ghost() ? "GHOST" : "";
-		const char * ltype = directory[index].is_long()  ? "LONG" : "";
-		const char * dtype = directory[index].is_dir()  ? "DIR" : "";
-		const char * useok = directory[index].is_dir() || directory[index].is_ghost() ? "-->" : "";
-
+		printf("\033[%d;%dH\033[0K%s%5d   ", _Y0+i+1, _X0, attr1, index);
+		print_entry(directory[index].data);
+		printf("%s", attr2);
 		
 
-		if (directory[index].is_long()) {
-			concat_long_name(long_name, (char*)directory[index].LDIR.Name1, (char*)directory[index].LDIR.Name2, (char*)directory[index].LDIR.Name3);
-			unsigned short ord = directory[index].LDIR.Ord;
-			unsigned short cks = directory[index].LDIR.Chksum;
-			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s      %3u  %-3u            %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, cks, attr2);
-			continue;
-		} else {
-			broken_int32 fc;
-			concat_name(short_name, (char*)directory[index].DIR.Name);
-			fc.half.lower = directory[index].DIR.FstClusLO;
-			fc.half.upper = directory[index].DIR.FstClusHI;
-			int length = directory[index].DIR.FileSize;
-			printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s   %6d  %-10d  %3s%s", _Y0+i+1, _X0, attr1, index, short_name, ltype, stats, dtype, fc.full, length, useok, attr2);
-		}
+		// const char * stats = directory[index].data.is_ghost() ? "GHOST" : "";
+		// const char * ltype = directory[index].data.is_long()  ? "LONG" : "";
+		// const char * dtype = directory[index].data.is_dir()  ? "DIR" : "";
+		// const char * useok = directory[index].data.is_dir() || directory[index].data.is_ghost() ? "-->" : "";
+
+		// if (directory[index].data.is_long()) {
+		// 	concat_long_name(long_name, (char*)directory[index].data.LDIR.Name1, (char*)directory[index].data.LDIR.Name2, (char*)directory[index].data.LDIR.Name3);
+		// 	unsigned short ord = directory[index].data.LDIR.Ord;
+		// 	unsigned short cks = directory[index].data.LDIR.Chksum;
+		// 	printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s      %3u  %-3u            %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, cks, attr2);
+		// 	continue;
+		// } else {
+		// 	broken_int32 fc;
+		// 	concat_name(short_name, (char*)directory[index].data.DIR.Name);
+		// 	fc.half.lower = directory[index].data.DIR.FstClusLO;
+		// 	fc.half.upper = directory[index].data.DIR.FstClusHI;
+		// 	int length = directory[index].data.DIR.FileSize;
+		// 	printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s   %6d  %-10d  %3s%s", _Y0+i+1, _X0, attr1, index, short_name, ltype, stats, dtype, fc.full, length, useok, attr2);
+		// }
 
 	}
 
@@ -291,30 +298,33 @@ unsigned char* Navigator::read_cluster(void) {
 	return cluster_buffer;
 }
 
-deque<entry> Navigator::read_directory_at(unsigned long N) {
-	deque<entry> result;
+Directory Navigator::read_directory_at(unsigned long N) {
+	Directory result;
 
 	unsigned char * cluster = read_cluster(N);
 	entry* entries = (entry *) cluster;
 	for (int i = 0; i < n_cluster_entries(); ++i) {
-		result.emplace_back(&entries[i]);
+		unsigned long sector = i / 16;
+		unsigned long position = i % 16;
+		result.emplace_back(N, sector, position, &entries[i]);
+		//result.push_back(EntryMetadata(N, sector, position, &entries[i]));
 	}		
 	delete[] cluster;
 	return result;
 }
 
-deque<entry> Navigator::read_full_directory_at(unsigned long N) {
+Directory Navigator::read_full_directory_at(unsigned long N) {
 	switch(_FAT[0][N]) {
 		case FAT_EMPTY:
 		case FAT_RESERVED1:
 		case FAT_RESERVED2:
-			return deque<entry>(0);
+			return Directory(0);
 	} 
 
-	deque<entry> result = read_directory_at(N);
+	Directory result = read_directory_at(N);
 	unsigned int next = _FAT[0][N];
 	while (next != FAT_EOC) {
-		deque<entry> next_entries = read_directory_at(next);
+		Directory next_entries = read_directory_at(next);
 		result.insert(result.end(), next_entries.begin(), next_entries.end());
 		next = _FAT[0][next];
 	}
@@ -322,7 +332,7 @@ deque<entry> Navigator::read_full_directory_at(unsigned long N) {
 	return result;
 }
 
-deque<entry> & Navigator::retrieve_directory_at(unsigned long N) {
+Directory & Navigator::retrieve_directory_at(unsigned long N) {
 	if (!_directory_tree.contains(N)) {
 		_directory_tree[N] = read_full_directory_at(N);
 	}
@@ -336,11 +346,14 @@ void Navigator::nav_downstream(void) {
 	}
 
 	int selected = _position.at(_current_directory);
-	const entry & entry = _directory_tree.at(_current_directory).at(selected);
-	if (entry.is_long()) {
-		// do nothing
-	} else {
-		if (entry.is_dir()) {
+	const entry & entry = _directory_tree.at(_current_directory).at(selected).data;
+
+	bool navable = !(entry.is_long() || entry.is_empty());
+	if (navable) {
+		if (entry.is_ghost()) {
+			// ghost file opts
+			printf("\033[48;1m     GHOST FILE");
+		} else if (entry.is_dir()) {
 			broken_int32 addr;
 			addr.half.lower = entry.DIR.FstClusLO;
 			addr.half.upper = entry.DIR.FstClusHI;
@@ -349,12 +362,6 @@ void Navigator::nav_downstream(void) {
 				_upstream_directory = _current_directory;
 				_current_directory = addr.full;
 				_position[addr.full];
-			}
-		} else {
-			if (entry.is_ghost()) {
-				// ghost file opts
-			} else {
-				// alive file opts
 			}
 		}
 	}
@@ -367,12 +374,55 @@ void Navigator::nav_upstream(void) {
 	}
 	if(_current_directory == _upstream_directory) { return; }
 
-	deque<entry> & updir = _directory_tree.at(_upstream_directory);
+	Directory & updir = _directory_tree.at(_upstream_directory);
 	_current_directory = _upstream_directory;
 
 	broken_int32 addr;
-	addr.half.lower = updir[1].DIR.FstClusLO;
-	addr.half.upper = updir[1].DIR.FstClusHI;
-	_upstream_directory = (updir[0].DIR.Name[0] == '.' && updir[1].DIR.Name[1] == '.') ? addr.full : 2;
+	addr.half.lower = updir[1].data.DIR.FstClusLO;
+	addr.half.upper = updir[1].data.DIR.FstClusHI;
+	_upstream_directory = (updir[0].data.DIR.Name[0] == '.' && updir[1].data.DIR.Name[1] == '.') ? addr.full : 2;
 	if (_upstream_directory == 0) _upstream_directory = 2;
 }
+
+void Navigator::print_entry(const entry & data) const {
+	static char short_name[16];
+	static char long_name[16];
+
+	const char * stats = data.is_ghost() ? "GHOST" : "";
+	const char * ltype = data.is_long()  ? "LONG" : "";
+	const char * dtype = data.is_dir()  ? "DIR" : "";
+	const char * useok = data.is_dir() || data.is_ghost() ? "-->" : "";
+
+	if (data.is_empty()) {
+		printf("%     -53s", "(NO DATA)");
+	} else if (data.is_long()) {
+		concat_long_name(long_name, (char*)data.LDIR.Name1, (char*)data.LDIR.Name2, (char*)data.LDIR.Name3);
+		unsigned short ord = data.LDIR.Ord;
+		unsigned short cks = data.LDIR.Chksum;
+		printf("%-13s   %4s  %5s  %3s      %3u  %-3u            ", long_name, ltype, stats, dtype, ord, cks);
+	} else {
+		broken_int32 fc;
+		concat_name(short_name, (char*)data.DIR.Name);
+		fc.half.lower = data.DIR.FstClusLO;
+		fc.half.upper = data.DIR.FstClusHI;
+		int length = data.DIR.FileSize;
+		printf("%-13s   %4s  %5s  %3s   %6d  %-10d  %3s", short_name, ltype, stats, dtype, fc.full, length, useok);
+	}
+
+}
+
+void Navigator::ghost_ship(void) {
+	int selection = _position.at(_current_directory);
+	EntryMetadata & ent = _directory_tree.at(_current_directory).at(selection);
+	
+	if (ent.cluster != _current_directory) { throw std::runtime_error("current directory not the same as target directory"); }
+	long long offset = (ent.cluster * _sector0->BPB_SecPerClus()); // nsector
+	offset = (offset + ent.sector + _sector0->first_data_sector()) * _sector0->BPB_BytsPerSec();
+	_device->seek(offset, false);
+	_device->read();
+
+	
+
+}
+
+

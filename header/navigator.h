@@ -20,6 +20,18 @@ typedef union {
 	unsigned long full;
 } broken_int32;
 
+struct EntryMetadata {
+	unsigned long cluster;
+	unsigned long sector;
+	unsigned long position;
+	entry data;
+
+	EntryMetadata(void) {}
+	EntryMetadata(unsigned long clus, unsigned long sec, unsigned long pos, entry* src);
+};
+
+typedef std::deque<EntryMetadata> Directory;
+
 class Navigator {
 private:
 	enum class ViewMode {
@@ -34,7 +46,7 @@ private:
 	fat32 * _sector0 = nullptr;
 	bool _initialized =  false;
 
-	std::map<unsigned long, std::deque<entry>> _directory_tree;
+	std::map<unsigned long, Directory> _directory_tree;
 	std::map<unsigned long, int> _position;
 	unsigned long _current_directory;
 	unsigned long _upstream_directory;
@@ -52,10 +64,12 @@ private:
 	int print_main(void) const;
 	int print_FAT(int nfat) const;
 	int print_directory_at(int N) const;
+	void print_entry(const entry & data) const;
 	void print_commands(void) const;
 	void move_sel (int off);
 	void nav_upstream(void);
 	void nav_downstream(void);
+	void ghost_ship(void);
 	
 
 	
@@ -64,9 +78,9 @@ private:
 	unsigned char* read_cluster(void);
 	unsigned char* read_cluster(unsigned long N);
 
-	std::deque<entry> read_directory_at(unsigned long N);
-	std::deque<entry> read_full_directory_at(unsigned long N);
-	std::deque<entry> & retrieve_directory_at(unsigned long N);
+	Directory read_directory_at(unsigned long N);
+	Directory read_full_directory_at(unsigned long N);
+	Directory & retrieve_directory_at(unsigned long N);
 
 	int n_fat_entries(void) const;
 	int n_cluster_entries(void) const;
