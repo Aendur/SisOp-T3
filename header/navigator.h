@@ -69,10 +69,10 @@ private:
 	void move_sel (int off);
 	void nav_upstream(void);
 	void nav_downstream(void);
-	void ghost_ship(void);
+	void launch_ghost_ship(void);;
+
 	
 	char * get_entry_string(const entry & data) const;
-
 	
 	// allocs _FAT[fatn]
 	void read_FAT(int fatn);

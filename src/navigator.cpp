@@ -4,6 +4,8 @@
 #include "layout.h"
 #include "fat32.h"
 #include "dialog.h"
+#include "popup.h"
+#include "ghost_ship.h"
 
 #include <cstdio>
 #include <stdexcept>
@@ -115,10 +117,13 @@ int Navigator::print_main(void) const {
 
 void Navigator::print_commands(void) const {
 	_term->clear_column(1,1,32,47);
-	printf("\n--- NAV ---         \n");
-	printf("ARROWS: move cursor   \n");
-	printf("ESC   : exit navigator\n");
-	printf("TAB   : toggle fat %d \n", (int)_view_mode + 1);
+	printf("\n--- NAV ---          \n");
+	printf("ARROWS: move cursor    \n");
+	printf("ESC   : exit navigator \n");
+	printf("TAB   : toggle fat %d  \n", (int)_view_mode + 1);
+	printf("RETURN: enter directory\n");
+	printf("RETURN: file recovery  \n");
+	printf("\n");
 }
 
 void Navigator::move_sel (int off) {
@@ -324,12 +329,11 @@ void Navigator::nav_downstream(void) {
 	int selected = _position.at(_current_directory);
 	const entry & entry = _directory_tree.at(_current_directory).at(selected).data;
 
-	bool navable = !(entry.is_long() || entry.is_empty());
+	//bool navable = !(entry.is_long() || entry.is_empty());
+	bool navable = (!(entry.is_long() || entry.is_empty())) && (entry.is_dir() != entry.is_ghost());
 	if (navable) {
 		if (entry.is_ghost()) {
-			// ghost file opts
-			printf("\033[48;1m     GHOST FILE");
-			ghost_ship();
+			launch_ghost_ship();
 		} else if (entry.is_dir()) {
 			broken_int32 addr;
 			addr.half.lower = entry.DIR.FstClusLO;
@@ -369,7 +373,8 @@ char* Navigator::get_entry_string(const entry & data) const {
 	const char * stats = data.is_ghost() ? "GHOST" : "";
 	const char * ltype = data.is_long()  ? "LONG" : "";
 	const char * dtype = data.is_dir()  ? "DIR" : "";
-	const char * useok = data.is_dir() || data.is_ghost() ? "-->" : "";
+	//const char * useok = data.is_dir() || data.is_ghost() ? "-->" : "";
+	const char * useok = data.is_dir() != data.is_ghost() ? "-->" : "";
 
 	if (data.is_empty()) {
 		snprintf(output, 128, "%     -53s", "(NO DATA)");
@@ -390,10 +395,7 @@ char* Navigator::get_entry_string(const entry & data) const {
 	return output;
 }
 
-
-#include "popup.h"
-
-void Navigator::ghost_ship(void) {
+void Navigator::launch_ghost_ship(void) {
 	int selection = _position.at(_current_directory);
 	EntryMetadata & ent = _directory_tree.at(_current_directory).at(selection);
 	
@@ -404,6 +406,12 @@ void Navigator::ghost_ship(void) {
 	_device->read();
 
 	entry* entries = (entry*) _device->buffer(0);
+
+	if (ent.data.is_dir()) {
+		printf("\033[48;1m     GHOST DIRECTORY");
+	} else {
+		printf("\033[48;1m     GHOST FILE");
+	}
 
 	// Popup(_term)
 	// 	.build([&] (void) { printf("%-58s", "Reference entry:"); })
@@ -418,15 +426,20 @@ void Navigator::ghost_ship(void) {
 		{ "OK"  , [](void) { return 1; } },
 	};
 	
-	std::string ref_ent(get_entry_string(entries[ent.position]));
- 	std::string sel_ent(get_entry_string(ent.data));
+	const std::string ref_ent(get_entry_string(entries[ent.position]));
+	const std::string sel_ent(get_entry_string(ent.data));
+	const std::string title = ent.data.is_dir() ? "DIRECTORY" : "FILE";
+
 	
 	Dialog dialog(_term, {
-		"Will attempt to restore file:", "",
+		"Will attempt to restore " + title, "",
 		"Reference entry:", ref_ent, "",
 		"Selected entry:", sel_ent, "", "",
 		"Confirm?"
 	}, dialog_options);
 
-	dialog.query(60,15);
+	if (dialog.query(75,15) != DIALOG_NO_SELECTION) {
+		//GhostShip gs(_device, _sector0);
+		//gs.board()
+	}
 }
