@@ -61,16 +61,17 @@ private:
 	ViewMode _view_mode;
 	inline void toggle_view(void) { _view_mode = (ViewMode)((1 + (int)_view_mode) % (int) ViewMode::END); }
 
+	
 	int print_main(void) const;
 	int print_FAT(int nfat) const;
 	int print_directory_at(int N) const;
-	void print_entry(const entry & data) const;
 	void print_commands(void) const;
 	void move_sel (int off);
 	void nav_upstream(void);
 	void nav_downstream(void);
 	void ghost_ship(void);
 	
+	char * get_entry_string(const entry & data) const;
 
 	
 	// allocs _FAT[fatn]

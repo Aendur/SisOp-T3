@@ -11,7 +11,6 @@
 using std::vector;
 using std::deque;
 
-
 EntryMetadata::EntryMetadata(unsigned long clus, unsigned long sec, unsigned long pos, entry* src) : cluster(clus), sector(sec), position(pos) {
 	memcpy(&this->data, src, sizeof(entry));
 }
@@ -210,9 +209,7 @@ int Navigator::print_directory_at(int N) const {
 		int index = i + i0;
 		const char * attr1 = index == selected ? "\033[7m" : "";
 		const char * attr2 = index == selected ? "\033[27m" : "";
-		printf("\033[%d;%dH\033[0K%s%5d   ", _Y0+i+1, _X0, attr1, index);
-		print_entry(directory[index].data);
-		printf("%s", attr2);
+		printf("\033[%d;%dH\033[0K%s%5d   %s%s", _Y0+i+1, _X0, attr1, index, get_entry_string(directory[index].data), attr2);
 	}
 
 	return max;
@@ -363,9 +360,10 @@ void Navigator::nav_upstream(void) {
 	if (_upstream_directory == 0) _upstream_directory = 2;
 }
 
-void Navigator::print_entry(const entry & data) const {
+char* Navigator::get_entry_string(const entry & data) const {
 	static char short_name[16];
 	static char long_name[16];
+	static char output[128];
 
 	const char * stats = data.is_ghost() ? "GHOST" : "";
 	const char * ltype = data.is_long()  ? "LONG" : "";
@@ -373,22 +371,23 @@ void Navigator::print_entry(const entry & data) const {
 	const char * useok = data.is_dir() || data.is_ghost() ? "-->" : "";
 
 	if (data.is_empty()) {
-		printf("%     -53s", "(NO DATA)");
+		snprintf(output, 128, "%     -53s", "(NO DATA)");
 	} else if (data.is_long()) {
 		concat_long_name(long_name, (char*)data.LDIR.Name1, (char*)data.LDIR.Name2, (char*)data.LDIR.Name3);
 		unsigned short ord = data.LDIR.Ord;
 		unsigned short cks = data.LDIR.Chksum;
-		printf("%-13s   %4s  %5s  %3s      %3u  %-3u            ", long_name, ltype, stats, dtype, ord, cks);
+		snprintf(output, 128, "%-13s   %4s  %5s  %3s      %3u  %-3u            ", long_name, ltype, stats, dtype, ord, cks);
 	} else {
 		broken_int32 fc;
 		concat_name(short_name, (char*)data.DIR.Name);
 		fc.half.lower = data.DIR.FstClusLO;
 		fc.half.upper = data.DIR.FstClusHI;
 		int length = data.DIR.FileSize;
-		printf("%-13s   %4s  %5s  %3s   %6d  %-10d  %3s", short_name, ltype, stats, dtype, fc.full, length, useok);
+		snprintf(output, 128, "%-13s   %4s  %5s  %3s   %6d  %-10d  %3s", short_name, ltype, stats, dtype, fc.full, length, useok);
 	}
-
+	return output;
 }
+
 
 #include "popup.h"
 
@@ -404,12 +403,20 @@ void Navigator::ghost_ship(void) {
 
 	entry* entries = (entry*) _device->buffer(0);
 
+
 	Popup(_term)
 		.build([&] (void) { printf("%-58s", "Reference entry:"); })
-		.build([&] (void) { print_entry(entries[ent.position]); })
+		.build([&] (void) { printf("%s", get_entry_string(entries[ent.position + 1])); })
 		.build([&] (void) { printf("%*c", 58, ' '); })
 		.build([&] (void) { printf("%-58s", "Selected entry:"); })
-		.build([&] (void) { print_entry(ent.data)             ; })
+		.build([&] (void) { printf("%s", get_entry_string(ent.data))                 ; })
 		.show(60,20,58);
+
+	static const DialogOptions dialog_options = {
+		{ "Cancel"  , [](void) { return DIALOG_NO_SELECTION; } },
+		{ "OK"  , [](void) { return 1; } },
+	};
+
+	Dialog dialog("Restore gator?", dialog_options);
 }
 
