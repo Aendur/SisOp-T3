@@ -1,0 +1,20 @@
+NAME test_seq               txt
+SIZE 1000       PART          0
+UID1 8B686D7C   UID2   22171463
+DATE 12022-04-03 TIME 23:17:35Z
+DATA|--kchcktbqqyfrjmkdbegeecalmgfpugqucicptwezipzriynuwpsshyso
+vrjgkjktlhyyazwizbezktgomwuamibcadknnyhzawqxktghketddapzwwkqfnj
+vdhoofxalpcbkquiaatamazksuoaefpgqypncbjumqjncraauglazanhavsnftj
+dhrbqkiqzmsntvleymxowtcxsnqecxaiqtufybbkiixveodcxgkbdhoocisamvy
+kpzvhysmbtiuhswqtznevndcyrucofvjvbzbryzebckmzwiliewfarcylaugwny
+yatccalgstpftjwnwdwbyoxmryslglfiuutzipqhcbvhqkptenejgtauq-->EOS
+NAME test_seq               txt
+SIZE 1000       PART          1
+UID1 8B686D7C   UID2   22171463
+DATE 12022-04-03 TIME 23:17:35Z
+DATA<--ohssojzrqfgteivdybbqgglapizonaflksidcwmirdldkjmmutbvxfmn
+ziybmohtfsipayulxwigabmziibjlkaukqoxhkvrwdfdbwnhydeizkhzetonjjp
+liztoxqtktalpmmmvrrvvsfpteyukrgqmypjeqbzmjgqtzgkdhadtyqhuysouop
+sblctvzzdutybosumgoostxoxplepptjcynkmxgwpamtrgvaeiyrftfmbabnjwr
+vluulduibvbrewzbqbkpeubzvoaoixegniuxgvnghsukjzespmbupbgfgiudawi
+akxcuzpipfdagaqewvivpigbooshxhrjt--|EOF
