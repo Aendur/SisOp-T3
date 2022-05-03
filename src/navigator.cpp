@@ -213,28 +213,6 @@ int Navigator::print_directory_at(int N) const {
 		printf("\033[%d;%dH\033[0K%s%5d   ", _Y0+i+1, _X0, attr1, index);
 		print_entry(directory[index].data);
 		printf("%s", attr2);
-		
-
-		// const char * stats = directory[index].data.is_ghost() ? "GHOST" : "";
-		// const char * ltype = directory[index].data.is_long()  ? "LONG" : "";
-		// const char * dtype = directory[index].data.is_dir()  ? "DIR" : "";
-		// const char * useok = directory[index].data.is_dir() || directory[index].data.is_ghost() ? "-->" : "";
-
-		// if (directory[index].data.is_long()) {
-		// 	concat_long_name(long_name, (char*)directory[index].data.LDIR.Name1, (char*)directory[index].data.LDIR.Name2, (char*)directory[index].data.LDIR.Name3);
-		// 	unsigned short ord = directory[index].data.LDIR.Ord;
-		// 	unsigned short cks = directory[index].data.LDIR.Chksum;
-		// 	printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s      %3u  %-3u            %s", _Y0+i+1, _X0, attr1, index, long_name, ltype, stats, dtype, ord, cks, attr2);
-		// 	continue;
-		// } else {
-		// 	broken_int32 fc;
-		// 	concat_name(short_name, (char*)directory[index].data.DIR.Name);
-		// 	fc.half.lower = directory[index].data.DIR.FstClusLO;
-		// 	fc.half.upper = directory[index].data.DIR.FstClusHI;
-		// 	int length = directory[index].data.DIR.FileSize;
-		// 	printf("\033[%d;%dH\033[0K%s%5d   %-13s   %4s  %5s  %3s   %6d  %-10d  %3s%s", _Y0+i+1, _X0, attr1, index, short_name, ltype, stats, dtype, fc.full, length, useok, attr2);
-		// }
-
 	}
 
 	return max;
@@ -304,8 +282,8 @@ Directory Navigator::read_directory_at(unsigned long N) {
 	unsigned char * cluster = read_cluster(N);
 	entry* entries = (entry *) cluster;
 	for (int i = 0; i < n_cluster_entries(); ++i) {
-		unsigned long sector = i / 16;
-		unsigned long position = i % 16;
+		unsigned long sector =   i / (_sector0->BPB_BytsPerSec() / sizeof(entry)); // 16
+		unsigned long position = i % (_sector0->BPB_BytsPerSec() / sizeof(entry)); // 16
 		result.emplace_back(N, sector, position, &entries[i]);
 		//result.push_back(EntryMetadata(N, sector, position, &entries[i]));
 	}		
@@ -353,6 +331,7 @@ void Navigator::nav_downstream(void) {
 		if (entry.is_ghost()) {
 			// ghost file opts
 			printf("\033[48;1m     GHOST FILE");
+			ghost_ship();
 		} else if (entry.is_dir()) {
 			broken_int32 addr;
 			addr.half.lower = entry.DIR.FstClusLO;
@@ -411,18 +390,26 @@ void Navigator::print_entry(const entry & data) const {
 
 }
 
+#include "popup.h"
+
 void Navigator::ghost_ship(void) {
 	int selection = _position.at(_current_directory);
 	EntryMetadata & ent = _directory_tree.at(_current_directory).at(selection);
 	
-	if (ent.cluster != _current_directory) { throw std::runtime_error("current directory not the same as target directory"); }
-	long long offset = (ent.cluster * _sector0->BPB_SecPerClus()); // nsector
-	offset = (offset + ent.sector + _sector0->first_data_sector()) * _sector0->BPB_BytsPerSec();
+	if (ent.cluster != _current_directory) { throw std::logic_error("current directory not the same as target directory"); }
+	long long offset = _sector0->first_sector_of_cluster(ent.cluster);
+	offset = (offset + ent.sector) * _sector0->BPB_BytsPerSec();
 	_device->seek(offset, false);
 	_device->read();
 
-	
+	entry* entries = (entry*) _device->buffer(0);
 
+	Popup(_term)
+		.build([&] (void) { printf("%-58s", "Reference entry:"); })
+		.build([&] (void) { print_entry(entries[ent.position]); })
+		.build([&] (void) { printf("%*c", 58, ' '); })
+		.build([&] (void) { printf("%-58s", "Selected entry:"); })
+		.build([&] (void) { print_entry(ent.data)             ; })
+		.show(60,20,58);
 }
-
 
