@@ -12,7 +12,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_ui.init();
 	_device.open_drive(drive);
 	_input.init(&_ui, 38, 24, "\033[1mGOTO:\033[0m ");
-	Dialog::init(&_ui);
+	//Dialog::init(&_ui);
 	
 	if (_device.geometry().BytesPerSector != 512) {
 		throw std::runtime_error("mismatch assumed bytes per sector = 512");
@@ -132,7 +132,7 @@ void DiskExplorer::run(void) {
 	print_commands();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	Dialog quit_dialog("Confirm exit?", quit_dialog_options);
+	Dialog quit_dialog(&_ui, {"Confirm exit?"}, quit_dialog_options);
 	while ((key = _ui.read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch(key) {
 		case TERMUI_KEY_F1         : _page[0].cycle_sectors_views()                   ;                  break;

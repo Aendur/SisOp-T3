@@ -80,7 +80,8 @@ void Navigator::navigate(void) {
 	_max_selection = print_main();
 
 	KeyCode key = TERMUI_KEY_UNDEFINED;
-	Dialog quit_dialog("Exit navigator?", quit_dialog_options);
+	//Dialog quit_dialog("Exit navigator?", quit_dialog_options);
+	Dialog quit_dialog(_term, {"Exit navigator?"}, quit_dialog_options);
 	while ((key = _term->read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch (key) {
 			case TERMUI_KEY_ARROW_UP   : move_sel(  -1) ; break;
@@ -384,6 +385,7 @@ char* Navigator::get_entry_string(const entry & data) const {
 		fc.half.upper = data.DIR.FstClusHI;
 		int length = data.DIR.FileSize;
 		snprintf(output, 128, "%-13s   %4s  %5s  %3s   %6d  %-10d  %3s", short_name, ltype, stats, dtype, fc.full, length, useok);
+		//output[0] = '.';
 	}
 	return output;
 }
@@ -403,20 +405,28 @@ void Navigator::ghost_ship(void) {
 
 	entry* entries = (entry*) _device->buffer(0);
 
-
-	Popup(_term)
-		.build([&] (void) { printf("%-58s", "Reference entry:"); })
-		.build([&] (void) { printf("%s", get_entry_string(entries[ent.position + 1])); })
-		.build([&] (void) { printf("%*c", 58, ' '); })
-		.build([&] (void) { printf("%-58s", "Selected entry:"); })
-		.build([&] (void) { printf("%s", get_entry_string(ent.data))                 ; })
-		.show(60,20,58);
+	// Popup(_term)
+	// 	.build([&] (void) { printf("%-58s", "Reference entry:"); })
+	// 	.build([&] (void) { printf("%s", get_entry_string(entries[ent.position])); })
+	// 	.build([&] (void) { printf("%*c", 58, ' '); })
+	// 	.build([&] (void) { printf("%-58s", "Selected entry:"); })
+	// 	.build([&] (void) { printf("%s", get_entry_string(ent.data))                 ; })
+	// 	.show(60,20,58);
 
 	static const DialogOptions dialog_options = {
 		{ "Cancel"  , [](void) { return DIALOG_NO_SELECTION; } },
 		{ "OK"  , [](void) { return 1; } },
 	};
+	
+	std::string ref_ent(get_entry_string(entries[ent.position]));
+ 	std::string sel_ent(get_entry_string(ent.data));
+	
+	Dialog dialog(_term, {
+		"Will attempt to restore file:", "",
+		"Reference entry:", ref_ent, "",
+		"Selected entry:", sel_ent, "", "",
+		"Confirm?"
+	}, dialog_options);
 
-	Dialog dialog("Restore gator?", dialog_options);
+	dialog.query(60,15);
 }
-

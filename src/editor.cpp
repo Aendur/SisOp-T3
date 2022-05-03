@@ -98,7 +98,7 @@ Editor::EditorAction Editor::edit_run(void) {
 	print_commands();
 	print_stack(show_stack_size);
 
-	Dialog quit_dialog("Write changes to disk and leave editor?", dialog_options);
+	Dialog quit_dialog(_term, {"Write changes to disk and leave editor?"}, dialog_options);
 	EditorAction dialog_result = KEEP_EDITING;
 
 	unsigned char input_byte;

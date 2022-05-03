@@ -8,65 +8,47 @@
 using std::string;
 using std::vector;
 
-Dialog::Dialog(const string & msg, const DialogOptions & opts) : _msg(msg), _options(opts) {
-	if (!_initialized) {
-		throw std::runtime_error("Dialog not initialized");
+Dialog::Dialog(TermUI * t, const DialogMessage & mssg, const DialogOptions & opts) : _term(t), _message(mssg), _options(opts) {
+	if (_term == nullptr) {
+		throw std::runtime_error("Term not initialized");
+	} else if (mssg.size() < 1) {
+		throw std::runtime_error("Dialog message needs at least 1 element");
 	} else if (opts.size() < 1) {
 		throw std::runtime_error("Dialog needs at least 1 option");
 	}
-	int msg_len = (int) msg.length();
-	int opt_len = 0;
-	for (const auto & opt : opts) { opt_len += (int) opt.option.length(); }
 
-	int msg_width = 14 + msg_len;
-	int opt_width =  8 + 3 * ((int)_options.size() + 1) + opt_len;
-	int extra_pad;
-
-	if (msg_width > opt_width) {
-		extra_pad = msg_width - opt_width;
-		_line_width = msg_width;
-		if (extra_pad % 2 == 1) {
-			++_line_width;
-			++_msg_rpad;
-		}
-		_opt_lpad = _opt_rpad = (extra_pad + 1) / 2;
-	} else if (msg_width < opt_width)  {
-		extra_pad = opt_width - msg_width;
-		_line_width = opt_width;
-		if (extra_pad % 2 == 1) {
-			++_line_width;
-			++_opt_rpad;
-		}
-		_msg_lpad = _msg_rpad = (extra_pad + 1) / 2;
-	}
-
-
-	for (int i = 0; i < _N_extra_lines; ++i) {
-		_lines[i] = new char[_line_width + 1];
-	}
-
-	memset(_lines[0], '-', _line_width);
-	memset(_lines[1], ' ', _line_width);
-
-	_lines[0][0] = ' ';
-	_lines[0][1] = ' ';
-	_lines[0][2] = ' ';
-	_lines[0][3] = '+';
-	_lines[0][_line_width] = 0;
-	_lines[0][_line_width - 1] = ' ';
-	_lines[0][_line_width - 2] = ' ';
-	_lines[0][_line_width - 3] = ' ';
-	_lines[0][_line_width - 4] = '+';
+	int msg_len = 0;
+	for (const auto & msg : _message) { msg_len = (int) msg.length() > msg_len ? (int) msg.length() : msg_len; }
 	
-	_lines[1][3] = '|';
-	_lines[1][_line_width] = 0;
-	_lines[1][_line_width - 4] = '|';
+	int opt_len = 0;
+	for (const auto & opt : _options) { opt_len += (int) opt.option.length(); }
+	opt_len += EW * ((int)_options.size() - 1);
+
+	_inner_width = msg_len > opt_len ? msg_len : opt_len;
+	_outer_width = _inner_width + (EW + 1 + EW) * 2;
+	_opts_width = opt_len;
+	_height = (int) _message.size() + 1 + EH;
+
+	_outer_line = new char[2 * _outer_width];
+	_middl_line = new char[2 * _outer_width];
+	_inner_line = new char[2 * _outer_width];
+
+
+	char *h_bar = new char[EW + _inner_width + EW + 1];
+	memset(h_bar, '-', EW + _inner_width + EW);
+	h_bar[EW + _inner_width + EW] = 0;
+
+	snprintf(_outer_line, 2 * _outer_width, "%*c", _outer_width, ' ');
+	snprintf(_middl_line, 2 * _outer_width, "%*c+%s+%*c", EW, ' ', h_bar, EW, ' ');
+	snprintf(_inner_line, 2 * _outer_width, "%*c|%*c|%*c", EW, ' ', EW + _inner_width + EW, ' ', EW, ' ');
+
+	delete[] h_bar;
 }
 
 Dialog::~Dialog(void) {
-	for (int i = 0; i < _N_extra_lines; ++i) {
-		delete[] _lines[i];
-	}
+	delete[] _outer_line;
+	delete[] _middl_line;
+	delete[] _inner_line;
 }
 
 int Dialog::query(int x0, int y0) {
@@ -96,38 +78,48 @@ void Dialog::select(int opt) {
 	}
 }
 
-#define STR_OUTER "\033[%d;%dH%*s"
-#define STR_INNER "\033[%d;%dH%s"
-#define STR_MESSG "\033[%d;%dH   |   %*s%s%*s   |   "
-#define STR_OPTLP "\033[%d;%dH   |%*s"
-#define STR_OPTRP "   %*s|   "
-#define STR_OPTSY "   \033[7m%s\033[27m"
-#define STR_OPTSN "   %s"
+#define STR_POSITION "\033[%d;%dH"
+#define STR_NEGATIVE "\033[7m"
+#define STR_POSITIVE "\033[0m"
+//#define STR_POSITIVE "\033[27m"
 
-void Dialog::show(int x0, int y0) const {
-	printf(STR_OUTER , y0 + 0, x0, _line_width, "");
-	printf(STR_INNER , y0 + 1, x0, _lines[0]);
-	printf(STR_INNER , y0 + 2, x0, _lines[1]);
-	printf(STR_MESSG , y0 + 3, x0, _msg_lpad, "", _msg.c_str(), _msg_rpad, "");
-	printf(STR_INNER , y0 + 4, x0, _lines[1]);
-	
-	printf(STR_OPTLP , y0 + 5, x0, _opt_lpad, "");
-	for (int i = 0; i < _options.size(); ++i) {
-		if (i == _selection) {
-			printf(STR_OPTSY, _options[i].option.c_str());
-		} else {
-			printf(STR_OPTSN, _options[i].option.c_str());
-		}
-	}
-	printf(STR_OPTRP , _opt_rpad, "");
-	
-	printf(STR_INNER , y0 + 6, x0, _lines[1]);
-	printf(STR_INNER , y0 + 7, x0, _lines[0]);
-	printf(STR_OUTER , y0 + 8, x0, _line_width, "");
+void Dialog::set_paddings(int * lpad, int * rpad, int width, int maxwidth) const {
+	int remaining = maxwidth - width;
+	*lpad = remaining / 2 + remaining % 2;
+	*rpad = remaining / 2;
 }
 
-void Dialog::clear(int x0, int y0) const {
-	for (int y = 1; y < 8; ++y) {
-		printf(STR_OUTER , y0 + y, x0 + 2, _line_width - 4, "");
+
+void Dialog::show(int X, int Y) const {
+	printf(STR_POSITION "%s", Y++, X, _outer_line);
+	printf(STR_POSITION "%s", Y++, X, _middl_line);
+	printf(STR_POSITION "%s", Y++, X, _inner_line);
+
+	int lpadding, rpadding;
+
+	for (const string & line : _message) {
+		set_paddings(&lpadding, &rpadding, (int)line.length(), _inner_width + EW + EW);
+		printf(STR_POSITION "%*c|%*c%s%*c|%*c", Y++, X, EW, ' ', lpadding, ' ', line.c_str(), rpadding, ' ', EW, ' ');
+	}
+
+	printf(STR_POSITION "%s", Y++, X, _inner_line);
+
+	set_paddings(&lpadding, &rpadding, _opts_width, _inner_width + EW + EW);
+	printf(STR_POSITION "%*c|%*c", Y++, X, EW, ' ', lpadding, ' ');
+	
+	int i = 0;
+	for (i = 0; i < _options.size()-1; ++i) {
+		printf("%s%s" STR_POSITIVE "%*c", i == _selection ? STR_NEGATIVE : "", _options[i].option.c_str(), EW, ' ');
+	}
+	printf("%s%s" STR_POSITIVE "%*c|%*c", i == _selection ? STR_NEGATIVE : "", _options[i].option.c_str(), rpadding, ' ', EW, ' ');
+
+	printf(STR_POSITION "%s", Y++, X, _inner_line);
+	printf(STR_POSITION "%s", Y++, X, _middl_line);
+	printf(STR_POSITION "%s", Y++, X, _outer_line);
+}
+
+void Dialog::clear(int X, int Y) const {
+	for (int i = 1; i < _height - 1; ++i) {
+		printf(STR_POSITION "%*c", Y+i, X, _outer_width, ' ');
 	}
 }
