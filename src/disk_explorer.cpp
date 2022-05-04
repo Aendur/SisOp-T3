@@ -36,7 +36,7 @@ DiskExplorer::DiskExplorer(WCHAR drive) {
 	_page[1].cycle_entries_views();
 
 	_editor.init(_device.geometry().BytesPerSector, &_ui, &_page[0], &_page[1]);
-	_navigator.init(&_ui, &_device, &_sector0);
+	//_navigator.init(&_ui, &_device, &_sector0);
 
 }
 
@@ -176,7 +176,8 @@ void DiskExplorer::run(void) {
 		case TERMUI_KEY_h          :
 		case TERMUI_KEY_H          : input_and_goto_cluster_data()                    ; /* reads/sets */ break;
 		case TERMUI_KEY_n          :
-		case TERMUI_KEY_N          : _navigator.navigate()                            ; read_setpages(); break;
+		case TERMUI_KEY_N          : init_navigator()                                 ; read_setpages(); break;
+		//case TERMUI_KEY_N          : _navigator.navigate()                            ; read_setpages(); break;
 		case TERMUI_KEY_t          :
 		case TERMUI_KEY_T          : input_and_goto_fat(0)                            ; /* reads/sets */ break;
 		case TERMUI_KEY_y          :
@@ -201,6 +202,12 @@ void DiskExplorer::run(void) {
 		print_commands();
 	}
 	_ui.clear_screen();
+}
+
+void DiskExplorer::init_navigator(void) {
+	Navigator navigator;
+	navigator.init(&_ui, &_device, &_sector0);
+	navigator.navigate();
 }
 
 void DiskExplorer::toggle_lock(void) {
