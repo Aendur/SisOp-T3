@@ -1,6 +1,3 @@
-GOTO:START
-
-
 @REM Criar no diretório raiz 5 subdiretórios: SD0, SD1, SD2, SD3 e SD4
 FOR %%I IN (0 1 2 3 4) DO (IF NOT EXIST SD%%I (MKDIR SD%%I))
 
@@ -29,16 +26,10 @@ D:\Documents\GitHub\SisOp-T3\filegen.exe sf8k_.txt 8000 %NF_8K% rnd
 CD ..
 CD ..
 
-:START
-GOTO:EOF
-
 @REM Copiar em SD1.2 arquivos de vídeo, de forma a encher o pen-drive.
-@REM  42 278 912
 CD SD1\SD1.2
 D:\Documents\GitHub\SisOp-T3\filegen.exe lf_.txt  100000000 2 rnd
-D:\Documents\GitHub\SisOp-T3\filegen.exe lf_3.txt  42278000 1 rnd
 CD ..
 CD ..
 
-:EOF
 

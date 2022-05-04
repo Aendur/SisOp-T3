@@ -2,25 +2,15 @@
 #define NAVIGATOR_H
 
 #include <map>
-//#include <vector>
 #include <deque>
 #include "entry.h"
+#include "entry_metadata.h"
 #include "longshort.h"
 
 class TermUI;
 class Device;
 class Dialog;
 struct fat32;
-
-struct EntryMetadata {
-	unsigned long cluster;
-	unsigned long sector;
-	unsigned long position;
-	entry data;
-
-	EntryMetadata(void) {}
-	EntryMetadata(unsigned long clus, unsigned long sec, unsigned long pos, entry* src);
-};
 
 typedef std::deque<EntryMetadata> Directory;
 
@@ -63,9 +53,6 @@ private:
 	void nav_downstream(void);
 	void launch_ghost_ship(void);;
 
-	
-	char * get_entry_string(const entry & data) const;
-	
 	// allocs _FAT[fatn]
 	void read_FAT(int fatn);
 	unsigned char* read_cluster(void);

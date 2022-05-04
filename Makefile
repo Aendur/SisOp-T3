@@ -1,12 +1,10 @@
-#CFLAGS=/Wall /W4 /EHsc /std:c++17 /Iheader /utf-8 /wd5045 /nologo
-#CFLAGS=/W4 /EHsc /std:c++17 /Iheader /utf-8 /nologo
 SRCDIR=src
 INCDIR=include
 OBJDIR=obj
 CFLAGS=/W4 /EHsc /std:c++20 /I$(INCDIR) /utf-8 /nologo
 
 FGLIBN=seqfile utility
-DXLIBN=disk_explorer term_ui device utility page input_field editor navigator ghost_ship dialog popup
+DXLIBN=disk_explorer term_ui device entry entry_metadata utility page input_field editor navigator ghost_ship seqfile dialog popup
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
@@ -25,6 +23,11 @@ update:
 $(OBJDIR)\seqfile.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 $(OBJDIR)\utility.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+
+$(OBJDIR)\entry.obj::              $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\entry_metadata.obj::     $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 
 $(OBJDIR)\disk_explorer.obj::      $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h

@@ -13,7 +13,7 @@ void Popup::popup(int X, int Y, int W) const {
 	bar[W+EX+EX] = 0;
 
 	printf(LMARGIN "%*c"        , Y++, X, EX + 1 + EX + W + EX + 1 + EX, ' ');
-	printf(LMARGIN "%*c+%s+%*c" , Y++, X, EX, ' ', bar, EX, ' ');
+	printf(LMARGIN "%*c+%-s+%*c", Y++, X, EX, ' ', bar, EX, ' ');
 	printf(LMARGIN "%*c|%*c|%*c", Y++, X, EX, ' ', EX + W + EX, ' ', EX, ' ');
 
 	for (auto & action : _to_exec) {
@@ -21,7 +21,7 @@ void Popup::popup(int X, int Y, int W) const {
 	}
 
 	printf(LMARGIN "%*c|%*c|%*c", Y++, X, EX, ' ', EX + W + EX, ' ', EX, ' ');
-	printf(LMARGIN "%*c+%s+%*c" , Y++, X, EX, ' ', bar, EX, ' ');
+	printf(LMARGIN "%*c+%-s+%*c", Y++, X, EX, ' ', bar, EX, ' ');
 	printf(LMARGIN "%*c"        , Y++, X, EX + 1 + EX + W + EX + 1 + EX, ' ');
 
 	delete[] bar;

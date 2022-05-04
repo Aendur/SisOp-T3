@@ -13,19 +13,6 @@
 using std::vector;
 using std::deque;
 
-EntryMetadata::EntryMetadata(unsigned long clus, unsigned long sec, unsigned long pos, entry* src) : cluster(clus), sector(sec), position(pos) {
-	memcpy(&this->data, src, sizeof(entry));
-}
-
-
-enum FAT_Code : unsigned int {
-	FAT_RESERVED1 = 0x0FFFFFF8,
-	FAT_RESERVED2 = 0x7FFFFFFF,
-	FAT_EOC       = 0x0FFFFFFF,
-	FAT_EMPTY     = 0x00000000,
-};
-
-
 Navigator::~Navigator(void) {
 	if (_FAT[0] != nullptr) {
 		delete[] _FAT[0];
@@ -86,12 +73,12 @@ void Navigator::navigate(void) {
 	Dialog quit_dialog(_term, {"Exit navigator?"}, quit_dialog_options);
 	while ((key = _term->read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
 		switch (key) {
-			case TERMUI_KEY_ARROW_UP   : move_sel(  -1) ; break;
-			case TERMUI_KEY_ARROW_DOWN : move_sel(   1) ; break;
-			case TERMUI_KEY_ARROW_LEFT : move_sel(  -1) ; break;
-			case TERMUI_KEY_ARROW_RIGHT: move_sel(   1) ; break;
-			case TERMUI_KEY_PGUP       : move_sel(-100) ; break;
-			case TERMUI_KEY_PGDOWN     : move_sel( 100) ; break;
+			case TERMUI_KEY_ARROW_UP   : move_sel( -1) ; break;
+			case TERMUI_KEY_ARROW_DOWN : move_sel(  1) ; break;
+			case TERMUI_KEY_ARROW_LEFT : move_sel( -1) ; break;
+			case TERMUI_KEY_ARROW_RIGHT: move_sel(  1) ; break;
+			case TERMUI_KEY_PGUP       : move_sel(-44) ; break;
+			case TERMUI_KEY_PGDOWN     : move_sel( 44) ; break;
 			case TERMUI_KEY_TAB        : toggle_view()  ; break;
 			case TERMUI_KEY_RETURN     : nav_downstream() ; break;
 			case TERMUI_KEY_BACKSPACE  : nav_upstream() ; break;
@@ -181,25 +168,6 @@ int Navigator::print_FAT(int nfat) const {
 	return max;
 }
 
-void concat_name(char * tgt, const char * src) {
-	snprintf(tgt, 9, "%s", src);
-	
-	if (src[8] != ' ') {
-		int pos = 0;
-		while(pos < 8 && tgt[pos] != ' ') { ++pos; }
-		tgt[pos++] = '.';
-		snprintf(tgt + pos, 4, "%s", src + 8);
-	}
-}
-
-void concat_long_name(char * tgt, const char * src1, const char * src2, const char * src3) {
-	int j = 0;
-	for (int i = 0; i < 10; i+= 2) { tgt[j++] = src1[i]; }
-	for (int i = 0; i < 12; i+= 2) { tgt[j++] = src2[i]; }
-	for (int i = 0; i <  4; i+= 2) { tgt[j++] = src3[i]; }
-	tgt[j] = 0;
-}
-
 int Navigator::print_directory_at(int N) const {
 	static const int NL = 45;
 	static char short_name[16];
@@ -215,7 +183,7 @@ int Navigator::print_directory_at(int N) const {
 		int index = i + i0;
 		const char * attr1 = index == selected ? "\033[7m" : "";
 		const char * attr2 = index == selected ? "\033[27m" : "";
-		printf("\033[%d;%dH\033[0K%s%5d   %s%s", _Y0+i+1, _X0, attr1, index, get_entry_string(directory[index].data), attr2);
+		printf("\033[%d;%dH\033[0K%s%5d   %s%s", _Y0+i+1, _X0, attr1, index, directory[index].data.get_str(), attr2);
 	}
 
 	return max;
@@ -365,47 +333,11 @@ void Navigator::nav_upstream(void) {
 	if (_upstream_directory == 0) _upstream_directory = 2;
 }
 
-char* Navigator::get_entry_string(const entry & data) const {
-	static char short_name[16];
-	static char long_name[16];
-	static char output[128];
-
-	const char * stats = data.is_ghost() ? "GHOST" : "";
-	const char * ltype = data.is_long()  ? "LONG" : "";
-	const char * dtype = data.is_dir()  ? "DIR" : "";
-	//const char * useok = data.is_dir() || data.is_ghost() ? "-->" : "";
-	const char * useok = data.is_dir() != data.is_ghost() ? "-->" : "";
-
-	if (data.is_empty()) {
-		snprintf(output, 128, "%     -53s", "(NO DATA)");
-	} else if (data.is_long()) {
-		concat_long_name(long_name, (char*)data.LDIR.Name1, (char*)data.LDIR.Name2, (char*)data.LDIR.Name3);
-		unsigned short ord = data.LDIR.Ord;
-		unsigned short cks = data.LDIR.Chksum;
-		snprintf(output, 128, "%-13s   %4s  %5s  %3s      %3u  %-3u            ", long_name, ltype, stats, dtype, ord, cks);
-	} else {
-		longshort fc;
-		concat_name(short_name, (char*)data.DIR.Name);
-		fc.half.lower = data.DIR.FstClusLO;
-		fc.half.upper = data.DIR.FstClusHI;
-		int length = data.DIR.FileSize;
-		snprintf(output, 128, "%-13s   %4s  %5s  %3s   %6d  %-10d  %3s", short_name, ltype, stats, dtype, fc.full, length, useok);
-		//output[0] = '.';
-	}
-	return output;
-}
-
 void Navigator::launch_ghost_ship(void) {
 	int selection = _position.at(_current_directory);
 	EntryMetadata & ent = _directory_tree.at(_current_directory).at(selection);
 	
 	if (ent.cluster != _current_directory) { throw std::logic_error("current directory not the same as target directory"); }
-	long long offset = _sector0->first_sector_of_cluster(ent.cluster);
-	offset = (offset + ent.sector) * _sector0->BPB_BytsPerSec();
-	_device->seek(offset, false);
-	_device->read();
-
-	entry* entries = (entry*) _device->buffer(0);
 
 	if (ent.data.is_dir()) {
 		printf("\033[48;1m     GHOST DIRECTORY");
@@ -413,33 +345,24 @@ void Navigator::launch_ghost_ship(void) {
 		printf("\033[48;1m     GHOST FILE");
 	}
 
-	// Popup(_term)
-	// 	.build([&] (void) { printf("%-58s", "Reference entry:"); })
-	// 	.build([&] (void) { printf("%s", get_entry_string(entries[ent.position])); })
-	// 	.build([&] (void) { printf("%*c", 58, ' '); })
-	// 	.build([&] (void) { printf("%-58s", "Selected entry:"); })
-	// 	.build([&] (void) { printf("%s", get_entry_string(ent.data))                 ; })
-	// 	.show(60,20,58);
-
 	static const DialogOptions dialog_options = {
 		{ "Cancel"  , [](void) { return DIALOG_NO_SELECTION; } },
 		{ "OK"  , [](void) { return 1; } },
 	};
-	
-	const std::string ref_ent(get_entry_string(entries[ent.position]));
-	const std::string sel_ent(get_entry_string(ent.data));
+
+	const std::string sel_ent(ent.data.get_str());
 	const std::string title = ent.data.is_dir() ? "DIRECTORY" : "FILE";
 
-	
 	Dialog dialog(_term, {
 		"Will attempt to restore " + title, "",
-		"Reference entry:", ref_ent, "",
 		"Selected entry:", sel_ent, "", "",
 		"Confirm?"
 	}, dialog_options);
 
 	if (dialog.query(75,15) != DIALOG_NO_SELECTION) {
-		//GhostShip gs(_device, _sector0);
-		//gs.board()
+		GhostShip gs(_device, _sector0, _term);
+		if (gs.embark(ent)) {
+			gs.launch(_FAT[0]);
+		}
 	}
 }

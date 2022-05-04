@@ -1,6 +1,17 @@
 #ifndef FAT32_SPEC_H
 #define FAT32_SPEC_H
 
+
+// #include <winnt.h>
+#include <Windows.h>
+
+enum FAT_Code : unsigned int {
+	FAT_RESERVED1 = 0x0FFFFFF8,
+	FAT_RESERVED2 = 0x7FFFFFFF,
+	FAT_EOC       = 0x0FFFFFFF,
+	FAT_EMPTY     = 0x00000000,
+};
+
 struct fat32 {
 private:
 	// buffer

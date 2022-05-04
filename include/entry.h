@@ -52,6 +52,7 @@ struct entry {
 
 	inline entry() {}
 	inline entry(entry*src);
+	const char* get_str(void) const;
 };
 
 // #define ENTRY_ATTR_READ_ONLY 0x01
