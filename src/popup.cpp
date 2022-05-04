@@ -26,13 +26,13 @@ void Popup::popup(int X, int Y, int W) const {
 
 	delete[] bar;
 }
-void Popup::show(int X, int Y, int W) const {
+void Popup::show(int X, int Y, int W, bool wait) const {
 	if (_term == nullptr) {
 		throw std::logic_error("Popup TermUI not initialized");
 	}
 
 	popup(X, Y, W);
-	_term->read();
+	if (wait) _term->read();
 }
 
 Popup & Popup::build(std::function<void(void)> && action) {

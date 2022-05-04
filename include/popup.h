@@ -14,7 +14,7 @@ public:
 	~Popup(void) {}
 	Popup(TermUI * t) : _term(t) { }
 	Popup& build(std::function<void(void)> && action);
-	void show(int X, int Y, int W) const;
+	void show(int X, int Y, int W, bool wait = true) const;
 };
 
 #endif

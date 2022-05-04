@@ -3,9 +3,18 @@
 #include "seqfile.h"
 #include "longshort.h"
 
-#include "fat32.h"
 #include "device.h"
 #include "popup.h"
+#include "term_ui.h"
+
+VoyageRecord::VoyageRecord(unsigned long clus, unsigned long sec, const void* memsrc) : cluster(clus), sector(sec) {
+	memcpy(data, memsrc, 512);
+}
+
+
+//////////////////////////////////////////////////
+//  EMBARK - prepare the entry to be recovered  //
+//////////////////////////////////////////////////
 
 bool GhostShip::embark(const EntryMetadata& ghost_entry) {
 	static const int LX = 75;
@@ -56,22 +65,17 @@ bool GhostShip::embark(const EntryMetadata& ghost_entry) {
 	return true;
 }
 
-void GhostShip::launch(unsigned int * FAT1, unsigned int * FAT2) {
-	(void) FAT1;
-	(void) FAT2;
-}
 
 bool GhostShip::check_consistency(const EntryMetadata& ghost_entry) {
-	unsigned long long actual_sector = _sector0->first_sector_of_cluster(ghost_entry.cluster) + ghost_entry.sector;
+	unsigned long actual_sector = (unsigned long) _sector0->first_sector_of_cluster(ghost_entry.cluster) + ghost_entry.sector;
 	long long offset = actual_sector * _sector0->BPB_BytsPerSec();
 
 	_device->seek(offset, false);
 	_device->read();
 
-	_record_book[CONTAINER_DIRECTORY_SECTOR].sector = actual_sector;
-	memcpy(_record_book[CONTAINER_DIRECTORY_SECTOR].data, _device->buffer(0), 512);
-	
-	entry* entries = (entry*) _record_book[CONTAINER_DIRECTORY_SECTOR].data;
+	//_record_book.emplace(ghost_entry.cluster, actual_sector, _device->buffer(0));
+	_record_book[actual_sector] = { ghost_entry.cluster, actual_sector, _device->buffer(0) };
+	entry* entries = (entry*)(_record_book[actual_sector].data);
 
 	bool same_addr1 = entries[ghost_entry.position].DIR.FstClusLO == ghost_entry.data.DIR.FstClusLO;
 	bool same_addr2 = entries[ghost_entry.position].DIR.FstClusHI == ghost_entry.data.DIR.FstClusHI;
@@ -82,7 +86,6 @@ bool GhostShip::check_consistency(const EntryMetadata& ghost_entry) {
 		return false;
 	} else {
 		((char*)(&entries[ghost_entry.position]))[0] = '~';
-		//const_cast<EntryMetadata&>(ghost_entry).data.DIR.Name[0] = '~';
 		return true;
 	}
 }
@@ -105,27 +108,142 @@ bool GhostShip::check_requirements(const EntryMetadata& ghost_entry) {
 #define STRING(x) STRING2(x)
 
 bool GhostShip::check_validity(const EntryMetadata& ghost_entry) {
-	// THIS FUNCTION SHOULD MAKE SURE TO LOOK CHECK IF ENTRY IS OPEN IN THE FAT
 	#pragma message( __FILE__ "(" STRING(__LINE__) "): \033[33;1mshould make sure to check if entry is open in the FAT\033[m" )
 	
 	ulongshort cluster;
 	cluster.half.lower = ghost_entry.data.DIR.FstClusLO;
 	cluster.half.upper = ghost_entry.data.DIR.FstClusHI;
-	
-	long long offset = _sector0->first_sector_of_cluster(cluster.full) * _sector0->BPB_BytsPerSec();
-	_device->seek(offset, false);
-	_device->read();
 
-	const unsigned char * file_addr = _device->buffer(0);
-	_first_header = SeqFile::check_file(file_addr, _first_msg);
-	if (!_first_header.valid) {
+	_first_header = search_cluster(cluster.full, _first_msg);
+	if (!_first_header.valid || _first_header.part != 0) {
 		_messages.push("Invalid file format");
 		return false;
 	} else {
-		_cluster_chain.push(cluster.full);
+		_cluster_chain[_first_header.part] = cluster.full;
 		return true;
 	}
 }
 
 
+SeqFile::Header GhostShip::search_cluster(unsigned long N, char out[4][256]) {
+	long long offset = _sector0->first_sector_of_cluster(N) * _sector0->BPB_BytsPerSec();
+	_device->seek(offset, false);
+	_device->read();
+	
+	const unsigned char * file_addr = _device->buffer(0);
+	return SeqFile::check_file(file_addr, out);
+}
+
+
+
+/////////////////////////////////////////////////
+//  LAUNCH - find file pieces around the disk  //
+/////////////////////////////////////////////////
+
+bool GhostShip::launch(void) {
+	static const int LW = 30;
+	unsigned long initial_cluster = _cluster_chain[0];
+	unsigned long current_cluster = next_empty(initial_cluster);
+
+	unsigned long total_parts = get_total_parts();
+	unsigned long num_parts = 1;
+
+	while (current_cluster != initial_cluster && num_parts < total_parts) {
+		auto chest = search_cluster(current_cluster, nullptr);
+		if (chest.valid) {
+			_cluster_chain[chest.part] = current_cluster;
+			++num_parts;
+		}
+
+		Popup(_term)
+			.build([&] (void) { printf("Found parts %d of %d"  , num_parts, total_parts); } )
+			.build([&] (void) { printf("Starting  cluster %-*d", LW-18, initial_cluster); } )
+			.build([&] (void) { printf("Searching cluster %-*d", LW-18, current_cluster); } )
+			.show(70, 15, LW, false);
+		
+		current_cluster = next_empty(current_cluster);
+	}
+
+	if (current_cluster == initial_cluster) {
+		_messages.push("Did not find all parts");
+		return false;
+	} else {
+		Popup msg(_term);
+		msg.build([&] (void) { printf("Found %d of %d parts"  , num_parts, total_parts); });
+
+		for (const auto & [key, val] : _cluster_chain) {
+			msg.build([&] (void) { printf("Part %d found in cluster %d", key, val); } );
+		}
+
+		msg.show(70, 15, LW);
+		return true;
+	}
+
+}
+
+unsigned long GhostShip::get_total_parts(void) const {
+	unsigned long total_parts = 1 + (_first_header.file_size / _sector0->cluster_size());
+	return total_parts;
+}
+
+/// Attempts to find the next empty cluster, starting from N.
+/// Goes back to sector 0 if we reach the end of the FAT.
+/// \returns Returns the next empty cluster that is greater than N, or N if no other empty cluster is found
+/// \param N The cluster to start searching from
+unsigned long GhostShip::next_empty(unsigned long N) const {
+	unsigned long current = N;
+	// start looking from N
+	while (++current < _sector0->n_fat_entries() && _FAT1[current] != 0);
+
+	// if we reach the end of the FAT, continue looking from the begining
+	if (current < _sector0->n_fat_entries()) {
+		return current;
+	} else {
+		current = 0;
+		while (++current < N && _FAT1[current] != 0);
+		return current;
+	}
+}
+
+
+
+//////////////////////////////////////////////
+//  DOCK - write changes to the FAT buffer  //
+//////////////////////////////////////////////
+
+bool GhostShip::dock(void) {
+	for (const auto & [part, N] : _cluster_chain) {
+		sort_cargo(part, N, 0);
+		sort_cargo(part, N, 1);
+	}
+	
+	return true;
+}
+
+void print_fat_sector(unsigned long * sec) {
+	for (int i = 0; i <  8; ++i) {
+		for (int j = 0; j < 16; ++j) {
+			printf("%08x   ", sec[i * 16 + j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+void GhostShip::sort_cargo(unsigned long part, unsigned long N, int fatn) {
+	ULONG fat_sector = (ULONG) _sector0->fat_sec_num(N, fatn);
+	LONGLONG fat_offset = _sector0->fat_ent_off(N);
+
+	if (!_record_book.contains(fat_sector)) {
+		_device->seek(fat_sector * _sector0->BPB_BytsPerSec(), false);
+		_device->read();
+		_record_book[fat_sector] = { 0, fat_sector, _device->buffer(0) };
+	}
+	*(unsigned long*)(&_record_book[fat_sector].data[fat_offset]) = _cluster_chain[part+1];
+
+	printf("\033[1;1H\033[0J");
+	print_fat_sector((unsigned long*)_device->buffer(0));
+	print_fat_sector((unsigned long*)(&_record_book[fat_sector].data));
+	_term->read();
+}
 

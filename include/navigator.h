@@ -63,7 +63,6 @@ private:
 	Directory read_full_directory_at(unsigned long N);
 	Directory & retrieve_directory_at(unsigned long N);
 
-	int n_fat_entries(void) const;
 	int n_cluster_entries(void) const;
 
 public:

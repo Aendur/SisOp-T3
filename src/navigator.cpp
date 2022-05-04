@@ -22,10 +22,6 @@ Navigator::~Navigator(void) {
 	}
 }
 
-int Navigator::n_fat_entries(void) const {
-	return _sector0->BPB_FATSz32() * ((size_t)_sector0->BPB_BytsPerSec() / sizeof(unsigned int));
-};
-
 int Navigator::n_cluster_entries(void) const {
 	return _sector0->cluster_size() / sizeof(entry);
 }
@@ -162,7 +158,7 @@ int set_min_max_i(int max, int current, int height) {
 
 int Navigator::print_FAT(int nfat) const {
 	static const int NL = 45;
-	int max = n_fat_entries();
+	int max = _sector0->n_fat_entries();
 	int selected = _position_fat[nfat];
 	int i0 = set_min_max_i(max, selected, NL);
 
@@ -216,7 +212,7 @@ void Navigator::read_FAT(int fatn) {
 	printf("loading FAT%d info...\n", fatn);
 	long long offset = (_sector0->BPB_RsvdSecCnt() + _sector0->BPB_FATSz32() * fatn) * _sector0->BPB_BytsPerSec();
 	_device->seek(offset, false);
-	_FAT[fatn] = new unsigned int[n_fat_entries()];
+	_FAT[fatn] = new unsigned int[_sector0->n_fat_entries()];
 	
 	int sector = 0;
 	int n_sectors = _sector0->BPB_FATSz32();
@@ -383,9 +379,9 @@ void Navigator::launch_ghost_ship(void) {
 	}, dialog_options);
 
 	if (dialog.query(75,15) != DIALOG_NO_SELECTION) {
-		GhostShip gs(_device, _sector0, _term);
-		if (gs.embark(ent)) {
-			gs.launch(_FAT[0], _FAT[1]);
-		}
+		GhostShip gs(_device, _sector0, _term, _FAT[0], _FAT[1]);
+		if (!gs.embark(ent)) { return; }
+		if (!gs.launch()   ) { return; }
+		//if (!gs.dock()     ) { return; }
 	}
 }

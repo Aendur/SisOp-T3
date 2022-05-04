@@ -56,6 +56,7 @@ public:
 	inline LONGLONG first_sector_of_cluster(LONGLONG N) const;
 	inline LONGLONG fat_sec_num(LONGLONG N, int nfat) const;
 	inline LONGLONG fat_ent_off(LONGLONG N) const;
+	inline ULONG n_fat_entries(void) const;
 };
 
 ULONG fat32::cluster_size(void) const {
@@ -80,6 +81,10 @@ LONGLONG fat32::fat_ent_off(LONGLONG N) const {
 	LONGLONG fat_offset = N * 4;
 	return fat_offset % this->BPB_BytsPerSec();
 }
+ULONG fat32::n_fat_entries(void) const {
+	return BPB_FATSz32() * ((size_t) BPB_BytsPerSec() / sizeof(ULONG));
+}
+
 
 
 #endif
