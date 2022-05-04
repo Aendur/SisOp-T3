@@ -1,4 +1,10 @@
 {
+	"explorer.experimental.fileNesting.enabled": true,
+	"explorer.experimental.fileNesting.expand": true,
+	"explorer.experimental.fileNesting.operateAsGroup": false,
+	"explorer.experimental.fileNesting.patterns": {
+		"*.cpp": "${capture}.cpp, ${capture}.h",
+	},
 	"files.associations": {
 		"unordered_map": "cpp",
 		"array": "cpp",

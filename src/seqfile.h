@@ -55,7 +55,14 @@ public:
 		const char * get_str(void) const;
 	};
 
+	/// Checks if a chuck of data is part of a SeqFile
+	/// \param memsrc  pointer to the data to be checked
+	/// \param message an optional array to store validity checking status
 	static Header check_file(const void * memsrc, char message[4][256] = nullptr);
+
+	/// Checks if a SeqFile object contains valid SeqFile data
+	/// \param memsrc  pointer to the file object to be checked
+	/// \param message an optional array to store validity checking status
 	static Header check_file(const SeqFile & src, char message[4][256] = nullptr);
 
 

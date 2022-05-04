@@ -11,7 +11,7 @@ class GhostShip {
 public:
 	GhostShip(Device * d, fat32 * s0) : _device(d), _sector0(s0) {}
 	void launch(void);
-	void board(const entry& ghost_entry);
+	bool board(const entry& ghost_entry);
 };
 
 #endif

@@ -5,20 +5,12 @@
 //#include <vector>
 #include <deque>
 #include "entry.h"
-
+#include "longshort.h"
 
 class TermUI;
 class Device;
 class Dialog;
 struct fat32;
-
-typedef union {
-	struct _broken_int32 {
-		unsigned short lower;
-		unsigned short upper;
-	} half;
-	unsigned long full;
-} broken_int32;
 
 struct EntryMetadata {
 	unsigned long cluster;
@@ -88,7 +80,6 @@ private:
 
 public:
 	~Navigator(void);
-	//void init(TermUI * t, Device * d) { if (!_initialized) {_term = t; _device = d; _initialized = true;} }
 	void init(TermUI * t, Device * d, fat32 * s0);
 	void navigate(void);
 };
