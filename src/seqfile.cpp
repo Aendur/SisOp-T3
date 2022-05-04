@@ -21,9 +21,72 @@ using std::vector;
 const unsigned long long SeqFile::seed = std::random_device()();
 std::mt19937_64 SeqFile::RNG = std::mt19937_64(seed);
 
-SeqFile::Header SeqFile::check_file(const unsigned char * memsrc) {
-	return Header();
+const char * SeqFile::Header::get_str(void) const {
+	static char buffer[256];
+	
+	snprintf(buffer, 256,
+		LINE_NAME LINE_META LINE_UIDS "DATE %s TIME %s\n",
+		base_name, extension, (unsigned long long) file_size, (unsigned long long) part,
+		id1, id2, datestamp, timestamp
+	);
+
+	return buffer;
 }
+
+SeqFile::Header SeqFile::check_file(const void * memsrc, char message[4][256]) {
+	Header header;
+	const unsigned char * src = (unsigned char*) memsrc;
+	char last_field[RF_LINE_SIZE + 1];
+	
+	if (message != nullptr) {
+		snprintf(message[0], 256, "SIZE \033[31;1mINVALID\033[m");
+		snprintf(message[1], 256, "PART \033[31;1mINVALID\033[m");
+		snprintf(message[2], 256, "UID1 \033[31;1mINVALID\033[m");
+		snprintf(message[3], 256, "UID2 \033[31;1mINVALID\033[m");
+	}
+	try {
+		memcpy(header.base_name, src + RF_NAME_OFF, RF_NAME_LEN); header.base_name[RF_NAME_LEN] = 0;
+		memcpy(header.extension, src + RF_EXTN_OFF, RF_EXTN_LEN); header.extension[RF_EXTN_LEN] = 0;
+		memcpy(header.datestamp, src + RF_DATE_OFF, RF_DATE_LEN); header.datestamp[RF_DATE_LEN] = 0;
+		memcpy(header.timestamp, src + RF_TIME_OFF, RF_TIME_LEN); header.timestamp[RF_TIME_LEN] = 0;
+
+		
+		memcpy(last_field, src + RF_SIZE_OFF, RF_SIZE_LEN);
+		last_field[RF_SIZE_LEN] = 0;
+		header.file_size = std::stoul(last_field);
+		if (message != nullptr) snprintf(message[0], 256, "SIZE \033[32;1mOK\033[m");
+
+		memcpy(last_field, src + RF_PART_OFF, RF_PART_LEN);
+		last_field[RF_PART_LEN] = 0;
+		header.part = std::stoul(last_field);
+		if (message != nullptr) snprintf(message[1], 256, "PART \033[32;1mOK\033[m");
+		
+		memcpy(last_field, src + RF_UID1_OFF, RF_UID1_LEN);
+		last_field[RF_UID1_LEN] = 0;
+		header.id1 = std::stoul(last_field, nullptr, 16);
+		if (message != nullptr) snprintf(message[2], 256, "UID1 \033[32;1mOK\033[m");
+
+		memcpy(last_field, src + RF_UID2_OFF, RF_UID2_LEN);
+		last_field[RF_UID2_LEN] = 0;
+		header.id1 = std::stoul(last_field, nullptr, 16);
+		if (message != nullptr) snprintf(message[3], 256, "UID2 \033[32;1mOK\033[m");
+
+		header.valid = true;
+		return header;
+	} catch (std::exception & e) {
+		// printf("%s\n%s\n%s\n%s\nLAST_VALUE='%s'\n", message[0], message[1], message[2], message[3], last_field);
+		// printf("%s\n", header.get_str());
+		// printf("%s\n", e.what());
+		header.valid = false;
+	}
+
+	return header;
+}
+
+SeqFile::Header SeqFile::check_file(const SeqFile & src, char message[4][256]) {
+	return check_file(src.file_buffer, message);
+}
+
 
 unsigned long SeqFile::gen_uuid(void) {
 	std::uniform_int_distribution<unsigned long> distribution;
