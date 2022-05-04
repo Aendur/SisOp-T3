@@ -39,5 +39,6 @@ bin/
 test.cpp
 *.log
 devshell.lnk
-
+src/*.h
+src/*.symlink
 bookmarks.dat
