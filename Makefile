@@ -6,7 +6,7 @@ OBJDIR=obj
 CFLAGS=/W4 /EHsc /std:c++20 /I$(INCDIR) /utf-8 /nologo
 
 FGLIBN=seqfile utility
-DXLIBN=disk_explorer term_ui device utility page input_field editor navigator dialog popup
+DXLIBN=disk_explorer term_ui device utility page input_field editor navigator ghost_ship dialog popup
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
@@ -19,11 +19,14 @@ filegen: src\filegen.cpp $(FGLIBS)
 diskexp: src\diskexp.cpp $(DXLIBS)
 	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:diskexp.exe $?
 
+update:
+	scripts\update_symlinks.bat
 
 $(OBJDIR)\seqfile.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 $(OBJDIR)\utility.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+
 $(OBJDIR)\disk_explorer.obj::      $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 $(OBJDIR)\term_ui.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
@@ -38,6 +41,9 @@ $(OBJDIR)\editor.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 $(OBJDIR)\navigator.obj::          $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\ghost_ship.obj::         $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+
 $(OBJDIR)\dialog.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 $(OBJDIR)\popup.obj::              $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
