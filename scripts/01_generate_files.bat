@@ -2,7 +2,11 @@
 FOR %%I IN (0 1 2 3 4) DO (IF NOT EXIST SD%%I (MKDIR SD%%I))
 
 @REM Criar em cada diretório 371 arquivos de aproximadamente 1 KB
-FOR %%I IN (0 1 2 3 4) DO ((CD SD%%I) & (D:\Documents\GitHub\SisOp-T3\filegen.exe file%%I_.txt 1000 371 rnd) & (CD ..))
+FOR %%I IN (0 1 2 3 4) DO (
+	CD SD%%I
+	D:\Documents\GitHub\SisOp-T3\filegen.exe file%%I_.txt 1000 371 rnd
+	CD ..
+)
 
 @REM Criar no subdiretório SD1, mais 3 subdiretórios: SD1.0, SD1.1 e SD1.2
 FOR %%I IN (0 1 2) DO (IF NOT EXIST SD1\SD1.%%I MKDIR SD1\SD1.%%I)

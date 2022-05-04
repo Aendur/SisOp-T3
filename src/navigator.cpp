@@ -326,7 +326,7 @@ void Navigator::nav_downstream(void) {
 		if (entry.is_ghost()) {
 			launch_ghost_ship();
 		} else if (entry.is_dir()) {
-			longshort addr;
+			ulongshort addr;
 			addr.half.lower = entry.DIR.FstClusLO;
 			addr.half.upper = entry.DIR.FstClusHI;
 			if (addr.full == 0) { addr.full = 2; }
@@ -349,7 +349,7 @@ void Navigator::nav_upstream(void) {
 	Directory & updir = _directory_tree.at(_upstream_directory);
 	_current_directory = _upstream_directory;
 
-	longshort addr;
+	ulongshort addr;
 	addr.half.lower = updir[1].data.DIR.FstClusLO;
 	addr.half.upper = updir[1].data.DIR.FstClusHI;
 	_upstream_directory = (updir[0].data.DIR.Name[0] == '.' && updir[1].data.DIR.Name[1] == '.') ? addr.full : 2;
@@ -385,7 +385,7 @@ void Navigator::launch_ghost_ship(void) {
 	if (dialog.query(75,15) != DIALOG_NO_SELECTION) {
 		GhostShip gs(_device, _sector0, _term);
 		if (gs.embark(ent)) {
-			gs.launch(_FAT[0]);
+			gs.launch(_FAT[0], _FAT[1]);
 		}
 	}
 }

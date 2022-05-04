@@ -7,6 +7,6 @@ typedef union {
 		unsigned short upper;
 	} half;
 	unsigned long full;
-} longshort;
+} ulongshort;
 
 #endif

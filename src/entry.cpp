@@ -40,7 +40,7 @@ const char* entry::get_str(void) const {
 		unsigned short cks = LDIR.Chksum;
 		snprintf(output, 128, "%-13s   %4s  %5s  %3s      %3u  %-3u            ", long_name, ltype, stats, dtype, ord, cks);
 	} else {
-		longshort fc;
+		ulongshort fc;
 		concat_name(short_name, (char*)DIR.Name);
 		fc.half.lower = DIR.FstClusLO;
 		fc.half.upper = DIR.FstClusHI;

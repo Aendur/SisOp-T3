@@ -56,8 +56,9 @@ bool GhostShip::embark(const EntryMetadata& ghost_entry) {
 	return true;
 }
 
-void GhostShip::launch(unsigned int * FAT) {
-	(void) FAT;
+void GhostShip::launch(unsigned int * FAT1, unsigned int * FAT2) {
+	(void) FAT1;
+	(void) FAT2;
 }
 
 bool GhostShip::check_consistency(const EntryMetadata& ghost_entry) {
@@ -107,7 +108,7 @@ bool GhostShip::check_validity(const EntryMetadata& ghost_entry) {
 	// THIS FUNCTION SHOULD MAKE SURE TO LOOK CHECK IF ENTRY IS OPEN IN THE FAT
 	#pragma message( __FILE__ "(" STRING(__LINE__) "): \033[33;1mshould make sure to check if entry is open in the FAT\033[m" )
 	
-	longshort cluster;
+	ulongshort cluster;
 	cluster.half.lower = ghost_entry.data.DIR.FstClusLO;
 	cluster.half.upper = ghost_entry.data.DIR.FstClusHI;
 	
@@ -121,7 +122,7 @@ bool GhostShip::check_validity(const EntryMetadata& ghost_entry) {
 		_messages.push("Invalid file format");
 		return false;
 	} else {
-		// we already set _first_header
+		_cluster_chain.push(cluster.full);
 		return true;
 	}
 }

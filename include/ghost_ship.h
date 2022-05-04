@@ -10,10 +10,12 @@ class TermUI;
 #include <stack>
 #include <string>
 #include <map>
+#include <queue>
 #include "seqfile.h"
 
 struct VoyageRecord {
-	unsigned long long sector;
+	unsigned long cluster;
+	unsigned long sector;
 	unsigned char data[512];
 };
 
@@ -33,6 +35,7 @@ class GhostShip {
 	RecordBook _record_book;
 	SeqFile::Header _first_header;
 	char _first_msg[4][256];
+	std::queue<unsigned long> _cluster_chain;
 
 
 	bool check_consistency(const EntryMetadata& ghost_entry);
@@ -41,7 +44,7 @@ class GhostShip {
 public:
 	GhostShip(Device * d, fat32 * s0, TermUI * t) : _device(d), _sector0(s0), _term(t) {}
 	bool embark(const EntryMetadata& ghost_entry);
-	void launch(unsigned int * FAT);
+	void launch(unsigned int * FAT1, unsigned int * FAT2);
 };
 
 #endif
