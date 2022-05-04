@@ -382,6 +382,6 @@ void Navigator::launch_ghost_ship(void) {
 		GhostShip gs(_device, _sector0, _term, _FAT[0], _FAT[1]);
 		if (!gs.embark(ent)) { return; }
 		if (!gs.launch()   ) { return; }
-		//if (!gs.dock()     ) { return; }
+		if (!gs.dock()     ) { return; }
 	}
 }

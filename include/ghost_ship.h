@@ -11,11 +11,10 @@ class TermUI;
 #include <string>
 #include <map>
 #include "seqfile.h"
-#include "fat32.h"
 
 struct VoyageRecord {
-	unsigned long cluster = FAT_EOC;
-	unsigned long sector = 0;
+	unsigned long cluster;
+	unsigned long sector;
 	unsigned char data[512];
 	VoyageRecord(void) {};
 	VoyageRecord(unsigned long clus, unsigned long sec, const void* memsrc);

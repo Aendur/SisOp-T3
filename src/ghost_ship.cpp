@@ -6,6 +6,7 @@
 #include "device.h"
 #include "popup.h"
 #include "term_ui.h"
+#include "fat32.h"
 
 VoyageRecord::VoyageRecord(unsigned long clus, unsigned long sec, const void* memsrc) : cluster(clus), sector(sec) {
 	memcpy(data, memsrc, 512);
@@ -142,21 +143,19 @@ SeqFile::Header GhostShip::search_cluster(unsigned long N, char out[4][256]) {
 
 bool GhostShip::launch(void) {
 	static const int LW = 30;
-	unsigned long initial_cluster = _cluster_chain[0];
+	unsigned long initial_cluster = _cluster_chain.at(0);
 	unsigned long current_cluster = next_empty(initial_cluster);
 
-	unsigned long total_parts = get_total_parts();
-	unsigned long num_parts = 1;
+	unsigned long num_clusters = 1 + (get_total_parts() / _sector0->BPB_SecPerClus());
 
-	while (current_cluster != initial_cluster && num_parts < total_parts) {
+	while (current_cluster != initial_cluster && _cluster_chain.size() < num_clusters) {
 		auto chest = search_cluster(current_cluster, nullptr);
 		if (chest.valid) {
 			_cluster_chain[chest.part] = current_cluster;
-			++num_parts;
 		}
 
 		Popup(_term)
-			.build([&] (void) { printf("Found parts %d of %d"  , num_parts, total_parts); } )
+			.build([&] (void) { printf("Found parts %llu of %lu"  , _cluster_chain.size(), num_clusters); } )
 			.build([&] (void) { printf("Starting  cluster %-*d", LW-18, initial_cluster); } )
 			.build([&] (void) { printf("Searching cluster %-*d", LW-18, current_cluster); } )
 			.show(70, 15, LW, false);
@@ -169,7 +168,7 @@ bool GhostShip::launch(void) {
 		return false;
 	} else {
 		Popup msg(_term);
-		msg.build([&] (void) { printf("Found %d of %d parts"  , num_parts, total_parts); });
+		msg.build([&] (void) { printf("Found %llu of %lu parts"  , _cluster_chain.size(), num_clusters); });
 
 		for (const auto & [key, val] : _cluster_chain) {
 			msg.build([&] (void) { printf("Part %d found in cluster %d", key, val); } );
@@ -182,7 +181,7 @@ bool GhostShip::launch(void) {
 }
 
 unsigned long GhostShip::get_total_parts(void) const {
-	unsigned long total_parts = 1 + (_first_header.file_size / _sector0->cluster_size());
+	unsigned long total_parts = 1 + (_first_header.file_size / _sector0->BPB_BytsPerSec());
 	return total_parts;
 }
 
@@ -212,18 +211,30 @@ unsigned long GhostShip::next_empty(unsigned long N) const {
 //////////////////////////////////////////////
 
 bool GhostShip::dock(void) {
-	for (const auto & [part, N] : _cluster_chain) {
-		sort_cargo(part, N, 0);
-		sort_cargo(part, N, 1);
-	}
+	unsigned long total_parts = get_total_parts();
+	//_sector0->BPB_SecPerClus()
 	
+	for (unsigned long part_num = 0; part_num < total_parts - 1; part_num += _sector0->BPB_SecPerClus()) {
+		unsigned long N = _cluster_chain.at(part_num);
+		sort_cargo(part_num, N, 0);
+		//sort_cargo(part_num, N, 1);
+	}
+
+	_term->read();
 	return true;
 }
 
-void print_fat_sector(unsigned long * sec) {
-	for (int i = 0; i <  8; ++i) {
-		for (int j = 0; j < 16; ++j) {
-			printf("%08x   ", sec[i * 16 + j]);
+void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2) {
+	static const int LW = 4;
+	static const int NL = 128 / LW;
+	for (int i = 0; i <  NL; ++i) {
+		for (int j = 0; j < LW; ++j) {
+			int index = i * LW + j;
+			if (sec1[index] == sec2[index]) {
+				printf("%-4d %08X  %-8s     ", index, sec1[index], "EQ");
+			} else {
+				printf("%-4d %08X->%08X     ", index, sec1[index], sec2[index]);
+			}
 		}
 		printf("\n");
 	}
@@ -231,19 +242,24 @@ void print_fat_sector(unsigned long * sec) {
 }
 
 void GhostShip::sort_cargo(unsigned long part, unsigned long N, int fatn) {
-	ULONG fat_sector = (ULONG) _sector0->fat_sec_num(N, fatn);
+	ULONG    fat_sector = (ULONG) _sector0->fat_sec_num(N, fatn);
 	LONGLONG fat_offset = _sector0->fat_ent_off(N);
+	int fat_element = (int) (fat_offset / sizeof(unsigned long));
+	bool contains = true;
 
 	if (!_record_book.contains(fat_sector)) {
 		_device->seek(fat_sector * _sector0->BPB_BytsPerSec(), false);
 		_device->read();
 		_record_book[fat_sector] = { 0, fat_sector, _device->buffer(0) };
+		contains = false;
 	}
-	*(unsigned long*)(&_record_book[fat_sector].data[fat_offset]) = _cluster_chain[part+1];
+	unsigned long next = _cluster_chain.at(part + _sector0->BPB_SecPerClus());
+	unsigned int* table = (unsigned int *) _record_book[fat_sector].data;
+	table[fat_element] = next;
 
 	printf("\033[1;1H\033[0J");
-	print_fat_sector((unsigned long*)_device->buffer(0));
-	print_fat_sector((unsigned long*)(&_record_book[fat_sector].data));
+	printf("\n\n\nFAT%d - SECTOR %lu ENTRY %d     PART %02lu - CLUSTER %08X -> %08X - %s\n\n", fatn+1, fat_sector, fat_element, part, N, next, contains ? "OLD" : "NEW");
+	compare_fat_sectors((unsigned long*)_device->buffer(0), (unsigned long*)(&_record_book[fat_sector].data));
 	_term->read();
 }
 
