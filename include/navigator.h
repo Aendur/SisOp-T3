@@ -49,6 +49,7 @@ private:
 	int print_directory_at(int N) const;
 	void print_commands(void) const;
 	void move_sel (int off);
+	void move_to_last(void);
 	void nav_upstream(void);
 	void nav_downstream(void);
 	void launch_ghost_ship(void);;

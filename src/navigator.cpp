@@ -75,13 +75,13 @@ void Navigator::navigate(void) {
 		switch (key) {
 			case TERMUI_KEY_ARROW_UP   : move_sel( -1) ; break;
 			case TERMUI_KEY_ARROW_DOWN : move_sel(  1) ; break;
-			case TERMUI_KEY_ARROW_LEFT : move_sel( -1) ; break;
-			case TERMUI_KEY_ARROW_RIGHT: move_sel(  1) ; break;
 			case TERMUI_KEY_PGUP       : move_sel(-44) ; break;
 			case TERMUI_KEY_PGDOWN     : move_sel( 44) ; break;
 			case TERMUI_KEY_TAB        : toggle_view()  ; break;
 			case TERMUI_KEY_RETURN     : nav_downstream() ; break;
 			case TERMUI_KEY_BACKSPACE  : nav_upstream() ; break;
+			case TERMUI_KEY_HOME       : move_sel(-_max_selection) ; break;
+			case TERMUI_KEY_END        : move_to_last() ; break;
 			default: break;
 		}
 		_max_selection = print_main();
@@ -105,11 +105,16 @@ int Navigator::print_main(void) const {
 void Navigator::print_commands(void) const {
 	_term->clear_column(1,1,32,47);
 	printf("\n--- NAV ---          \n");
-	printf("ARROWS: move cursor    \n");
-	printf("ESC   : exit navigator \n");
-	printf("TAB   : toggle fat %d  \n", (int)_view_mode + 1);
+	printf("UP    : select previous\n");
+	printf("DOWN  : select next    \n");
+	printf("PGUP  : sel. prev. page\n");
+	printf("PGDOWN: sel. next page \n");
+	printf("HOME  : sel. first item\n");
+	printf("END   : sel. last item \n");
+	printf("TAB   : view FAT       \n");
 	printf("RETURN: enter directory\n");
 	printf("RETURN: file recovery  \n");
+	printf("ESC   : exit navigator \n");
 	printf("\n");
 }
 
@@ -125,6 +130,24 @@ void Navigator::move_sel (int off) {
 	*selected = *selected + off;
 	if (*selected < 0) *selected = 0;
 	if (*selected >= _max_selection) *selected = _max_selection - 1;
+}
+
+void Navigator::move_to_last(void) {
+	switch(_view_mode) {
+		case ViewMode::FAT1: move_sel(_max_selection); return;
+		case ViewMode::FAT2: move_sel(_max_selection); return;
+	}
+
+	//_position[_current_directory]
+	auto entry = _directory_tree[_current_directory].rbegin();
+	auto end = _directory_tree[_current_directory].rend();
+	int i = 1;
+	while (entry->data.is_empty() &&  entry != end) {
+		++i;
+		++entry;
+	}
+	
+	_position[_current_directory] = _max_selection - i;
 }
 
 /// \param max maximum number of entries
