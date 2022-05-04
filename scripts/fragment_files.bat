@@ -1,6 +1,6 @@
-SET /A "NF_512=1000" 
-SET /A "NF_4K=NF_512*2"
-SET /A "NF_8K=NF_512*3"
+SET /A "NF_512=1250" 
+SET /A "NF_4K=NF_512*1"
+SET /A "NF_8K=NF_512*1"
 
 @REM Apagar aleatoriamente, os arquivos deletados não podem ter sido criados sequencialmente, 50 arquivos de aproximadamente 1, 4 e 8 KB, em diferentes diretórios.
 SETLOCAL ENABLEDELAYEDEXPANSION
@@ -26,7 +26,6 @@ FOR /L %%J IN (0 1 2 3 4) DO (
 
 @REM Copiar 10 arquivos textos distintos, cada um com aproximadamente 40 KB Apagar o 3º, o 5º e o 7º arquivos criados.
 CD SD1\SD1.2
-D:\Documents\GitHub\SisOp-T3\filegen.exe mf20_.txt 20000 10 seq
 D:\Documents\GitHub\SisOp-T3\filegen.exe mf40_.txt 40000 10 seq
 cd ..
 cd ..
