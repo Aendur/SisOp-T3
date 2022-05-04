@@ -1,6 +1,6 @@
 {
 	"explorer.experimental.fileNesting.enabled": true,
-	"explorer.experimental.fileNesting.expand": true,
+	"explorer.experimental.fileNesting.expand": false,
 	"explorer.experimental.fileNesting.operateAsGroup": false,
 	"explorer.experimental.fileNesting.patterns": {
 		"*.cpp": "${capture}.cpp, ${capture}.h",
