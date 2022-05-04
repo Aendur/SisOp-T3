@@ -1,7 +1,8 @@
 #CFLAGS=/Wall /W4 /EHsc /std:c++17 /Iheader /utf-8 /wd5045 /nologo
 #CFLAGS=/W4 /EHsc /std:c++17 /Iheader /utf-8 /nologo
 SRCDIR=src
-INCDIR=src
+INCDIR=include
+OBJDIR=obj
 CFLAGS=/W4 /EHsc /std:c++20 /I$(INCDIR) /utf-8 /nologo
 
 FGLIBN=seqfile utility
@@ -19,29 +20,28 @@ diskexp: src\diskexp.cpp $(DXLIBS)
 	cl $(CFLAGS) /DDISKEXP /Fo:obj\ /Fe:diskexp.exe $?
 
 
-obj\seqfile.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\utility.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-
-obj\disk_explorer.obj::      $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\term_ui.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\device.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\page.obj::               $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\input_field.obj::        $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\editor.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\navigator.obj::          $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\dialog.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
-obj\popup.obj::              $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
-	cl $(CFLAGS) /c /Fo:obj\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\seqfile.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\utility.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\disk_explorer.obj::      $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\term_ui.obj::            $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\device.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\page.obj::               $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\input_field.obj::        $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\editor.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\navigator.obj::          $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\dialog.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\popup.obj::              $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 
 
 dirs:
