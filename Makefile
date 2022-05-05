@@ -4,7 +4,7 @@ OBJDIR=obj
 CFLAGS=/W4 /EHsc /std:c++20 /I$(INCDIR) /utf-8 /nologo
 
 FGLIBN=seqfile utility
-DXLIBN=disk_explorer term_ui device entry entry_metadata utility page input_field editor navigator ghost_ship seqfile dialog popup
+DXLIBN=disk_explorer term_ui device entry entry_metadata utility page input_field editor navigator ghost_ship record_book seqfile dialog popup
 
 FGLIBS=$(patsubst %,obj\\%.obj,$(FGLIBN))
 DXLIBS=$(patsubst %,obj\\%.obj,$(DXLIBN))
@@ -45,6 +45,8 @@ $(OBJDIR)\editor.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 $(OBJDIR)\navigator.obj::          $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 $(OBJDIR)\ghost_ship.obj::         $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
+	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
+$(OBJDIR)\record_book.obj::        $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h
 	cl $(CFLAGS) /c /Fo:$(OBJDIR)\ $(SRCDIR)\$(@B).cpp
 
 $(OBJDIR)\dialog.obj::             $(SRCDIR)\$(@B).cpp $(INCDIR)\$(@B).h

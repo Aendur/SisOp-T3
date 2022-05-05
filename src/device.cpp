@@ -198,6 +198,14 @@ void Device::seek(LONGLONG offset, bool relative) {
 	}
 }
 
+void Device::write(PBYTE buffer) {
+	lock_drive();
+	BOOL status = WriteFile(_device, buffer, _geometry.BytesPerSector, &_write_nbytes, NULL);
+	if (status == FALSE) { print_error(LAYOUT_WFREE L"device::write(1)", GetLastError()); }
+	seek(0, true);
+	unlock_drive();
+}
+
 void Device::write(PBYTE buffers[2]) {
 	lock_drive();
 	BOOL status = WriteFile(_device, buffers[0], _geometry.BytesPerSector, &_write_nbytes, NULL);

@@ -379,7 +379,7 @@ void Navigator::launch_ghost_ship(void) {
 	}, dialog_options);
 
 	if (dialog.query(75,15) != DIALOG_NO_SELECTION) {
-		GhostShip gs(_device, _sector0, _term, _FAT[0], _FAT[1]);
+		GhostShip gs(_device, _sector0, _term, _FAT[0]);
 		if (!gs.embark(ent)) { return; }
 		if (!gs.launch()   ) { return; }
 		if (!gs.dock()     ) { return; }
