@@ -207,15 +207,18 @@ bool GhostShip::dock(void) {
 	unsigned long next = _sector0->BPB_SecPerClus();
 	unsigned long N1 = _record_book.get_cluster(part);
 	unsigned long N2 = _record_book.get_cluster(next);
+	_term->clear_screen();
 	try {
 		for (unsigned long i = 0; i < total_clusters - 1; ++i) {
 			part  =  i      * _sector0->BPB_SecPerClus();
 			next  = (i + 1) * _sector0->BPB_SecPerClus();
 			N1 = _record_book.get_cluster(part);
 			N2 = _record_book.get_cluster(next);
+			printf("PART %lu:\n", part);
 			sort_cargo(N1, N2, 0);
 			sort_cargo(N1, N2, 1);
 		}
+		printf("PART %lu:\n", next);
 		sort_cargo(N2, FAT_EOC, 0);
 		sort_cargo(N2, FAT_EOC, 1);
 	} catch (std::exception &) {
@@ -224,8 +227,6 @@ bool GhostShip::dock(void) {
 	}
 	return true;
 }
-
-void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2);
 
 void GhostShip::sort_cargo(unsigned long N1, unsigned long N2, int fatn) {
 	ULONG    fat_sector = (ULONG) _sector0->fat_sec_num(N1, fatn);
@@ -237,57 +238,19 @@ void GhostShip::sort_cargo(unsigned long N1, unsigned long N2, int fatn) {
 	bool newentry = _record_book.add_record(0, fat_sector, _device->buffer(0));
 
 	_record_book.alter_fat_record(fat_sector, fat_element, N2);
-	if (fatn == 1) {
-		unsigned long next = N2;
-		printf("\033[1;1H\033[0J");
-		printf("\n\n\nFAT%d - SECTOR %lu ENTRY %d     CLUSTER %08X -> %08X - %s\n\n", fatn+1, fat_sector, fat_element, N1, next, newentry ? "NEW" : "OLD");
-		compare_fat_sectors((unsigned long*)_device->buffer(0), (unsigned long*)(&_record_book.get_record(fat_sector).data));
-		//_term->read();
-	}
-}
 
+
+	printf("FAT%d - SECTOR %lu ENTRY %d     CLUSTER %08X -> %08X - %s\n", fatn+1, fat_sector, fat_element, N1, N2, newentry ? "NEW" : "OLD");
+	//compare_fat_sectors((unsigned long*)_device->buffer(0), (unsigned long*)(&_record_book.get_record(fat_sector).data));
+	//_term->read();
+}
 
 
 /////////////////////////////////////////////////////////
 //  DISEMBARK - review and commit changes to the disk  //
 /////////////////////////////////////////////////////////
-void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2) {
-	static const int LW = 4;
-	static const int NL = 128 / LW;
-	for (int i = 0; i <  NL; ++i) {
-		for (int j = 0; j < LW; ++j) {
-			int index = i * LW + j;
-			if (sec1[index] == sec2[index]) {
-				printf("%-4d %08X  %-8s     ", index, sec1[index], "EQ");
-			} else {
-				printf("%-4d %08X->%08X     ", index, sec1[index], sec2[index]);
-			}
-		}
-		printf("\n");
-	}
-	printf("\n");
-}
-
-
-void compare_byte_sectors(const unsigned char * ref_sector, const unsigned char * dif_sector, bool show_ref) {
-	(void) show_ref;
-	static const int LW = 16;
-	static const int NL = 512 / LW;
-	for (int i = 0; i <  NL; ++i) {
-		for (int j = 0; j < LW; ++j) {
-			int index = i * LW + j;
-			if (ref_sector[index] == dif_sector[index]) {
-				printf("|   %02X   ", ref_sector[index]);
-			} else {
-				printf("| %02X->%02X ", ref_sector[index], dif_sector[index]);
-			}
-		}
-		printf("|\n");
-	}
-	printf("\n");
-}
-
-//#include <vector>
+void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2);
+void compare_byte_sectors(const unsigned char * ref_sector, const unsigned char * dif_sector, bool show_ref);
 
 bool GhostShip::disembark(void) {
 	unsigned long fat_start = _sector0->BPB_RsvdSecCnt();
@@ -341,5 +304,42 @@ bool GhostShip::disembark(void) {
 	}
 	//if (_term->read() == TERMUI_KEY_TAB) { record_book_page.switch_buff(); }
 	return true;
+}
+
+
+void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2) {
+	static const int LW = 4;
+	static const int NL = 128 / LW;
+	for (int i = 0; i <  NL; ++i) {
+		for (int j = 0; j < LW; ++j) {
+			int index = i * LW + j;
+			if (sec1[index] == sec2[index]) {
+				printf("%-4d %08X  %-8s     ", index, sec1[index], "EQ");
+			} else {
+				printf("%-4d %08X->%08X     ", index, sec1[index], sec2[index]);
+			}
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+
+
+void compare_byte_sectors(const unsigned char * ref_sector, const unsigned char * dif_sector, bool show_ref) {
+	(void) show_ref;
+	static const int LW = 16;
+	static const int NL = 512 / LW;
+	for (int i = 0; i <  NL; ++i) {
+		for (int j = 0; j < LW; ++j) {
+			int index = i * LW + j;
+			if (ref_sector[index] == dif_sector[index]) {
+				printf("|   %02X   ", ref_sector[index]);
+			} else {
+				printf("| %02X->%02X ", ref_sector[index], dif_sector[index]);
+			}
+		}
+		printf("|\n");
+	}
+	printf("\n");
 }
 

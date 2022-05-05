@@ -47,7 +47,7 @@ void RecordBook::show_chain(void) const {
 		msg.build([&] (void) { printf("Part \033[1m%-3d\033[0m found in cluster \033[1m%-6d\033[0m", key, val); } );
 	}
 
-	msg.show(70, 15, LW);
+	msg.show(80, 12, LW);
 }
 
 unsigned long RecordBook::get_total_parts(void) const {
