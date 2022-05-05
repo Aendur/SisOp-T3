@@ -85,6 +85,7 @@ NavReturn Navigator::navigate(void) {
 			case TERMUI_KEY_BACKSPACE  : nav_upstream() ; break;
 			case TERMUI_KEY_HOME       : move_sel(-_max_selection) ; break;
 			case TERMUI_KEY_END        : move_to_last() ; break;
+			case TERMUI_KEY_F12        : _device->reopen_drive(); break;
 			default: break;
 		}
 		_max_selection = print_main();
@@ -122,6 +123,7 @@ void Navigator::print_commands(void) const {
 	printf("TAB   : view FAT       \n");
 	printf("RETURN: enter directory\n");
 	printf("RETURN: file recovery  \n");
+	printf("F12   : \033[33;1mREOPEN HANDLE\033[0m\n");
 	printf("ESC   : exit navigator \n");
 	printf("\n");
 }
@@ -245,7 +247,7 @@ void Navigator::read_FAT(int fatn) {
 		memcpy(position, _device->buffer(0), _sector0->BPB_BytsPerSec());
 		position += _sector0->BPB_BytsPerSec();
 		sector += 1;
-		printf("%d\n", sector);
+		printf("loaded %d sectors\n", sector);
 	}
 }
 

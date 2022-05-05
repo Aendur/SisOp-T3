@@ -4,10 +4,12 @@
 #include <map>
 #include <string>
 #include <stack>
+#include <vector>
 #include "seqfile.h"
 
 struct fat32;
 class TermUI;
+class Device;
 
 struct VoyageRecord {
 	unsigned long cluster;
@@ -16,8 +18,16 @@ struct VoyageRecord {
 };
 
 class RecordBook {
+public:
+	enum SelectedOption {
+		NONE,
+		DISCARD,
+		WRITE,
+	};
+
 private:
 	bool _registered = false;
+	Device * _device = nullptr;
 	TermUI * _term = nullptr;
 	fat32 * _sector0 = nullptr;
 	std::stack<std::string> _messages;
@@ -25,9 +35,14 @@ private:
 	std::map<unsigned long, unsigned long> _cluster_chain;
 	SeqFile::Header _first_header;
 
+	void print_record (const VoyageRecord & record, bool show_dif) const;
+	void print_record_fat (int nfat, const unsigned int * ref_sector, const VoyageRecord & record, bool show_dif) const;
+	void print_record_data (const unsigned char * ref_sector, const VoyageRecord & record, bool show_dif) const;
+	void print_options(const std::map<SelectedOption, std::string> & options, SelectedOption highlighted) const;
+
 public:
 	//RecordBook(void);
-	void init(TermUI * t, fat32 * s0) { _term = t; _sector0 = s0; }
+	void init(Device * d, TermUI * t, fat32 * s0) { _device = d; _term = t; _sector0 = s0; }
 
 	inline void add_message (const std::string & msg) { _messages.push(msg); }
 	inline const std::string & last_message (void) const { return _messages.top(); }
@@ -49,6 +64,9 @@ public:
 
 	unsigned long get_total_parts(void) const;
 	unsigned long get_total_clusters(void) const;
+
+	SelectedOption review_records(void) const;
+
 };
 
 #endif

@@ -205,6 +205,7 @@ void DiskExplorer::run(void) {
 }
 
 void DiskExplorer::init_navigator(void) {
+	_ui.clear_screen();
 	Navigator navigator;
 	navigator.init(&_ui, &_device, &_sector0);
 	navigator.navigate();

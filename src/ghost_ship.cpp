@@ -10,7 +10,7 @@
 #include "page.h"
 
 GhostShip::GhostShip(Device * d, fat32 * s0, TermUI * t, unsigned int * fat) : _device(d), _sector0(s0), _term(t), _FAT1(fat) {
-	_record_book.init(_term, _sector0);
+	_record_book.init(_device, _term, _sector0);
 }
 
 //////////////////////////////////////////////////
@@ -253,57 +253,19 @@ void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2);
 void compare_byte_sectors(const unsigned char * ref_sector, const unsigned char * dif_sector, bool show_ref);
 
 bool GhostShip::disembark(void) {
-	unsigned long fat_start = _sector0->BPB_RsvdSecCnt();
-	unsigned long fat1_end = fat_start + _sector0->BPB_FATSz32();
-	unsigned long fat2_end = fat1_end + _sector0->BPB_FATSz32();
+	auto write = _record_book.review_records();
 
-	// printf("\033[1;1H\033[0J");
-	// std::vector<unsigned int> selections;
-	// int current_selection = 0;
-	// for (auto & [sector, record] : _record_book) { selections.push_back(sector); }
-
-	// KeyCode key = TERMUI_KEY_UNDEFINED;
-	// enum SelectedOption {
-	// 	NONE,
-	// 	WRITE,
-	// 	DISCARD
-	// };
-	
-	// SelectedOption selected_option = NONE;
-	// while(selected_option == NONE) {
-	// 	KeyCode key = _term->read();
-
-	// 	switch(key) {
-	// 		case TERMUI_KEY_TAB        : break;
-	// 		case TERMUI_KEY_ARROW_LEFT : break;
-	// 		case TERMUI_KEY_ARROW_RIGHT: break;
-	// 		case TERMUI_KEY_RETURN     : break;
-	// 		default: break;
-	// 	}
-
-
-	// }
-
-
-	for (const auto & [sector, record] : _record_book.get_records()) {
+	if (write == RecordBook::WRITE) {
 		printf("\033[1;1H\033[0J");
-		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
-		_device->read();
-		printf("\n");
-		printf("SECTOR %d - ", sector);
-		if      (fat_start <= sector && sector < fat1_end) { printf("FAT1"); }
-		else if (fat1_end  <= sector && sector < fat2_end) { printf("FAT2"); }
-		else                                               { printf("DATA"); }
-		compare_byte_sectors(_device->buffer(0), record.data, false);
-		printf("\n");
-		printf("\n");
-		//_term->read();
-
-		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
-		_device->write((PBYTE)record.data);
+		for (const auto & [sector, record] : _record_book.get_records()) {
+			printf("Writing record at sector %lu\n", sector);
+			_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
+			_device->write((PBYTE)record.data);
+		}
+		return true;
+	} else {
+		return false;
 	}
-	//if (_term->read() == TERMUI_KEY_TAB) { record_book_page.switch_buff(); }
-	return true;
 }
 
 
