@@ -383,5 +383,6 @@ void Navigator::launch_ghost_ship(void) {
 		if (!gs.embark(ent)) { return; }
 		if (!gs.launch()   ) { return; }
 		if (!gs.dock()     ) { return; }
+		if (!gs.disembark()) { return; }
 	}
 }

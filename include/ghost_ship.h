@@ -44,12 +44,14 @@ class GhostShip {
 	 
 	SeqFile::Header search_cluster(unsigned long N, char out[4][256]);
 	unsigned long next_empty(unsigned long N) const;
-	void sort_cargo(unsigned long part, unsigned long N, int fatn);
+	void sort_cargo(unsigned long N, unsigned long N2, int fatn);
+
 public:
 	GhostShip(Device * d, fat32 * s0, TermUI * t, unsigned int * F1, unsigned int * F2) : _device(d), _sector0(s0), _term(t), _FAT1(F1), _FAT2(F2) {}
 	bool embark(const EntryMetadata& ghost_entry);
 	bool launch(void);
 	bool dock(void);
+	bool disembark(void);
 
 };
 
