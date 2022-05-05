@@ -31,7 +31,6 @@ class GhostShip {
 	void sort_cargo(unsigned long N, unsigned long N2, int fatn);
 
 public:
-	//GhostShip(Device * d, fat32 * s0, TermUI * t, unsigned int * F1, unsigned int * F2) : _device(d), _sector0(s0), _term(t), _FAT1(F1), _FAT2(F2) {}
 	GhostShip(Device * d, fat32 * s0, TermUI * t, unsigned int * fat);
 	bool embark(const EntryMetadata& ghost_entry);
 	bool launch(void);

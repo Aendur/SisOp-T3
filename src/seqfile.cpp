@@ -33,8 +33,8 @@ const char * SeqFile::Header::get_str(void) const {
 	return buffer;
 }
 
-#define MSG_FIELD_INVALID "\033[31;1mINVALID\033[m: "
-#define MSG_FIELD_OK      "\033[32;1mOK\033[m: "
+#define MSG_FIELD_INVALID " \033[31;1mINVALID\033[m: "
+#define MSG_FIELD_OK      " \033[32;1mOK\033[m: "
 
 SeqFile::Header SeqFile::check_file(const void * memsrc, char message[4][256]) {
 	Header header;
