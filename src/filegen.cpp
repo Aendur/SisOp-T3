@@ -11,8 +11,11 @@
 
 int main (int argc, char ** argv) {
 	if (argc < 5) {
-		std::cout << "a.out [File name] [File size] [Num files] [rnd|seq] <dry>\n\n";
-		std::cout << "      file_size in bytes\n";
+		std::cout << "filegen [File name] [File size] [Num files] [rnd|seq] <dry>\n\n";
+		std::cout << "        File size in bytes\n";
+		std::cout << "        rnd: file with random characters\n";
+		std::cout << "        seq: SeqFile\n";
+		std::cout << "        dry: optional parameter for dry run (the file will not be written)\n";
 		return 0;
 	}
 	bool seq_file = strcmp(argv[4], "seq") == 0;
