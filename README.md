@@ -35,5 +35,5 @@ Os argumentos do programa são:
 ## Pre-requisitos
 Este programa deve ser executado no sistema operacional Windows, versão 10 ou superior.
 Não há pre-requisitos adicionais de bibliotecas.
-Para compliar é necessário executar o ambiente de desenvolvimento do MS Visual Studio (recomendado `MSVC++ 19.29 x64` (2019) ou mais recente).
+Para compliar é necessário executar o ambiente de desenvolvimento do MS Visual Studio (recomendado `MSVC++ 19.29 x64 (2019)` ou mais recente).
 
