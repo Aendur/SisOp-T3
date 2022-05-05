@@ -14,6 +14,11 @@ struct fat32;
 
 typedef std::deque<EntryMetadata> Directory;
 
+enum class NavReturn {
+	NO_ACTION,
+	REQUIRES_RELOAD,
+};
+
 class Navigator {
 private:
 	enum class ViewMode {
@@ -39,6 +44,7 @@ private:
 	int _X0;
 	int _Y0;
 	int _max_selection;
+	bool _reload_required = false;
 
 	ViewMode _view_mode;
 	inline void toggle_view(void) { _view_mode = (ViewMode)((1 + (int)_view_mode) % (int) ViewMode::END); }
@@ -52,7 +58,7 @@ private:
 	void move_to_last(void);
 	void nav_upstream(void);
 	void nav_downstream(void);
-	void launch_ghost_ship(void);;
+	bool launch_ghost_ship(void);;
 
 	// allocs _FAT[fatn]
 	void read_FAT(int fatn);
@@ -65,10 +71,12 @@ private:
 
 	int n_cluster_entries(void) const;
 
+	void reload_tree(void);
+
 public:
 	~Navigator(void);
 	void init(TermUI * t, Device * d, fat32 * s0);
-	void navigate(void);
+	NavReturn navigate(void);
 };
 
 

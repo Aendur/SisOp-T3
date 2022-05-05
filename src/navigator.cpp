@@ -50,7 +50,14 @@ void Navigator::init(TermUI * t, Device * d, fat32 * s0) {
 	}
 }
 
-void Navigator::navigate(void) {
+void Navigator::reload_tree(void) {
+	read_FAT(0);
+	read_FAT(1);
+	_directory_tree.clear();
+	retrieve_directory_at(_current_directory);
+}
+
+NavReturn Navigator::navigate(void) {
 	static const DialogOptions quit_dialog_options = {
 		{ "Stay"  , [](void) { return DIALOG_NO_SELECTION; } },
 		{ "Exit"  , [](void) { return 1; } },
@@ -58,7 +65,7 @@ void Navigator::navigate(void) {
 
 	if (!_initialized) {
 		printf(LAYOUT_FREE "navigator not initialized");
-		return;
+		return NavReturn::NO_ACTION;
 	}
 
 	_term->clear_screen();
@@ -67,7 +74,7 @@ void Navigator::navigate(void) {
 	KeyCode key = TERMUI_KEY_UNDEFINED;
 	//Dialog quit_dialog("Exit navigator?", quit_dialog_options);
 	Dialog quit_dialog(_term, {"Exit navigator?"}, quit_dialog_options);
-	while ((key = _term->read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) {
+	while (((key = _term->read()) != TERMUI_KEY_ESC || quit_dialog.query(93,20) == DIALOG_NO_SELECTION) && _reload_required == false) {
 		switch (key) {
 			case TERMUI_KEY_ARROW_UP   : move_sel( -1) ; break;
 			case TERMUI_KEY_ARROW_DOWN : move_sel(  1) ; break;
@@ -84,6 +91,11 @@ void Navigator::navigate(void) {
 	}
 
 	_term->clear_screen();
+	if (_reload_required) {
+		return NavReturn::REQUIRES_RELOAD;
+	} else {
+		return NavReturn::NO_ACTION;
+	}
 }
 
 int Navigator::print_main(void) const {
@@ -320,7 +332,12 @@ void Navigator::nav_downstream(void) {
 	bool navable = (!(entry.is_long() || entry.is_empty())) && (entry.is_dir() != entry.is_ghost());
 	if (navable) {
 		if (entry.is_ghost()) {
-			launch_ghost_ship();
+			_reload_required = launch_ghost_ship();
+			if (_reload_required) {
+				reload_tree();
+				_reload_required = false;
+				_term->clear_screen();
+			}
 		} else if (entry.is_dir()) {
 			ulongshort addr;
 			addr.half.lower = entry.DIR.FstClusLO;
@@ -352,7 +369,7 @@ void Navigator::nav_upstream(void) {
 	if (_upstream_directory == 0) _upstream_directory = 2;
 }
 
-void Navigator::launch_ghost_ship(void) {
+bool Navigator::launch_ghost_ship(void) {
 	int selection = _position.at(_current_directory);
 	EntryMetadata & ent = _directory_tree.at(_current_directory).at(selection);
 	
@@ -380,9 +397,11 @@ void Navigator::launch_ghost_ship(void) {
 
 	if (dialog.query(75,15) != DIALOG_NO_SELECTION) {
 		GhostShip gs(_device, _sector0, _term, _FAT[0]);
-		if (!gs.embark(ent)) { return; }
-		if (!gs.launch()   ) { return; }
-		if (!gs.dock()     ) { return; }
-		if (!gs.disembark()) { return; }
+		if (!gs.embark(ent)) { return false; }
+		if (!gs.launch()   ) { return false; }
+		if (!gs.dock()     ) { return false; }
+		if (!gs.disembark()) { return false; }
+		return true;
 	}
+	return false;
 }
