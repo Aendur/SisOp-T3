@@ -302,53 +302,53 @@ void compare_byte_sectors(unsigned char * ref_sector, unsigned char * dif_sector
 	printf("\n");
 }
 
-//#include <vector>
+#include <vector>
 
 bool GhostShip::disembark(void) {
-	// unsigned long fat_start = _sector0->BPB_RsvdSecCnt();
-	// unsigned long fat1_end = fat_start + _sector0->BPB_FATSz32();
-	// unsigned long fat2_end = fat1_end + _sector0->BPB_FATSz32();
+	unsigned long fat_start = _sector0->BPB_RsvdSecCnt();
+	unsigned long fat1_end = fat_start + _sector0->BPB_FATSz32();
+	unsigned long fat2_end = fat1_end + _sector0->BPB_FATSz32();
 
-	// printf("\033[1;1H\033[0J");
-	// std::vector<unsigned int> selections;
-	// int current_selection = 0;
-	// for (auto & [sector, record] : _record_book) { selections.push_back(sector); }
+	printf("\033[1;1H\033[0J");
+	std::vector<unsigned int> selections;
+	int current_selection = 0;
+	for (auto & [sector, record] : _record_book) { selections.push_back(sector); }
 
-	// KeyCode key = TERMUI_KEY_UNDEFINED;
-	// enum SelectedOption {
-	// 	NONE,
-	// 	WRITE,
-	// 	DISCARD
-	// };
+	KeyCode key = TERMUI_KEY_UNDEFINED;
+	enum SelectedOption {
+		NONE,
+		WRITE,
+		DISCARD
+	};
 	
-	// SelectedOption selected_option = NONE;
-	// while(selected_option == NONE) {
-	// 	KeyCode key = _term->read();
+	SelectedOption selected_option = NONE;
+	while(selected_option == NONE) {
+		KeyCode key = _term->read();
 
-	// 	switch(key) {
-	// 		case TERMUI_KEY_TAB        : break;
-	// 		case TERMUI_KEY_ARROW_LEFT : break;
-	// 		case TERMUI_KEY_ARROW_RIGHT: break;
-	// 		case TERMUI_KEY_RETURN     : break;
-	// 		default: break;
-	// 	}
+		switch(key) {
+			case TERMUI_KEY_TAB        : break;
+			case TERMUI_KEY_ARROW_LEFT : break;
+			case TERMUI_KEY_ARROW_RIGHT: break;
+			case TERMUI_KEY_RETURN     : break;
+			default: break;
+		}
 
 
-	// }
+	}
 
-	// for (auto & [sector, record] : _record_book) {
-	// 	_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
-	// 	_device->read();
+	for (auto & [sector, record] : _record_book) {
+		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
+		_device->read();
 
-	// 	printf("\n");
-	// 	printf("SECTOR %d - ", sector);
-	// 	if      (fat_start <= sector && sector < fat1_end) { printf("FAT1"); }
-	// 	else if (fat1_end  <= sector && sector < fat2_end) { printf("FAT2"); }
-	// 	else                                               { printf("DATA"); }
-	// 	printf("\n");
-	// 	printf("\n");
-	// }
-	// if (_term->read() == TERMUI_KEY_TAB) { record_book_page.switch_buff(); }
+		printf("\n");
+		printf("SECTOR %d - ", sector);
+		if      (fat_start <= sector && sector < fat1_end) { printf("FAT1"); }
+		else if (fat1_end  <= sector && sector < fat2_end) { printf("FAT2"); }
+		else                                               { printf("DATA"); }
+		printf("\n");
+		printf("\n");
+	}
+	if (_term->read() == TERMUI_KEY_TAB) { record_book_page.switch_buff(); }
 	return true;
 }
 
