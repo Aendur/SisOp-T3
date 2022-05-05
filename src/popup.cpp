@@ -5,8 +5,8 @@
 
 #define LMARGIN "\033[%d;%dH"
 
-void Popup::popup(int X, int Y, int W) const {
-	static const int EX = 3;
+int Popup::popup(int X, int Y, int W) const {
+	int Y0 = Y;
 	
 	char * bar = new char[W+EX+EX+1];
 	memset(bar, '-', W+EX+EX);
@@ -17,7 +17,9 @@ void Popup::popup(int X, int Y, int W) const {
 	printf(LMARGIN "%*c|%*c|%*c", Y++, X, EX, ' ', EX + W + EX, ' ', EX, ' ');
 
 	for (auto & action : _to_exec) {
-		printf(LMARGIN "%*c|%*c"    , Y++, X, EX, ' ', EX, ' ' ); action(); printf("%*c|%*c", EX, ' ', EX, ' ' );
+		printf(LMARGIN "%*c|%*c"    , Y++, X, EX, ' ', EX, ' ' );
+		action();
+		printf("%*c|%*c", EX, ' ', EX, ' ' );
 	}
 
 	printf(LMARGIN "%*c|%*c|%*c", Y++, X, EX, ' ', EX + W + EX, ' ', EX, ' ');
@@ -25,14 +27,24 @@ void Popup::popup(int X, int Y, int W) const {
 	printf(LMARGIN "%*c"        , Y++, X, EX + 1 + EX + W + EX + 1 + EX, ' ');
 
 	delete[] bar;
+	return Y-Y0;
 }
+
+void Popup::clear(int X, int Y, int W, int H) const {
+	for (int i = 0; i < H; ++i) {
+		printf(LMARGIN "%*c", Y++, X, EX + 1 + EX + W + EX + 1 + EX, ' ');
+	}
+}
+
+
 void Popup::show(int X, int Y, int W, bool wait) const {
 	if (_term == nullptr) {
 		throw std::logic_error("Popup TermUI not initialized");
 	}
 
-	popup(X, Y, W);
+	int H = popup(X, Y, W);
 	if (wait) _term->read();
+	clear(X, Y, W, H);
 }
 
 Popup & Popup::build(std::function<void(void)> && action) {

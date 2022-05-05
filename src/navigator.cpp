@@ -336,7 +336,6 @@ void Navigator::nav_downstream(void) {
 			if (_reload_required) {
 				reload_tree();
 				_reload_required = false;
-				_term->clear_screen();
 			}
 		} else if (entry.is_dir()) {
 			ulongshort addr;
@@ -350,6 +349,8 @@ void Navigator::nav_downstream(void) {
 			}
 		}
 	}
+	
+	_term->clear_screen();
 }
 
 void Navigator::nav_upstream(void) {

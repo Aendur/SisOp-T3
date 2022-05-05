@@ -7,9 +7,11 @@
 class TermUI;
 class Popup {
 private:
+	static const int EX = 3;
 	TermUI * _term = nullptr;
 	std::vector<std::function<void(void)>> _to_exec;
-	void popup(int X, int Y, int W) const;
+	int popup(int X, int Y, int W) const;
+	void clear(int X, int Y, int W, int H) const;
 public:
 	~Popup(void) {}
 	Popup(TermUI * t) : _term(t) { }

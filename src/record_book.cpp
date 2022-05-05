@@ -39,12 +39,12 @@ void RecordBook::alter_fat_record(unsigned long sector, unsigned long position, 
 
 
 void RecordBook::show_chain(void) const {
-	static const int LW = 30;
+	static const int LW = 32;
 	Popup msg(_term);
-	msg.build([&] (void) { printf("Found %llu of %lu parts"  , _cluster_chain.size(), get_total_clusters()); });
+	msg.build([&] (void) { printf("Found \033[1m%-3llu\033[0m of \033[1m%3lu\033[0m parts          "  , _cluster_chain.size(), get_total_clusters()); });
 
 	for (const auto & [key, val] : _cluster_chain) {
-		msg.build([&] (void) { printf("Part %d found in cluster %d", key, val); } );
+		msg.build([&] (void) { printf("Part \033[1m%-3d\033[0m found in cluster \033[1m%-6d\033[0m", key, val); } );
 	}
 
 	msg.show(70, 15, LW);

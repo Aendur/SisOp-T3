@@ -321,6 +321,7 @@ bool GhostShip::disembark(void) {
 
 	// }
 
+
 	for (const auto & [sector, record] : _record_book.get_records()) {
 		printf("\033[1;1H\033[0J");
 		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
@@ -333,7 +334,7 @@ bool GhostShip::disembark(void) {
 		compare_byte_sectors(_device->buffer(0), record.data, false);
 		printf("\n");
 		printf("\n");
-		_term->read();
+		//_term->read();
 
 		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
 		_device->write((PBYTE)record.data);

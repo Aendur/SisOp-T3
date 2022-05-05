@@ -33,8 +33,8 @@ const char * SeqFile::Header::get_str(void) const {
 	return buffer;
 }
 
-#define MSG_FIELD_INVALID "%s \033[31;1mINVALID\033[m: (%-10s)"
-#define MSG_FIELD_OK      "%s \033[32;1mOK\033[m: (%-10s)"
+#define MSG_FIELD_INVALID "\033[31;1mINVALID\033[m: "
+#define MSG_FIELD_OK      "\033[32;1mOK\033[m: "
 
 SeqFile::Header SeqFile::check_file(const void * memsrc, char message[4][256]) {
 	Header header;
@@ -51,36 +51,36 @@ SeqFile::Header SeqFile::check_file(const void * memsrc, char message[4][256]) {
 	try {
 		memcpy(last_field, src + RF_SIZE_OFF, RF_SIZE_LEN);
 		last_field[RF_SIZE_LEN] = 0;
-		if (message != nullptr) snprintf(message[0], 256, MSG_FIELD_INVALID, "SIZE", last_field);
+		if (message != nullptr) snprintf(message[0], 256, "SIZE" MSG_FIELD_INVALID "(%-10s)", last_field);
 		header.file_size = std::stoul(last_field   );
-		if (message != nullptr) snprintf(message[0], 256, MSG_FIELD_OK, "SIZE", last_field);
+		if (message != nullptr) snprintf(message[0], 256, "SIZE" MSG_FIELD_OK "%-10lu", header.file_size);
 		valid[0] = true;
 	} catch (std::exception &) {}
 
 	try {
 		memcpy(last_field, src + RF_PART_OFF, RF_PART_LEN);
 		last_field[RF_PART_LEN] = 0;
-		if (message != nullptr) snprintf(message[1], 256, MSG_FIELD_INVALID, "PART", last_field);
+		if (message != nullptr) snprintf(message[1], 256, "PART" MSG_FIELD_INVALID "(%-10s)", last_field);
 		header.part = std::stoul(last_field   );
-		if (message != nullptr) snprintf(message[1], 256, MSG_FIELD_OK, "PART", last_field);
+		if (message != nullptr) snprintf(message[1], 256, "PART" MSG_FIELD_OK "%-10lu", header.part);
 		valid[1] = true;
 	} catch (std::exception &) {}
 		
 	try {
 		memcpy(last_field, src + RF_UID1_OFF, RF_UID1_LEN);
 		last_field[RF_UID1_LEN] = 0;
-		if (message != nullptr) snprintf(message[2], 256, MSG_FIELD_INVALID, "UID1", last_field);
+		if (message != nullptr) snprintf(message[2], 256, "UID1" MSG_FIELD_INVALID "(%-10s)", last_field);
 		header.id1 = std::stoul(last_field, nullptr, 16   );
-		if (message != nullptr) snprintf(message[2], 256, MSG_FIELD_OK, "UID1", last_field);
+		if (message != nullptr) snprintf(message[2], 256, "UID1" MSG_FIELD_OK "%08X  ", header.id1);
 		valid[2] = true;
 	} catch (std::exception &) {}
 
 	try {
 		memcpy(last_field, src + RF_UID2_OFF, RF_UID2_LEN);
 		last_field[RF_UID2_LEN] = 0;
-		if (message != nullptr) snprintf(message[3], 256, MSG_FIELD_INVALID, "UID2", last_field);
-		header.id1 = std::stoul(last_field, nullptr, 16   );
-		if (message != nullptr) snprintf(message[3], 256, MSG_FIELD_OK, "UID2", last_field);
+		if (message != nullptr) snprintf(message[3], 256, "UID2" MSG_FIELD_INVALID "(%-10s)", last_field);
+		header.id2 = std::stoul(last_field, nullptr, 16   );
+		if (message != nullptr) snprintf(message[3], 256, "UID2" MSG_FIELD_OK "%08X  ", header.id2);
 		valid[3] = true;
 	} catch (std::exception &) {}
 
