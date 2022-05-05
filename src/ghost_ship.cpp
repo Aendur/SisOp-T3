@@ -9,11 +9,9 @@
 #include "fat32.h"
 #include "page.h"
 
-VoyageRecord::VoyageRecord(unsigned long clus, unsigned long sec, const void* memsrc) : cluster(clus), sector(sec) {
-	memcpy(data, memsrc, 512);
+GhostShip::GhostShip(Device * d, fat32 * s0, TermUI * t, unsigned int * fat) : _device(d), _sector0(s0), _term(t), _FAT1(fat) {
+	_record_book.init(_term, _sector0);
 }
-
-
 
 //////////////////////////////////////////////////
 //  EMBARK - prepare the entry to be recovered  //
@@ -30,24 +28,24 @@ bool GhostShip::embark(const EntryMetadata& ghost_entry) {
 
 	if (!check_consistency(ghost_entry)) {
 		failed
-			.build([&] (void) { printf("%-*s", LW, _messages.top().c_str()); })
+			.build([&] (void) { printf("%-*s", LW, _record_book.last_message().c_str()); })
 			.show(LX,LY,LW);
 		return false;
 	}
 	if (!check_requirements(ghost_entry)) {
 		failed
-			.build([&] (void) { printf("%-*s", LW, _messages.top().c_str()); })
+			.build([&] (void) { printf("%-*s", LW, _record_book.last_message().c_str()); })
 			.show(LX,LY,LW);
 		return false;
 	}
 	if (!check_validity(ghost_entry)) {
 		failed
-			.build([&] (void) { printf("%-*s", LW, _messages.top().c_str()); })
+			.build([&] (void) { printf("%-*s", LW, _record_book.last_message().c_str()); })
 			.show(LX,LY,LW);
 		return false;
 	}
 
-	entry & new_entry = ((entry*)(_record_book.begin()->second.data))[ghost_entry.position];
+	entry & new_entry = ((entry*)(_record_book.first_record().data))[ghost_entry.position];
 
 	Popup(_term)
 		.build([&] (void) { printf("%-*s", LW+7, "\033[1mReady to launch!\033[m"); })
@@ -77,15 +75,15 @@ bool GhostShip::check_consistency(const EntryMetadata& ghost_entry) {
 	_device->read();
 
 	//_record_book.emplace(ghost_entry.cluster, actual_sector, _device->buffer(0));
-	_record_book[actual_sector] = { ghost_entry.cluster, actual_sector, _device->buffer(0) };
-	entry* entries = (entry*)(_record_book[actual_sector].data);
+	_record_book.add_record(ghost_entry.cluster, actual_sector, _device->buffer(0));
+	entry* entries = (entry*)(_record_book.get_record(actual_sector).data);
 
 	bool same_addr1 = entries[ghost_entry.position].DIR.FstClusLO == ghost_entry.data.DIR.FstClusLO;
 	bool same_addr2 = entries[ghost_entry.position].DIR.FstClusHI == ghost_entry.data.DIR.FstClusHI;
 	bool same_size  = entries[ghost_entry.position].DIR.FileSize  == ghost_entry.data.DIR.FileSize;
 	bool consistent = same_addr1 && same_addr2 && same_size;
 	if (!consistent) {
-		_messages.push("Inconsistent data");
+		_record_book.add_message("Inconsistent data");
 		return false;
 	} else {
 		((char*)(&entries[ghost_entry.position]))[0] = '~';
@@ -100,7 +98,7 @@ bool GhostShip::check_requirements(const EntryMetadata& ghost_entry) {
 		!ghost_entry.data.is_long() &&
 		!ghost_entry.data.is_empty();
 	if (!requirements) {
-		_messages.push("Requirements not met");
+		_record_book.add_message("Requirements not met");
 		return false;
 	} else {
 		return true;
@@ -117,12 +115,13 @@ bool GhostShip::check_validity(const EntryMetadata& ghost_entry) {
 	cluster.half.lower = ghost_entry.data.DIR.FstClusLO;
 	cluster.half.upper = ghost_entry.data.DIR.FstClusHI;
 
-	_first_header = search_cluster(cluster.full, _first_msg);
-	if (!_first_header.valid || _first_header.part != 0) {
-		_messages.push("Invalid file format");
+	_record_book.register_cargo(search_cluster(cluster.full, _first_msg));
+	const auto & first_header = _record_book.first_header();
+	if (!first_header.valid || first_header.part != 0) {
+		_record_book.add_message("Invalid file format");
 		return false;
 	} else {
-		_cluster_chain[_first_header.part] = cluster.full;
+		_record_book.link_cluster(first_header.part, cluster.full);
 		return true;
 	}
 }
@@ -142,49 +141,38 @@ SeqFile::Header GhostShip::search_cluster(unsigned long N, char out[4][256]) {
 /////////////////////////////////////////////////
 //  LAUNCH - find file pieces around the disk  //
 /////////////////////////////////////////////////
-
 bool GhostShip::launch(void) {
-	static const int LW = 30;
-	unsigned long initial_cluster = _cluster_chain.at(0);
+	unsigned long initial_cluster = _record_book.get_cluster(0);
 	unsigned long current_cluster = next_empty(initial_cluster);
+	unsigned long num_clusters = _record_book.get_total_clusters();
 
-	unsigned long num_clusters = 1 + (get_total_parts() / _sector0->BPB_SecPerClus());
-
-	while (current_cluster != initial_cluster && _cluster_chain.size() < num_clusters) {
+	while (current_cluster != initial_cluster && _record_book.get_chain_size() < num_clusters) {
 		auto chest = search_cluster(current_cluster, nullptr);
-		if (chest.valid) {
-			_cluster_chain[chest.part] = current_cluster;
+
+		bool same_size = chest.file_size == _record_book.first_header().file_size;
+		bool same_uid1 = chest.id1       == _record_book.first_header().id1;
+		bool same_uid2 = chest.id2       == _record_book.first_header().id2;
+		if (chest.valid && same_size && same_uid1 && same_uid2) {
+			_record_book.link_cluster(chest.part, current_cluster);
 		}
 
-		Popup(_term)
-			.build([&] (void) { printf("Found parts %llu of %lu"  , _cluster_chain.size(), num_clusters); } )
-			.build([&] (void) { printf("Starting  cluster %-*d", LW-18, initial_cluster); } )
-			.build([&] (void) { printf("Searching cluster %-*d", LW-18, current_cluster); } )
-			.show(70, 15, LW, false);
+		// Popup(_term)
+		// 	.build([&] (void) { printf("Found parts %llu of %lu"  , _record_book.get_chain_size(), num_clusters); } )
+		// 	.build([&] (void) { printf("Starting  cluster %-*d", LW-18, initial_cluster); } )
+		// 	.build([&] (void) { printf("Searching cluster %-*d", LW-18, current_cluster); } )
+		// 	.show(70, 15, LW, false);
 		
 		current_cluster = next_empty(current_cluster);
 	}
 
 	if (current_cluster == initial_cluster) {
-		_messages.push("Did not find all parts");
+		_record_book.add_message("Did not find all parts");
 		return false;
 	} else {
-		Popup msg(_term);
-		msg.build([&] (void) { printf("Found %llu of %lu parts"  , _cluster_chain.size(), num_clusters); });
-
-		for (const auto & [key, val] : _cluster_chain) {
-			msg.build([&] (void) { printf("Part %d found in cluster %d", key, val); } );
-		}
-
-		msg.show(70, 15, LW);
+		_record_book.show_chain();
 		return true;
 	}
 
-}
-
-unsigned long GhostShip::get_total_parts(void) const {
-	unsigned long total_parts = 1 + (_first_header.file_size / _sector0->BPB_BytsPerSec());
-	return total_parts;
 }
 
 /// Attempts to find the next empty cluster, starting from N.
@@ -213,53 +201,49 @@ unsigned long GhostShip::next_empty(unsigned long N) const {
 //////////////////////////////////////////////
 
 bool GhostShip::dock(void) {
-	unsigned long total_parts = get_total_parts();
-	unsigned long total_clusters = 1 + (total_parts / _sector0->BPB_SecPerClus());
+	unsigned long total_clusters = _record_book.get_total_clusters();
 
 	unsigned long part = 0;
 	unsigned long next = _sector0->BPB_SecPerClus();
-	unsigned long N1 = _cluster_chain.at(part);
-	unsigned long N2 = _cluster_chain.at(next);
+	unsigned long N1 = _record_book.get_cluster(part);
+	unsigned long N2 = _record_book.get_cluster(next);
 	try {
 		for (unsigned long i = 0; i < total_clusters - 1; ++i) {
 			part  =  i      * _sector0->BPB_SecPerClus();
 			next  = (i + 1) * _sector0->BPB_SecPerClus();
-			N1 = _cluster_chain.at(part);
-			N2 = _cluster_chain.at(next);
+			N1 = _record_book.get_cluster(part);
+			N2 = _record_book.get_cluster(next);
 			sort_cargo(N1, N2, 0);
 			sort_cargo(N1, N2, 1);
 		}
 		sort_cargo(N2, FAT_EOC, 0);
 		sort_cargo(N2, FAT_EOC, 1);
 	} catch (std::exception &) {
-		_messages.emplace("Error altering the FAT");
+		_record_book.add_message("Error altering the FAT");
 		return false;
 	}
 	return true;
 }
 
+void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2);
+
 void GhostShip::sort_cargo(unsigned long N1, unsigned long N2, int fatn) {
 	ULONG    fat_sector = (ULONG) _sector0->fat_sec_num(N1, fatn);
 	LONGLONG fat_offset = _sector0->fat_ent_off(N1);
 	int fat_element = (int) (fat_offset / sizeof(unsigned long));
-	bool contains = true;
 
 	_device->seek(fat_sector * _sector0->BPB_BytsPerSec(), false);
 	_device->read();
-	
-	if (!_record_book.contains(fat_sector)) {
-		_record_book[fat_sector] = { 0, fat_sector, _device->buffer(0) };
-		contains = false;
+	bool newentry = _record_book.add_record(0, fat_sector, _device->buffer(0));
+
+	_record_book.alter_fat_record(fat_sector, fat_element, N2);
+	if (fatn == 1) {
+		unsigned long next = N2;
+		printf("\033[1;1H\033[0J");
+		printf("\n\n\nFAT%d - SECTOR %lu ENTRY %d     CLUSTER %08X -> %08X - %s\n\n", fatn+1, fat_sector, fat_element, N1, next, newentry ? "NEW" : "OLD");
+		compare_fat_sectors((unsigned long*)_device->buffer(0), (unsigned long*)(&_record_book.get_record(fat_sector).data));
+		//_term->read();
 	}
-
-	unsigned long next = N2;
-	unsigned int* table = (unsigned int *) _record_book[fat_sector].data;
-	table[fat_element] = next;
-
-	//printf("\033[1;1H\033[0J");
-	//printf("\n\n\nFAT%d - SECTOR %lu ENTRY %d     PART %02lu - CLUSTER %08X -> %08X - %s\n\n", fatn+1, fat_sector, fat_element, part, N1, next, contains ? "OLD" : "NEW");
-	//compare_fat_sectors((unsigned long*)_device->buffer(0), (unsigned long*)(&_record_book[fat_sector].data));
-	//_term->read();
 }
 
 
@@ -285,7 +269,8 @@ void compare_fat_sectors(unsigned long * sec1, unsigned long * sec2) {
 }
 
 
-void compare_byte_sectors(unsigned char * ref_sector, unsigned char * dif_sector, bool show_ref) {
+void compare_byte_sectors(const unsigned char * ref_sector, const unsigned char * dif_sector, bool show_ref) {
+	(void) show_ref;
 	static const int LW = 16;
 	static const int NL = 512 / LW;
 	for (int i = 0; i <  NL; ++i) {
@@ -305,9 +290,9 @@ void compare_byte_sectors(unsigned char * ref_sector, unsigned char * dif_sector
 //#include <vector>
 
 bool GhostShip::disembark(void) {
-	// unsigned long fat_start = _sector0->BPB_RsvdSecCnt();
-	// unsigned long fat1_end = fat_start + _sector0->BPB_FATSz32();
-	// unsigned long fat2_end = fat1_end + _sector0->BPB_FATSz32();
+	unsigned long fat_start = _sector0->BPB_RsvdSecCnt();
+	unsigned long fat1_end = fat_start + _sector0->BPB_FATSz32();
+	unsigned long fat2_end = fat1_end + _sector0->BPB_FATSz32();
 
 	// printf("\033[1;1H\033[0J");
 	// std::vector<unsigned int> selections;
@@ -336,19 +321,24 @@ bool GhostShip::disembark(void) {
 
 	// }
 
-	// for (auto & [sector, record] : _record_book) {
-	// 	_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
-	// 	_device->read();
+	for (const auto & [sector, record] : _record_book.get_records()) {
+		printf("\033[1;1H\033[0J");
+		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
+		_device->read();
+		printf("\n");
+		printf("SECTOR %d - ", sector);
+		if      (fat_start <= sector && sector < fat1_end) { printf("FAT1"); }
+		else if (fat1_end  <= sector && sector < fat2_end) { printf("FAT2"); }
+		else                                               { printf("DATA"); }
+		compare_byte_sectors(_device->buffer(0), record.data, false);
+		printf("\n");
+		printf("\n");
+		_term->read();
 
-	// 	printf("\n");
-	// 	printf("SECTOR %d - ", sector);
-	// 	if      (fat_start <= sector && sector < fat1_end) { printf("FAT1"); }
-	// 	else if (fat1_end  <= sector && sector < fat2_end) { printf("FAT2"); }
-	// 	else                                               { printf("DATA"); }
-	// 	printf("\n");
-	// 	printf("\n");
-	// }
-	// if (_term->read() == TERMUI_KEY_TAB) { record_book_page.switch_buff(); }
+		_device->seek(sector * _sector0->BPB_BytsPerSec(), false);
+		_device->write((PBYTE)record.data);
+	}
+	//if (_term->read() == TERMUI_KEY_TAB) { record_book_page.switch_buff(); }
 	return true;
 }
 

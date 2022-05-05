@@ -4,6 +4,8 @@
 #include <string>
 #include <random>
 
+typedef char SeqMessage[4][256];
+
 class SeqFile {
 private:
 	static const unsigned long long seed;
