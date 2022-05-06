@@ -22,6 +22,7 @@ class GhostShip {
 	RecordBook _record_book;
 	SeqMessage _first_msg;
 
+	unsigned long get_actual_sector(const EntryMetadata& entry);
 	bool check_consistency(const EntryMetadata& ghost_entry);
 	bool check_requirements(const EntryMetadata& ghost_entry);
 	bool check_validity(const EntryMetadata& ghost_entry);

@@ -9,4 +9,12 @@ typedef union {
 	unsigned long full;
 } ulongshort;
 
+typedef union {
+	struct _bytebyte {
+		unsigned char lower;
+		unsigned char upper;
+	} half;
+	unsigned short full;
+} ushortbyte;
+
 #endif

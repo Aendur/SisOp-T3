@@ -38,6 +38,9 @@ void RecordBook::alter_fat_record(unsigned long sector, unsigned long position, 
 	table[position] = value;
 }
 
+void RecordBook::alter_data_record(unsigned long sector, unsigned long position, unsigned char value) {
+	_records[sector].data[position] = value;
+}
 
 void RecordBook::show_chain(void) const {
 	static const int LW = 32;

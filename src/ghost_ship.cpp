@@ -45,7 +45,7 @@ bool GhostShip::embark(const EntryMetadata& ghost_entry) {
 		return false;
 	}
 
-	entry & new_entry = ((entry*)(_record_book.first_record().data))[ghost_entry.position];
+	const entry & new_entry = ((entry*)(_record_book.first_record().data))[ghost_entry.position];
 
 	Popup(_term)
 		.build([&] (void) { printf("%-*s", LW+7, "\033[1mReady to launch!\033[m"); })
@@ -66,27 +66,30 @@ bool GhostShip::embark(const EntryMetadata& ghost_entry) {
 	return true;
 }
 
+unsigned long GhostShip::get_actual_sector(const EntryMetadata& entry) {
+	return (unsigned long) _sector0->first_sector_of_cluster(entry.cluster) + entry.sector;
+}
 
 bool GhostShip::check_consistency(const EntryMetadata& ghost_entry) {
-	unsigned long actual_sector = (unsigned long) _sector0->first_sector_of_cluster(ghost_entry.cluster) + ghost_entry.sector;
+	unsigned long actual_sector = get_actual_sector(ghost_entry);
 	long long offset = actual_sector * _sector0->BPB_BytsPerSec();
 
 	_device->seek(offset, false);
 	_device->read();
 
-	//_record_book.emplace(ghost_entry.cluster, actual_sector, _device->buffer(0));
 	_record_book.add_record(ghost_entry.cluster, actual_sector, _device->buffer(0));
-	entry* entries = (entry*)(_record_book.get_record(actual_sector).data);
+	const entry* entries = (entry*)(_record_book.get_record(actual_sector).data);
 
 	bool same_addr1 = entries[ghost_entry.position].DIR.FstClusLO == ghost_entry.data.DIR.FstClusLO;
 	bool same_addr2 = entries[ghost_entry.position].DIR.FstClusHI == ghost_entry.data.DIR.FstClusHI;
 	bool same_size  = entries[ghost_entry.position].DIR.FileSize  == ghost_entry.data.DIR.FileSize;
 	bool consistent = same_addr1 && same_addr2 && same_size;
+
 	if (!consistent) {
 		_record_book.add_message("Inconsistent data");
 		return false;
 	} else {
-		((char*)(&entries[ghost_entry.position]))[0] = '~';
+		//((char*)(&entries[ghost_entry.position]))[0] = '~';
 		return true;
 	}
 }
@@ -105,23 +108,45 @@ bool GhostShip::check_requirements(const EntryMetadata& ghost_entry) {
 	}
 }
 
-#define STRING2(x) #x
-#define STRING(x) STRING2(x)
+//#define STRING2(x) #x
+//#define STRING(x) STRING2(x)
 
 bool GhostShip::check_validity(const EntryMetadata& ghost_entry) {
-	#pragma message( __FILE__ "(" STRING(__LINE__) "): \033[33;1mshould make sure to check if entry is open in the FAT\033[m" )
-	
+	//#pragma message( __FILE__ "(" STRING(__LINE__) "): \033[33;1mshould make sure to check if entry is open in the FAT\033[m" )
+
 	ulongshort cluster;
 	cluster.half.lower = ghost_entry.data.DIR.FstClusLO;
 	cluster.half.upper = ghost_entry.data.DIR.FstClusHI;
+	
+	ulongshort max;
+	max.full = _sector0->n_clusters();
+	
+	bool found = false;
+	while (!found && cluster.half.upper <= max.half.upper) {
+		auto first_header = search_cluster(cluster.full, _first_msg);
+	
+		if (!first_header.valid || first_header.part != 0) {
+			found = false;
+			cluster.half.upper += 1;
+		} else {
+			_record_book.register_cargo(first_header);
+			_record_book.link_cluster(first_header.part, cluster.full);
 
-	_record_book.register_cargo(search_cluster(cluster.full, _first_msg));
-	const auto & first_header = _record_book.first_header();
-	if (!first_header.valid || first_header.part != 0) {
+			unsigned long actual_sector = get_actual_sector(ghost_entry);
+			ushortbyte clusHI;
+			clusHI.full = cluster.half.upper;
+			_record_book.alter_data_record(actual_sector, ghost_entry.position * sizeof(entry) + 20, clusHI.half.lower);
+			_record_book.alter_data_record(actual_sector, ghost_entry.position * sizeof(entry) + 21, clusHI.half.upper);
+			_record_book.alter_data_record(actual_sector, ghost_entry.position * sizeof(entry) +  0, '~');
+			//clusHI.half.
+			found = true;
+		}
+	}
+
+	if (!found) {
 		_record_book.add_message("Invalid file format");
 		return false;
 	} else {
-		_record_book.link_cluster(first_header.part, cluster.full);
 		return true;
 	}
 }

@@ -52,6 +52,7 @@ public:
 	inline const std::map<unsigned long, VoyageRecord> & get_records (void) const { return _records; }
 	inline const VoyageRecord & first_record (void) const { return _records.begin()->second; };
 	void alter_fat_record(unsigned long sector, unsigned long position, unsigned long value);
+	void alter_data_record(unsigned long sector, unsigned long position, unsigned char value);
 
 	void register_cargo(const SeqFile::Header & cargo); 
 	inline const SeqFile::Header & first_header(void) const { return _first_header; };

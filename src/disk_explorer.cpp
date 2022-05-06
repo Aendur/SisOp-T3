@@ -372,6 +372,7 @@ void DiskExplorer::show_fat32_info(void) const {
 	printf("\033[205CBPB_FATSz32    : %u\n", _sector0.BPB_FATSz32());
 	printf("\033[205CBPB_NumFATs    : %u\n", _sector0.BPB_NumFATs());
 	printf("\033[205CBPB_RsvdSecCnt : %u\n", _sector0.BPB_RsvdSecCnt());
+	printf("\033[205CBPB_TotSec32   : %u\n", _sector0.BPB_TotSec32());
 	printf("\033[205CBytes/sector   : %u\n", _sector0.BPB_BytsPerSec());
 	printf("\033[205CSectors/cluster: %u\n", _sector0.BPB_SecPerClus());
 	printf("\033[205CBPB_RootClus   : %d\n", _sector0.BPB_RootClus());
